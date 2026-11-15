@@ -151,3 +151,9 @@ Added six typed firewall actions for enabled flags and default inbound Block acr
 Microsoft partial-instance update documentation and existing WMI source were inspected for the remaining providers. Provider support is not universal, and no full-instance replacement was introduced to bypass that uncertainty. Logging/WMI remains concrete unfinished work. Windows coverage is83 controls with17 IDs remaining, and the original full rewrite scope remains active.
 
 Windows amd64/386 and Linux amd64 package compilation passed. No tests, COM activation, firewall query/write, service action or native runtime execution ran. SDK netfw.h/icftypes.h method order, IDs and scalar types were read from installed source; no new package was installed.
+
+## Frontend rotating refresh coordination
+
+Source review found that concurrent401 responses reused the same single-use refresh token, while core deletes it transactionally. The frontend now shares refresh work per session, retries late401 responses with an already refreshed access token, ignores stale refresh responses after logout/login, and refuses to replay an old request under a new login session. Session generation is preserved only by internal token rotation. TypeScript no-emit compilation passed; no browser session, token store, network request or test was exercised. Full semantic API review remains unfinished.
+
+Protected binary downloads now share the same bounded authenticated-response/refresh path as JSON requests. This covers session recordings after access-token expiry without bypassing session-generation guards. TypeScript no-emit compilation passed again; no browser storage, credentials, network call or test was exercised.
