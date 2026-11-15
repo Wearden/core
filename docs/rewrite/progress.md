@@ -179,3 +179,9 @@ Source comparison found that an explicit empty change_ids array was treated as r
 ## Per-control unfinished native write ledger
 
 remaining-native-writes.json now derives every missing ID from current native manifests and the server capability allowlist, grouped by provider kind. This preserves both Ubuntu releases and all Windows assignments rather than reducing scope to supported controls. The ledger distinguishes static source coverage from runtime applicability. No native operation or test ran.
+
+## Linux SSH integration source findings
+
+The14 SSH content controls were mapped to their native targets in linux-ssh-write-analysis.md. Source review identified separate directory-creation and missing-parent backup allowlists, implicit-option error gating, first-value include precedence, banner-file dependency and loaded-daemon validation/reload as coupled implementation requirements. These findings determine the next provider work; no generic file writer or unsupported capability was enabled. Linux coverage remains27. No tests or native operations ran.
+
+SSH provider preparation now centralizes14 compiled baseline option/value pairs in checks/ssh_policy.go. Numeric observations use the same baseline accessor intended for typed mutation planning, retaining tighter-value and disabled-zero semantics. Linux and Windows amd64 Linux-agent compilation passed. Write dispatch remains disabled pending the documented backup/include/banner/reload integration; no tests or native operations ran.
