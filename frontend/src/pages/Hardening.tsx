@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { assetsApi } from "../assetsApi";
@@ -38,10 +38,19 @@ export function NewHardening({
   const [scanId, setScanId] = useState("");
   const [name, setName] = useState("");
   const [controls, setControls] = useState<Set<string>>(() => new Set(initialControlIds ?? []));
-  const [plan, setPlan] = useState<Plan | null>(null);
+  const [review, setReview] = useState<{ key: string; plan: Plan } | null>(null);
+  const selectionKey = JSON.stringify([activeBid, scanId, Array.from(hosts).sort((a, b) => a - b), Array.from(controls).sort()]);
+  const plan = review?.key === selectionKey ? review.plan : null;
   const [confirmRisky, setConfirmRisky] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const planRequest = useRef(0);
+  useEffect(() => {
+    planRequest.current++;
+    setReview(null);
+    setConfirmRisky(false);
+    setBusy(false);
+  }, [selectionKey]);
 
   const eligible = useMemo(() => (assets.data ?? []).filter((a) => bench && a.os_type === bench.os), [assets.data, bench]);
   const profile = useQuery({
@@ -59,18 +68,23 @@ export function NewHardening({
   };
 
   const doPlan = async () => {
+    const requestId = ++planRequest.current;
+    setReview(null);
+    setConfirmRisky(false);
     setError(null);
     setBusy(true);
     try {
-      setPlan(await hardeningApi.plan({ benchmark_id: activeBid, control_ids: Array.from(controls), asset_ids: Array.from(hosts), scan_id: scanId || undefined }));
+      const next = await hardeningApi.plan({ benchmark_id: activeBid, control_ids: Array.from(controls), asset_ids: Array.from(hosts), scan_id: scanId || undefined });
+      if (requestId === planRequest.current) setReview({ key: selectionKey, plan: next });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("hard.planFailed"));
+      if (requestId === planRequest.current) setError(err instanceof Error ? err.message : t("hard.planFailed"));
     } finally {
-      setBusy(false);
+      if (requestId === planRequest.current) setBusy(false);
     }
   };
 
   const apply = async () => {
+    if (!plan || busy || (riskyPicked > 0 && !confirmRisky)) return;
     setError(null);
     setBusy(true);
     try {
@@ -111,7 +125,7 @@ export function NewHardening({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm">
             <span className="text-slate-300">{t("hard.benchmark")}</span>
-            <select className={`${field} mt-1 w-full`} value={activeBid} onChange={(e) => { setBid(e.target.value); setControls(new Set()); setPlan(null); }}>
+            <select className={`${field} mt-1 w-full`} value={activeBid} onChange={(e) => { setBid(e.target.value); setControls(new Set()); setReview(null); }}>
               {(benches.data ?? []).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </label>

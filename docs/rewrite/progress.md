@@ -157,3 +157,9 @@ Windows amd64/386 and Linux amd64 package compilation passed. No tests, COM acti
 Source review found that concurrent401 responses reused the same single-use refresh token, while core deletes it transactionally. The frontend now shares refresh work per session, retries late401 responses with an already refreshed access token, ignores stale refresh responses after logout/login, and refuses to replay an old request under a new login session. Session generation is preserved only by internal token rotation. TypeScript no-emit compilation passed; no browser session, token store, network request or test was exercised. Full semantic API review remains unfinished.
 
 Protected binary downloads now share the same bounded authenticated-response/refresh path as JSON requests. This covers session recordings after access-token expiry without bypassing session-generation guards. TypeScript no-emit compilation passed again; no browser storage, credentials, network call or test was exercised.
+
+## Bind hardening preview to submitted selection
+
+Source review found that changing hosts, controls or source scan retained an actionable preview for the previous selection. Preview state now carries the canonical benchmark/scan/host/control selection key; mismatched or late responses cannot authorize the displayed selection. Selection changes reset risk confirmation, and the apply handler independently requires a matching preview and confirmation. TypeScript no-emit compilation passed. No UI/browser action, API call, native task or test ran.
+
+Preview source review additionally covered selection A/B/A and overlapping responses: selection changes now invalidate pending preview generations and clear the review. New previews reset confirmation; stale success/error/finalization callbacks cannot replace the current review or busy state. TypeScript no-emit compilation passed; no tests or live UI operations ran.
