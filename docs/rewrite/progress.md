@@ -143,3 +143,11 @@ URA001..012 now have compiled membership plans, core risk gating and canonical b
 Contains-mode deny/network plans preserve existing assignments; exact plans use baseline defaults, including the four impersonation SIDs. Native catalog4 tightens URA007 and service runtime observations so reports can detect those post-apply regressions. The importer source reflects version4 and the strict impersonation matcher. All three canonical/embedded copies remain identical, with100 controls and98 connected entries each. Original legacy YAML is untouched.
 
 Windows coverage is77 typed writers;23 remain. Windows amd64/386 and Linux amd64 compilation passed. Python catalog-importer syntax parsing did not execute it. No tests, LSA/SCM queries or mutations, service operations or watchdog execution ran.
+
+## INetFwPolicy2 local scalar providers
+
+Added six typed firewall actions for enabled flags and default inbound Block across Domain/Private/Public. The source uses fixed SDK vtable methods and single-profile bits; rules, groups, resets, outbound policy and logging remain untouched. Exact logical values use a separate DPAPI snapshot kind. Apply has a current-profile modification precondition in both preparation and dispatch; saved-value drift/rechecks and independent recovery remain required. Restore is not blocked by the apply-only management-policy check. Core forces explicit risk confirmation. Local settings are not effective-policy or connectivity attestations.
+
+Microsoft partial-instance update documentation and existing WMI source were inspected for the remaining providers. Provider support is not universal, and no full-instance replacement was introduced to bypass that uncertainty. Logging/WMI remains concrete unfinished work. Windows coverage is83 controls with17 IDs remaining, and the original full rewrite scope remains active.
+
+Windows amd64/386 and Linux amd64 package compilation passed. No tests, COM activation, firewall query/write, service action or native runtime execution ran. SDK netfw.h/icftypes.h method order, IDs and scalar types were read from installed source; no new package was installed.
