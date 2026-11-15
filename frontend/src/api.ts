@@ -34,12 +34,18 @@ function readStoredTokens(): Tokens | null {
 }
 
 let tokens: Tokens | null = readStoredTokens();
+let sessionGeneration = 0;
 
 export function getTokens(): Tokens | null {
   return tokens;
 }
 
 export function setTokens(next: Tokens | null): void {
+  sessionGeneration++;
+  storeTokens(next);
+}
+
+function storeTokens(next: Tokens | null): void {
   tokens = next;
   try {
     if (next) localStorage.setItem(TOKEN_KEY, JSON.stringify(next));
@@ -49,28 +55,48 @@ export function setTokens(next: Tokens | null): void {
   }
 }
 
-async function refreshTokens(): Promise<boolean> {
-  if (!tokens) return false;
-  const res = await fetch("/api/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: tokens.refresh_token }),
+let refreshFlight: { session: Tokens; promise: Promise<boolean> } | null = null;
+
+function refreshTokens(): Promise<boolean> {
+  const session = tokens;
+  if (!session) return Promise.resolve(false);
+  if (refreshFlight?.session === session) return refreshFlight.promise;
+  const promise = (async () => {
+    const res = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: session.refresh_token }),
+    });
+    if (!res.ok) return false;
+    const next = (await res.json()) as Tokens;
+    if (tokens !== session) return false;
+    storeTokens(next);
+    return true;
+  })().finally(() => {
+    if (refreshFlight?.promise === promise) refreshFlight = null;
   });
-  if (!res.ok) return false;
-  setTokens((await res.json()) as Tokens);
-  return true;
+  refreshFlight = { session, promise };
+  return promise;
 }
 
-export async function request<T>(path: string, init: RequestInit = {}, auth = true, retried = false): Promise<T> {
+async function fetchResponse(path: string, init: RequestInit = {}, auth = true, retried = false): Promise<Response> {
+  const accessToken = tokens?.access_token;
+  const generation = sessionGeneration;
   const headers = new Headers(init.headers);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  if (auth && tokens) headers.set("Authorization", `Bearer ${tokens.access_token}`);
+  if (auth && accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
 
   const res = await fetch(`/api${path}`, { ...init, headers });
 
-  if (res.status === 401 && auth && !retried && (await refreshTokens())) {
-    return request<T>(path, init, auth, true);
+  if (res.status === 401 && auth && !retried && tokens && generation === sessionGeneration &&
+      (tokens.access_token !== accessToken || await refreshTokens()) && generation === sessionGeneration && tokens) {
+    return fetchResponse(path, init, auth, true);
   }
+  return res;
+}
+
+export async function request<T>(path: string, init: RequestInit = {}, auth = true, retried = false): Promise<T> {
+  const res = await fetchResponse(path, init, auth, retried);
   if (!res.ok) {
     let message = res.statusText || `HTTP ${res.status}`;
     try {
@@ -87,9 +113,7 @@ export async function request<T>(path: string, init: RequestInit = {}, auth = tr
 
 /** Fetches a protected binary (e.g. a session recording) and returns a blob: URL for the browser to play. */
 export async function fetchBlobUrl(path: string): Promise<string> {
-  const headers = new Headers();
-  if (tokens) headers.set("Authorization", `Bearer ${tokens.access_token}`);
-  const res = await fetch(`/api${path}`, { headers });
+  const res = await fetchResponse(path);
   if (!res.ok) throw new ApiError(res.status, res.status === 404 ? "No recording for this session" : `HTTP ${res.status}`);
   return URL.createObjectURL(await res.blob());
 }
