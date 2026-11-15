@@ -61,4 +61,4 @@ The local frontend node_modules junction reuses dependencies from the original d
 
 See docs/DEMO_SCRIPT.md for the agent-based walkthrough and docs/TARGETS.md for exact supported OS scope. The optional Makefile wraps source compilation and ordinary compose operations; the PowerShell build script remains the Windows distribution path. No make or system package was installed.
 
-The old Ubuntu22.04 SSH target source is retained separately under lab/ubuntu-target, with an explicit disposable password required instead of a built-in fallback. It is excluded from default compose and cannot satisfy the Ubuntu24.04 native assignment. Use lab/agent-linux for the new model. Neither fixture was built or started here.
+The old Ubuntu22.04 SSH target source is retained separately under lab/ubuntu-target, with an explicit disposable password required instead of a built-in fallback. It is excluded from default compose and requires separate native-agent provisioning with the matching Ubuntu22.04 assignment; it cannot satisfy the Ubuntu24.04 assignment. Use lab/agent-linux for the new model. Neither fixture was built or started here.

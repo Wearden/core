@@ -21,6 +21,8 @@ type scanInput struct {
 
 func originalBenchmark(native string) string {
 	switch native {
+	case "ubuntu-22.04-native":
+		return "ubuntu-22.04-cis"
 	case "ubuntu-24.04-native", "ubuntu-24.04-native-filesystem":
 		return "ubuntu-24.04-cis"
 	case "windows-10-native-registry":
