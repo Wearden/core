@@ -35,3 +35,11 @@ Apply currently rejects error evidence except the explicit absent journald setti
 6. Wire core capability/risk metadata only after those paths exist, update both release catalogs only when their definitions change, and refresh remaining-native-writes.json. Compile Windows/Linux targets. Tests and live native operations remain prohibited by the user.
 
 The next implementation must address these linked paths as one provider change; a broad generic file writer would bypass existing precheck/recovery boundaries. Current Linux write coverage remains27 controls.
+
+## Daemon validation privacy decision
+
+The upstream [sshd manual](https://man.openbsd.org/sshd.8) describes -t as configuration/key sanity checking and -T as including those checks. It also states that SIGHUP re-executes the daemon using its original name/options; sending the signal alone therefore does not prove a chosen file was loaded or that command-line overrides are absent.
+
+The [OpenSSH9.3 release notes](https://www.openssh.org/txt/release-9.3) explicitly introduce -G for effective-configuration parsing without attempting to load private keys. This changes the implementation path: use a trusted/version-checked key-free validation mode where supported, with bounded output and only selected policy values retained. Do not add a -t/-T fallback under the current credential privacy boundary. A version string or package name alone is not runtime proof, and older supported distributions still need an explicit compatible validation design rather than being silently dropped.
+
+No sshd process, version probe, configuration validation, key file read or signal was executed. The research does not enable task dispatch or establish runtime correctness. Next work must bind the trusted daemon identity, key-free validation capability and reload/restore lifecycle before removing the current execution guard.
