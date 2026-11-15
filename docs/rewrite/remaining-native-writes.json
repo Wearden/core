@@ -764,26 +764,13 @@
     },
     {
       "benchmark_id": "server-2022-native-registry",
-      "ruleset_version": "native-windows-4",
+      "ruleset_version": "native-windows-5",
       "total_controls": 100,
-      "compiled_write_ids": 97,
+      "compiled_write_ids": 99,
       "remaining_by_kind": {
-        "registry": 1,
-        "unsupported": 2
+        "registry": 1
       },
       "remaining": [
-        {
-          "id": "WIN-PWD-002",
-          "kind": "unsupported",
-          "target": "",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-PWD-009",
-          "kind": "unsupported",
-          "target": "",
-          "severity": "critical"
-        },
         {
           "id": "WIN-DEF-009",
           "kind": "registry",
@@ -794,26 +781,13 @@
     },
     {
       "benchmark_id": "windows-10-native-registry",
-      "ruleset_version": "native-windows-4",
+      "ruleset_version": "native-windows-5",
       "total_controls": 100,
-      "compiled_write_ids": 97,
+      "compiled_write_ids": 99,
       "remaining_by_kind": {
-        "registry": 1,
-        "unsupported": 2
+        "registry": 1
       },
       "remaining": [
-        {
-          "id": "WIN-PWD-002",
-          "kind": "unsupported",
-          "target": "",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-PWD-009",
-          "kind": "unsupported",
-          "target": "",
-          "severity": "critical"
-        },
         {
           "id": "WIN-DEF-009",
           "kind": "registry",
@@ -824,26 +798,13 @@
     },
     {
       "benchmark_id": "windows-11-native-registry",
-      "ruleset_version": "native-windows-4",
+      "ruleset_version": "native-windows-5",
       "total_controls": 100,
-      "compiled_write_ids": 97,
+      "compiled_write_ids": 99,
       "remaining_by_kind": {
-        "registry": 1,
-        "unsupported": 2
+        "registry": 1
       },
       "remaining": [
-        {
-          "id": "WIN-PWD-002",
-          "kind": "unsupported",
-          "target": "",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-PWD-009",
-          "kind": "unsupported",
-          "target": "",
-          "severity": "critical"
-        },
         {
           "id": "WIN-DEF-009",
           "kind": "registry",
