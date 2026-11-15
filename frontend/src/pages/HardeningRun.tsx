@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { hardeningApi, shortId } from "../hardeningApi";
@@ -33,6 +33,12 @@ export default function HardeningRun() {
   const [error, setError] = useState<string | null>(null);
   const [openRow, setOpenRow] = useState<number | null>(null);
   const [rollbackName, setRollbackName] = useState("");
+  useEffect(() => {
+    setPicked(new Set());
+    setRollbackName("");
+    setOpenRow(null);
+    setError(null);
+  }, [id]);
 
   // Control titles, so the table shows what each control is and not only its ID.
   const benchmarkId = run.data?.benchmark_id;
@@ -45,7 +51,14 @@ export default function HardeningRun() {
   });
   const titleOf = new Map((controls.data ?? []).map((c) => [c.id, c.title]));
 
-  const cancel = useMutation({ mutationFn: () => hardeningApi.cancel(id!), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["run", id] }) });
+  const cancel = useMutation({
+    mutationFn: () => hardeningApi.cancel(id!),
+    onSuccess: () => {
+      setError(null);
+      return queryClient.invalidateQueries({ queryKey: ["run", id] });
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : t("hr.cancelFailed")),
+  });
   const rollback = useMutation({
     mutationFn: (ids?: number[]) => hardeningApi.rollback(id!, ids, rollbackName.trim() || undefined),
     onSuccess: () => {
@@ -63,6 +76,7 @@ export default function HardeningRun() {
   if (!r) return <p className="text-slate-400">{t("common.loading")}</p>;
 
   const applied = r.changes.filter((c) => c.status === "applied");
+  const selected = applied.filter((c) => picked.has(c.id)).map((c) => c.id);
   const finished = ["completed", "cancelled", "failed"].includes(r.status);
   // done_changes also counts rollback steps, so it can pass the total. Never show more than 100%.
   const done = Math.min(r.done_changes, r.total_changes);
@@ -92,10 +106,12 @@ export default function HardeningRun() {
         <div className="flex items-center gap-3">
           <StatusPill status={r.status} />
           {canOperate && !finished && (
-            <button onClick={() => cancel.mutate()} className="rounded-md border border-red-900 px-3 py-1.5 text-sm text-red-300 hover:bg-red-950/50">{t("hr.stop")}</button>
+            <button onClick={() => cancel.mutate()} disabled={cancel.isPending} className="rounded-md border border-red-900 px-3 py-1.5 text-sm text-red-300 hover:bg-red-950/50 disabled:opacity-40">{t("hr.stop")}</button>
           )}
         </div>
       </div>
+
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
 
       <div>
         <div className="h-3 w-full overflow-hidden rounded bg-slate-800">
@@ -129,11 +145,11 @@ export default function HardeningRun() {
             aria-label={t("hr.rollbackNamePh")}
           />
           <button
-            onClick={() => rollback.mutate(Array.from(picked))}
-            disabled={picked.size === 0 || !finished || rollback.isPending}
+            onClick={() => rollback.mutate(selected)}
+            disabled={selected.length === 0 || !finished || rollback.isPending}
             className="rounded-md border border-slate-700 px-3 py-1.5 text-sm hover:bg-slate-800 disabled:opacity-40"
           >
-            {t("hr.rollbackSel")} ({picked.size})
+            {t("hr.rollbackSel")} ({selected.length})
           </button>
           <button
             onClick={() => window.confirm(t("hr.rollbackConfirm")) && rollback.mutate(undefined)}
@@ -143,7 +159,6 @@ export default function HardeningRun() {
             {t("hr.rollbackAll")}
           </button>
           {!finished && <span className="text-xs text-slate-500">{t("hr.whenFinished")}</span>}
-          {error && <span className="text-sm text-red-300">{error}</span>}
         </div>
       )}
 
