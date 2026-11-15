@@ -1,0 +1,99 @@
+import { ReactNode } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth } from "./auth";
+import Shell from "./layout/Shell";
+import Login from "./pages/Login";
+import ChangePassword from "./pages/ChangePassword";
+import Dashboard from "./pages/Dashboard";
+import Placeholder from "./pages/Placeholder";
+import Assets from "./pages/Assets";
+import Audit from "./pages/Audit";
+import Sessions from "./pages/Sessions";
+import Benchmarks from "./pages/Benchmarks";
+import Scans from "./pages/Scans";
+import ScanDetail from "./pages/ScanDetail";
+import Hardening from "./pages/Hardening";
+import HardeningRun from "./pages/HardeningRun";
+import Rollback from "./pages/Rollback";
+import Reports from "./pages/Reports";
+import HostAnalytics from "./pages/HostAnalytics";
+import AttackMatrix from "./pages/AttackMatrix";
+import { useI18n } from "./i18n";
+
+function Spinner() {
+  const { t } = useI18n();
+  return <div className="flex min-h-screen items-center justify-center text-slate-400">{t("common.loading")}</div>;
+}
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.must_change_password && location.pathname !== "/change-password") {
+    return <Navigate to="/change-password" replace />;
+  }
+  return <>{children}</>;
+}
+
+function LoginRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return <Spinner />;
+  if (user && user.must_change_password) return <Navigate to="/change-password" replace />;
+  if (user) return <Navigate to="/" replace />;
+  return <Login />;
+}
+
+const PHASES: Record<string, { title: string; phase: number }> = {
+  "/settings": { title: "nav.settings", phase: 8 },
+  // "/reports" is a real page now (see routes below)
+};
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginRoute />} />
+          <Route
+            path="/change-password"
+            element={
+              <RequireAuth>
+                <ChangePassword />
+              </RequireAuth>
+            }
+          />
+          <Route
+            element={
+              <RequireAuth>
+                <Shell />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="/assets" element={<Assets />} />
+            <Route path="/audit" element={<Audit />} />
+            <Route path="/sessions" element={<Sessions />} />
+            <Route path="/benchmarks" element={<Benchmarks />} />
+            <Route path="/scans" element={<Scans />} />
+            <Route path="/scans/:id" element={<ScanDetail />} />
+            <Route path="/hardening" element={<Hardening />} />
+            <Route path="/hardening/:id" element={<HardeningRun />} />
+            <Route path="/rollback" element={<Rollback />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/attack" element={<AttackMatrix />} />
+            <Route path="/hosts/:id" element={<HostAnalytics />} />
+            {Object.entries(PHASES).map(([path, info]) => (
+              <Route
+                key={path}
+                path={path}
+                element={<Placeholder title={info.title} phase={info.phase} />}
+              />
+            ))}
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
