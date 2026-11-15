@@ -766,10 +766,9 @@
       "benchmark_id": "server-2022-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 83,
+      "compiled_write_ids": 84,
       "remaining_by_kind": {
         "firewall": 3,
-        "guest_account": 1,
         "installer_policy": 1,
         "registry": 2,
         "unsupported": 2,
@@ -787,12 +786,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-PWD-010",
-          "kind": "guest_account",
-          "target": "Guest",
-          "severity": "medium"
         },
         {
           "id": "WIN-FW-007",
@@ -884,10 +877,9 @@
       "benchmark_id": "windows-10-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 83,
+      "compiled_write_ids": 84,
       "remaining_by_kind": {
         "firewall": 3,
-        "guest_account": 1,
         "installer_policy": 1,
         "registry": 2,
         "unsupported": 2,
@@ -905,12 +897,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-PWD-010",
-          "kind": "guest_account",
-          "target": "Guest",
-          "severity": "medium"
         },
         {
           "id": "WIN-FW-007",
@@ -1002,10 +988,9 @@
       "benchmark_id": "windows-11-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 83,
+      "compiled_write_ids": 84,
       "remaining_by_kind": {
         "firewall": 3,
-        "guest_account": 1,
         "installer_policy": 1,
         "registry": 2,
         "unsupported": 2,
@@ -1023,12 +1008,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-PWD-010",
-          "kind": "guest_account",
-          "target": "Guest",
-          "severity": "medium"
         },
         {
           "id": "WIN-FW-007",
