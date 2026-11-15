@@ -171,3 +171,11 @@ Hardening request-state review separated planning from apply-in-flight state. Se
 Hardening cancellation failures now appear outside the applied-change-only rollback toolbar. The cancel button is disabled while pending; English/Azerbaijani fallback messages were added. TypeScript no-emit compilation passed; no test or live API operation ran.
 
 Rollback run navigation now resets selection/name/detail/error state. Selected rollback IDs are intersected with currently applied changes, so a polling status update cannot leave obsolete IDs in the request or count. TypeScript no-emit compilation passed; no tests or live rollback ran.
+
+## Explicit rollback selection boundary
+
+Source comparison found that an explicit empty change_ids array was treated as rollback-all. Empty arrays now fail400 before opening a database transaction; null/omitted retains the existing all-restorable behavior used by the frontend. Nonpositive IDs are also rejected before database access. Windows/Linux amd64 core compilation passed. No tests, DB connection, request or rollback task ran.
+
+## Per-control unfinished native write ledger
+
+remaining-native-writes.json now derives every missing ID from current native manifests and the server capability allowlist, grouped by provider kind. This preserves both Ubuntu releases and all Windows assignments rather than reducing scope to supported controls. The ledger distinguishes static source coverage from runtime applicability. No native operation or test ran.
