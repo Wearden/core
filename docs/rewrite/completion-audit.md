@@ -23,7 +23,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 | Linux platform scope | Supported Ubuntu22.04/24.04 metadata before enrollment; assignment release must match before scans and new task work | Namespace metadata is not whole-host attestation; existing recovery/delivery precedes the guard |
 | Windows inspection | Three100-control manifests;98 connected providers and2 manual controls per OS; embedded/canonical bytes match | Complexity/reversible-storage audits remain manual; native availability is unexercised |
 | Windows service hosting | Confirmed installer, LocalSystem SCM hosting, protected state/bootstrap, cancellation/restart source | No service installed or started; binary upgrades require separate review |
-| Typed remediation and rollback | Core task API,27 Linux handlers and56 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
+| Typed remediation and rollback | Core task API,27 Linux handlers and59 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
 | Recovery across main-process loss | Independent platform helpers, durable journals, elapsed-time leases and revisioned compensation | No helper or recovery path executed |
 | Retain stronger compliant policies | Shared ValidApplyTarget permits the compiled target or unchanged compliant original; agent/helper/journal paths use it | Source mismatch fixed; no runtime reproduction under the no-test instruction |
 | Drift | Subsequent report reconciliation against applied baselines; rollback/compensation withdraw baselines | No drift scenario exercised |
@@ -39,7 +39,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 
 ## Concrete unfinished work
 
-1. Complete the remaining typed write/restore providers. Ubuntu24.04 has61 control IDs without write handlers and Windows44; Ubuntu22.04 adds12 read-only audit IDs without write handlers; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
+1. Complete the remaining typed write/restore providers. Ubuntu24.04 has61 control IDs without write handlers and Windows41; Ubuntu22.04 adds12 read-only audit IDs without write handlers; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
 2. Keep the approved nftables dependency read-only. Firewall mutation must not silently expand that approval. IP forwarding also needs a multi-setting restore plan because its kernel side effects exceed the current single-sysctl snapshot.
 3. Resolve the three credential-sensitive manual inspection entries without weakening the current privacy boundary. Missing/ambiguous evidence must remain error throughout.
 4. Finish semantic API/data-shape review. Route registration, compilation and reused TypeScript clients are necessary evidence, not proof of full legacy behavior.
@@ -63,3 +63,7 @@ Review found that platform-dependent Git newline conversion could alter canonica
 The matching native assignment now preserves all100 original IDs/severities. Its99 connected entries include12 additional read-only audit controls, with USR006 still manual. The shared88 definitions match the24.04 catalog. Package status, conservative persistent auditd enablement and bounded AUDIT_LIST_RULES metadata providers are wired into the scanner. Initial enrollment supports either release, while one-shot/daemon scans and new tasks require the matching assignment; retained recovery/results still precede that guard. Core maps the22.04 native ID back to its original baseline.
 
 Windows amd64 and Linux amd64 package-tree compiler checks passed. The Linux agent also compiled standalone for both targets using its pinned x/sys version and an artifact-local proto replacement, with network fetching disabled. Canonical/embedded manifest bytes and SHA256 match. No tests, live audit queries, scans, service actions or deployment ran. Loaded selector presence does not prove global audit enablement, complete rule coverage or event delivery. No new dependency or audit/firewall write capability was added.
+
+## Windows notice and anonymous-pipe writers
+
+Windows now has59 compiled handlers:31 DWORD policies, two fixed baseline notice strings, one anonymous-pipe list removal, seven account-policy scalars and18 audit policies. Exact typed string/list snapshots integrate with the existing private DPAPI journals, native rechecks and independent watchdog. Compliant existing text/empty lists remain untouched. Core requires explicit risk confirmation for all three additions. Original registry bytes or value absence are restored; malformed/unreviewed encodings are refused before mutation and contents are not sent to core. No native call, test, service action or policy modification ran.
