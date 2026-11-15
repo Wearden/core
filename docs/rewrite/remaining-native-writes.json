@@ -1,0 +1,1244 @@
+{
+  "scope": "Static capability/manifest comparison only. Presence in the write allowlist does not prove runtime applicability or successful restoration. No tests or native calls executed.",
+  "benchmarks": [
+    {
+      "benchmark_id": "ubuntu-22.04-native",
+      "ruleset_version": "native-linux-2204-1",
+      "total_controls": 100,
+      "compiled_write_ids": 27,
+      "remaining_by_kind": {
+        "apt_authentication": 1,
+        "apt_https": 1,
+        "audit_rules": 10,
+        "auditd_enabled": 1,
+        "file_metadata": 2,
+        "filesystem_metadata": 3,
+        "mount_options": 3,
+        "package_installed": 8,
+        "pam_history": 1,
+        "policy_config": 8,
+        "service_disabled": 12,
+        "sshd_config": 14,
+        "sudo_logfile": 1,
+        "sysctl": 1,
+        "ufw_runtime": 5,
+        "uid_zero": 1,
+        "unsupported": 1
+      },
+      "remaining": [
+        {
+          "id": "LNX-FS-006",
+          "kind": "mount_options",
+          "target": "/var/tmp",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FS-009",
+          "kind": "mount_options",
+          "target": "/tmp",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FS-010",
+          "kind": "mount_options",
+          "target": "/dev/shm",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PKG-001",
+          "kind": "package_installed",
+          "target": "unattended-upgrades",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PKG-002",
+          "kind": "package_installed",
+          "target": "aide",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PKG-003",
+          "kind": "package_installed",
+          "target": "sudo",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PKG-004",
+          "kind": "apt_https",
+          "target": "reviewed-apt-sources",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PKG-005",
+          "kind": "apt_authentication",
+          "target": "reviewed-apt-authentication",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-SVC-001",
+          "kind": "service_disabled",
+          "target": "avahi-daemon.service",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SVC-002",
+          "kind": "service_disabled",
+          "target": "cups.service",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SVC-003",
+          "kind": "service_disabled",
+          "target": "isc-dhcp-server.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-004",
+          "kind": "service_disabled",
+          "target": "slapd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-005",
+          "kind": "service_disabled",
+          "target": "nfs-server.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-006",
+          "kind": "service_disabled",
+          "target": "rpcbind.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-007",
+          "kind": "service_disabled",
+          "target": "rsync.service",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SVC-008",
+          "kind": "service_disabled",
+          "target": "named.service,bind9.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-009",
+          "kind": "service_disabled",
+          "target": "vsftpd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-010",
+          "kind": "service_disabled",
+          "target": "snmpd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-011",
+          "kind": "service_disabled",
+          "target": "xinetd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-012",
+          "kind": "service_disabled",
+          "target": "telnet.socket",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-NET-001",
+          "kind": "sysctl",
+          "target": "net.ipv4.ip_forward",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FW-001",
+          "kind": "package_installed",
+          "target": "ufw",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-002",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-002",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-003",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-003",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FW-004",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-004",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-005",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-005",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-006",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-006",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-AUD-001",
+          "kind": "package_installed",
+          "target": "auditd",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-AUD-002",
+          "kind": "auditd_enabled",
+          "target": "auditd.service",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-AUD-003",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-003",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-AUD-004",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-004",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-AUD-005",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-005",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-AUD-006",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-006",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-AUD-007",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-007",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-AUD-008",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-008",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-AUD-009",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-009",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-AUD-010",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-010",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-AUD-011",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-011",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-AUD-012",
+          "kind": "audit_rules",
+          "target": "LNX-AUD-012",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-LOG-004",
+          "kind": "package_installed",
+          "target": "rsyslog",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-LOG-005",
+          "kind": "package_installed",
+          "target": "logrotate",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-LOG-006",
+          "kind": "sudo_logfile",
+          "target": "/etc/sudoers",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-002",
+          "kind": "sshd_config",
+          "target": "loglevel",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-003",
+          "kind": "sshd_config",
+          "target": "x11forwarding",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-004",
+          "kind": "sshd_config",
+          "target": "maxauthtries",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-005",
+          "kind": "sshd_config",
+          "target": "ignorerhosts",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-006",
+          "kind": "sshd_config",
+          "target": "hostbasedauthentication",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-SSH-007",
+          "kind": "sshd_config",
+          "target": "permitrootlogin",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-SSH-008",
+          "kind": "sshd_config",
+          "target": "permitemptypasswords",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-SSH-009",
+          "kind": "sshd_config",
+          "target": "permituserenvironment",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-010",
+          "kind": "sshd_config",
+          "target": "clientaliveinterval",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-011",
+          "kind": "sshd_config",
+          "target": "clientalivecountmax",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SSH-012",
+          "kind": "sshd_config",
+          "target": "logingracetime",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SSH-013",
+          "kind": "sshd_config",
+          "target": "maxsessions",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SSH-014",
+          "kind": "sshd_config",
+          "target": "usepam",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-015",
+          "kind": "sshd_config",
+          "target": "banner",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-001",
+          "kind": "package_installed",
+          "target": "libpam-pwquality",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PAM-002",
+          "kind": "policy_config",
+          "target": "minlen",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PAM-003",
+          "kind": "policy_config",
+          "target": "dcredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-004",
+          "kind": "policy_config",
+          "target": "ucredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-005",
+          "kind": "policy_config",
+          "target": "lcredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-006",
+          "kind": "policy_config",
+          "target": "ocredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-007",
+          "kind": "pam_history",
+          "target": "/etc/pam.d/common-password",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PAM-008",
+          "kind": "policy_config",
+          "target": "deny",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PAM-009",
+          "kind": "policy_config",
+          "target": "PASS_MAX_DAYS",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-010",
+          "kind": "policy_config",
+          "target": "PASS_MIN_DAYS",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-USR-002",
+          "kind": "file_metadata",
+          "target": "/etc/shadow",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-USR-004",
+          "kind": "file_metadata",
+          "target": "/etc/gshadow",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-USR-005",
+          "kind": "uid_zero",
+          "target": "/etc/passwd",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-USR-006",
+          "kind": "unsupported",
+          "target": "native-review-required",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-USR-007",
+          "kind": "filesystem_metadata",
+          "target": "world-writable-files",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-USR-008",
+          "kind": "filesystem_metadata",
+          "target": "unsticky-directories",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-USR-009",
+          "kind": "filesystem_metadata",
+          "target": "orphaned-owners",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "benchmark_id": "ubuntu-24.04-native",
+      "ruleset_version": "native-linux-3",
+      "total_controls": 88,
+      "compiled_write_ids": 27,
+      "remaining_by_kind": {
+        "apt_authentication": 1,
+        "apt_https": 1,
+        "file_metadata": 2,
+        "filesystem_metadata": 3,
+        "mount_options": 3,
+        "package_installed": 7,
+        "pam_history": 1,
+        "policy_config": 8,
+        "service_disabled": 12,
+        "sshd_config": 14,
+        "sudo_logfile": 1,
+        "sysctl": 1,
+        "ufw_runtime": 5,
+        "uid_zero": 1,
+        "unsupported": 1
+      },
+      "remaining": [
+        {
+          "id": "LNX-FS-006",
+          "kind": "mount_options",
+          "target": "/var/tmp",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FS-009",
+          "kind": "mount_options",
+          "target": "/tmp",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FS-010",
+          "kind": "mount_options",
+          "target": "/dev/shm",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PKG-001",
+          "kind": "package_installed",
+          "target": "unattended-upgrades",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PKG-002",
+          "kind": "package_installed",
+          "target": "aide",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PKG-003",
+          "kind": "package_installed",
+          "target": "sudo",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PKG-004",
+          "kind": "apt_https",
+          "target": "reviewed-apt-sources",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PKG-005",
+          "kind": "apt_authentication",
+          "target": "reviewed-apt-authentication",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-SVC-001",
+          "kind": "service_disabled",
+          "target": "avahi-daemon.service",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SVC-002",
+          "kind": "service_disabled",
+          "target": "cups.service",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SVC-003",
+          "kind": "service_disabled",
+          "target": "isc-dhcp-server.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-004",
+          "kind": "service_disabled",
+          "target": "slapd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-005",
+          "kind": "service_disabled",
+          "target": "nfs-server.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-006",
+          "kind": "service_disabled",
+          "target": "rpcbind.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-007",
+          "kind": "service_disabled",
+          "target": "rsync.service",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SVC-008",
+          "kind": "service_disabled",
+          "target": "named.service,bind9.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-009",
+          "kind": "service_disabled",
+          "target": "vsftpd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-010",
+          "kind": "service_disabled",
+          "target": "snmpd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-011",
+          "kind": "service_disabled",
+          "target": "xinetd.service",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SVC-012",
+          "kind": "service_disabled",
+          "target": "telnet.socket",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-NET-001",
+          "kind": "sysctl",
+          "target": "net.ipv4.ip_forward",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FW-001",
+          "kind": "package_installed",
+          "target": "ufw",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-002",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-002",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-003",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-003",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FW-004",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-004",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-005",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-005",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-FW-006",
+          "kind": "ufw_runtime",
+          "target": "LNX-FW-006",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-LOG-004",
+          "kind": "package_installed",
+          "target": "rsyslog",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-LOG-005",
+          "kind": "package_installed",
+          "target": "logrotate",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-LOG-006",
+          "kind": "sudo_logfile",
+          "target": "/etc/sudoers",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-002",
+          "kind": "sshd_config",
+          "target": "loglevel",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-003",
+          "kind": "sshd_config",
+          "target": "x11forwarding",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-004",
+          "kind": "sshd_config",
+          "target": "maxauthtries",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-005",
+          "kind": "sshd_config",
+          "target": "ignorerhosts",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-006",
+          "kind": "sshd_config",
+          "target": "hostbasedauthentication",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-SSH-007",
+          "kind": "sshd_config",
+          "target": "permitrootlogin",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-SSH-008",
+          "kind": "sshd_config",
+          "target": "permitemptypasswords",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-SSH-009",
+          "kind": "sshd_config",
+          "target": "permituserenvironment",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-010",
+          "kind": "sshd_config",
+          "target": "clientaliveinterval",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-011",
+          "kind": "sshd_config",
+          "target": "clientalivecountmax",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SSH-012",
+          "kind": "sshd_config",
+          "target": "logingracetime",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SSH-013",
+          "kind": "sshd_config",
+          "target": "maxsessions",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-SSH-014",
+          "kind": "sshd_config",
+          "target": "usepam",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-SSH-015",
+          "kind": "sshd_config",
+          "target": "banner",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-001",
+          "kind": "package_installed",
+          "target": "libpam-pwquality",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PAM-002",
+          "kind": "policy_config",
+          "target": "minlen",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PAM-003",
+          "kind": "policy_config",
+          "target": "dcredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-004",
+          "kind": "policy_config",
+          "target": "ucredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-005",
+          "kind": "policy_config",
+          "target": "lcredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-006",
+          "kind": "policy_config",
+          "target": "ocredit",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-007",
+          "kind": "pam_history",
+          "target": "/etc/pam.d/common-password",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-PAM-008",
+          "kind": "policy_config",
+          "target": "deny",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-PAM-009",
+          "kind": "policy_config",
+          "target": "PASS_MAX_DAYS",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-PAM-010",
+          "kind": "policy_config",
+          "target": "PASS_MIN_DAYS",
+          "severity": "low"
+        },
+        {
+          "id": "LNX-USR-002",
+          "kind": "file_metadata",
+          "target": "/etc/shadow",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-USR-004",
+          "kind": "file_metadata",
+          "target": "/etc/gshadow",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-USR-005",
+          "kind": "uid_zero",
+          "target": "/etc/passwd",
+          "severity": "critical"
+        },
+        {
+          "id": "LNX-USR-006",
+          "kind": "unsupported",
+          "target": "native-review-required",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-USR-007",
+          "kind": "filesystem_metadata",
+          "target": "world-writable-files",
+          "severity": "high"
+        },
+        {
+          "id": "LNX-USR-008",
+          "kind": "filesystem_metadata",
+          "target": "unsticky-directories",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-USR-009",
+          "kind": "filesystem_metadata",
+          "target": "orphaned-owners",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "benchmark_id": "ubuntu-24.04-native-filesystem",
+      "ruleset_version": "1",
+      "total_controls": 10,
+      "compiled_write_ids": 7,
+      "remaining_by_kind": {
+        "mount_options": 3
+      },
+      "remaining": [
+        {
+          "id": "LNX-FS-006",
+          "kind": "mount_options",
+          "target": "/var/tmp",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FS-009",
+          "kind": "mount_options",
+          "target": "/tmp",
+          "severity": "medium"
+        },
+        {
+          "id": "LNX-FS-010",
+          "kind": "mount_options",
+          "target": "/dev/shm",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "benchmark_id": "server-2022-native-registry",
+      "ruleset_version": "native-windows-4",
+      "total_controls": 100,
+      "compiled_write_ids": 83,
+      "remaining_by_kind": {
+        "firewall": 3,
+        "guest_account": 1,
+        "installer_policy": 1,
+        "registry": 2,
+        "unsupported": 2,
+        "wmi": 8
+      },
+      "remaining": [
+        {
+          "id": "WIN-PWD-002",
+          "kind": "unsupported",
+          "target": "",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-PWD-009",
+          "kind": "unsupported",
+          "target": "",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-PWD-010",
+          "kind": "guest_account",
+          "target": "Guest",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-007",
+          "kind": "firewall",
+          "target": "Domain.LogBlocked",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-008",
+          "kind": "firewall",
+          "target": "Public.LogBlocked",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-009",
+          "kind": "firewall",
+          "target": "Public.LogMaxSizeKilobytes",
+          "severity": "low"
+        },
+        {
+          "id": "WIN-SMB-003",
+          "kind": "wmi",
+          "target": "MSFT_SmbServerConfiguration.EnableSMB1Protocol",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-SMB-004",
+          "kind": "registry",
+          "target": "Start",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-SMB-005",
+          "kind": "wmi",
+          "target": "MSFT_SmbServerConfiguration.RequireSecuritySignature",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-SMB-006",
+          "kind": "wmi",
+          "target": "MSFT_SmbClientConfiguration.RequireSecuritySignature",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-DEF-001",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.DisableRealtimeMonitoring",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-DEF-002",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.MAPSReporting",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-003",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.PUAProtection",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-004",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.DisableScanningNetworkFiles",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-005",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.EnableNetworkProtection",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-DEF-007",
+          "kind": "installer_policy",
+          "target": "AlwaysInstallElevated",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-DEF-009",
+          "kind": "registry",
+          "target": "RunAsPPL",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "benchmark_id": "windows-10-native-registry",
+      "ruleset_version": "native-windows-4",
+      "total_controls": 100,
+      "compiled_write_ids": 83,
+      "remaining_by_kind": {
+        "firewall": 3,
+        "guest_account": 1,
+        "installer_policy": 1,
+        "registry": 2,
+        "unsupported": 2,
+        "wmi": 8
+      },
+      "remaining": [
+        {
+          "id": "WIN-PWD-002",
+          "kind": "unsupported",
+          "target": "",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-PWD-009",
+          "kind": "unsupported",
+          "target": "",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-PWD-010",
+          "kind": "guest_account",
+          "target": "Guest",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-007",
+          "kind": "firewall",
+          "target": "Domain.LogBlocked",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-008",
+          "kind": "firewall",
+          "target": "Public.LogBlocked",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-009",
+          "kind": "firewall",
+          "target": "Public.LogMaxSizeKilobytes",
+          "severity": "low"
+        },
+        {
+          "id": "WIN-SMB-003",
+          "kind": "wmi",
+          "target": "MSFT_SmbServerConfiguration.EnableSMB1Protocol",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-SMB-004",
+          "kind": "registry",
+          "target": "Start",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-SMB-005",
+          "kind": "wmi",
+          "target": "MSFT_SmbServerConfiguration.RequireSecuritySignature",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-SMB-006",
+          "kind": "wmi",
+          "target": "MSFT_SmbClientConfiguration.RequireSecuritySignature",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-DEF-001",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.DisableRealtimeMonitoring",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-DEF-002",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.MAPSReporting",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-003",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.PUAProtection",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-004",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.DisableScanningNetworkFiles",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-005",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.EnableNetworkProtection",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-DEF-007",
+          "kind": "installer_policy",
+          "target": "AlwaysInstallElevated",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-DEF-009",
+          "kind": "registry",
+          "target": "RunAsPPL",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "benchmark_id": "windows-11-native-registry",
+      "ruleset_version": "native-windows-4",
+      "total_controls": 100,
+      "compiled_write_ids": 83,
+      "remaining_by_kind": {
+        "firewall": 3,
+        "guest_account": 1,
+        "installer_policy": 1,
+        "registry": 2,
+        "unsupported": 2,
+        "wmi": 8
+      },
+      "remaining": [
+        {
+          "id": "WIN-PWD-002",
+          "kind": "unsupported",
+          "target": "",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-PWD-009",
+          "kind": "unsupported",
+          "target": "",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-PWD-010",
+          "kind": "guest_account",
+          "target": "Guest",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-007",
+          "kind": "firewall",
+          "target": "Domain.LogBlocked",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-008",
+          "kind": "firewall",
+          "target": "Public.LogBlocked",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-FW-009",
+          "kind": "firewall",
+          "target": "Public.LogMaxSizeKilobytes",
+          "severity": "low"
+        },
+        {
+          "id": "WIN-SMB-003",
+          "kind": "wmi",
+          "target": "MSFT_SmbServerConfiguration.EnableSMB1Protocol",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-SMB-004",
+          "kind": "registry",
+          "target": "Start",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-SMB-005",
+          "kind": "wmi",
+          "target": "MSFT_SmbServerConfiguration.RequireSecuritySignature",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-SMB-006",
+          "kind": "wmi",
+          "target": "MSFT_SmbClientConfiguration.RequireSecuritySignature",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-DEF-001",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.DisableRealtimeMonitoring",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-DEF-002",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.MAPSReporting",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-003",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.PUAProtection",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-004",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.DisableScanningNetworkFiles",
+          "severity": "medium"
+        },
+        {
+          "id": "WIN-DEF-005",
+          "kind": "wmi",
+          "target": "MSFT_MpPreference.EnableNetworkProtection",
+          "severity": "high"
+        },
+        {
+          "id": "WIN-DEF-007",
+          "kind": "installer_policy",
+          "target": "AlwaysInstallElevated",
+          "severity": "critical"
+        },
+        {
+          "id": "WIN-DEF-009",
+          "kind": "registry",
+          "target": "RunAsPPL",
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

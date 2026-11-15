@@ -16,9 +16,15 @@ func (s *Server) rollbackHardening(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in) {
 		return
 	}
-	if len(in.IDs) > 40000 || (in.Name != nil && len(*in.Name) > 120) {
+	if (in.IDs != nil && len(in.IDs) == 0) || len(in.IDs) > 40000 || (in.Name != nil && len(*in.Name) > 120) {
 		problem(w, 400, "Invalid rollback selection")
 		return
+	}
+	for _, id := range in.IDs {
+		if id <= 0 {
+			problem(w, 400, "Invalid rollback change ID")
+			return
+		}
 	}
 	tx, err := s.DB.BeginTx(r.Context(), nil)
 	if err != nil {
