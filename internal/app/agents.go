@@ -309,7 +309,7 @@ func (s *Server) agentRuleset(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 func (s *Server) listAgents(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.DB.QueryContext(r.Context(), "SELECT id,COALESCE(asset_id,0),hostname,os,version,benchmark_id,revoked,last_seen FROM agents ORDER BY created_at DESC")
+	rows, err := s.DB.QueryContext(r.Context(), "SELECT id,COALESCE(asset_id,0),hostname,os,version,benchmark_id,revoked,last_seen,"+agentHealthySQL+" FROM agents g ORDER BY created_at DESC")
 	if err != nil {
 		s.databaseError(w, err)
 		return
@@ -319,14 +319,14 @@ func (s *Server) listAgents(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var id, hostname, osName, version, bid string
 		var assetID int64
-		var revoked bool
+		var revoked, healthy bool
 		var seen *time.Time
-		if err = rows.Scan(&id, &assetID, &hostname, &osName, &version, &bid, &revoked, &seen); err != nil {
+		if err = rows.Scan(&id, &assetID, &hostname, &osName, &version, &bid, &revoked, &seen, &healthy); err != nil {
 			s.databaseError(w, err)
 			return
 		}
 		status := "offline"
-		if seen != nil && time.Since(*seen) < 3*time.Minute {
+		if healthy {
 			status = "online"
 		}
 		if revoked {
