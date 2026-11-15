@@ -121,3 +121,9 @@ Added ubuntu-22.04-native / native-linux-2204-1 with100 retained controls,99 con
 Enrollment accepts either supported release; scans and new task work enforce the matching benchmark. Existing recovery/delivery remains available before assignment guards. Core selects the original22.04 benchmark for legacy-ID scan requests. Scan route source locations were updated after the mapping insertion. The shared27 mutation handlers remain unchanged; no additional audit or firewall mutation is enabled.
 
 Windows/Linux amd64 full package-tree compilation and standalone Linux-agent compilation for both targets passed. Standalone compilation used the pinned dependency set, an ignored artifact-local proto replacement and GOPROXY=off. No tests, native calls, service operations, kernel queries or application execution ran. Entire rewrite remains incomplete as recorded in completion-audit.md.
+
+## Windows typed notice and anonymous-pipe actions
+
+SEC004/005 and SMB010 now have compiled native plans and core risk gating. The two fixed notice strings match all three original baseline remediation values. Existing nonempty text is retained; NullSessionPipes is removed only when configured, with empty/absent state preserved. Snapshots retain exact REG_SZ/REG_MULTI_SZ bytes or absence, reject malformed or oversized encoding and reuse SYSTEM-only DPAPI backups, drift checks, watchdog recovery and native rechecks. Stored descriptors contain no notice text or pipe names. Prior DWORD/account/audit snapshot formats remain compatible. Windows coverage is59 controls;41 remain without write handlers.
+
+Windows amd64 and Linux amd64 full package-tree compilation passed after implementation. No tests or native operations ran. Microsoft registry type/setter documentation was inspected; references and limits are recorded in the Windows agent README.
