@@ -3,9 +3,11 @@ package app
 func actionSupported(osName, id string) bool {
 	if osName == "linux" {
 		switch id {
+		case "LNX-PAM-002", "LNX-PAM-003", "LNX-PAM-004", "LNX-PAM-005", "LNX-PAM-006", "LNX-PAM-008", "LNX-PAM-009", "LNX-PAM-010":
+			return true
 		case "LNX-NET-002", "LNX-NET-003", "LNX-NET-004", "LNX-NET-005", "LNX-NET-006", "LNX-NET-007", "LNX-NET-008":
 			return true
-		case "LNX-FS-001", "LNX-FS-002", "LNX-FS-003", "LNX-FS-004", "LNX-FS-005", "LNX-FS-007", "LNX-FS-008", "LNX-NET-009", "LNX-NET-010", "LNX-NET-011", "LNX-NET-012", "LNX-LOG-001", "LNX-LOG-002", "LNX-LOG-003", "LNX-SSH-001", "LNX-USR-001", "LNX-USR-003", "LNX-USR-010", "LNX-USR-011", "LNX-USR-012":
+		case "LNX-FS-001", "LNX-FS-002", "LNX-FS-003", "LNX-FS-004", "LNX-FS-005", "LNX-FS-007", "LNX-FS-008", "LNX-NET-009", "LNX-NET-010", "LNX-NET-011", "LNX-NET-012", "LNX-LOG-001", "LNX-LOG-002", "LNX-LOG-003", "LNX-SSH-001", "LNX-USR-001", "LNX-USR-002", "LNX-USR-003", "LNX-USR-004", "LNX-USR-010", "LNX-USR-011", "LNX-USR-012":
 			return true
 		}
 	}
@@ -40,6 +42,10 @@ func actionRisky(osName, id string, declared bool) bool {
 	}
 	if osName == "linux" {
 		switch id {
+		case "LNX-PAM-002", "LNX-PAM-003", "LNX-PAM-004", "LNX-PAM-005", "LNX-PAM-006", "LNX-PAM-008", "LNX-PAM-009", "LNX-PAM-010":
+			return true
+		case "LNX-USR-002", "LNX-USR-004":
+			return true
 		case "LNX-NET-002", "LNX-NET-003", "LNX-NET-004", "LNX-NET-005", "LNX-NET-006", "LNX-NET-007", "LNX-NET-008":
 			return true
 		}

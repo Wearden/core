@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"sort"
 	"strconv"
@@ -39,41 +38,7 @@ func featureCompleted(scans []map[string]any, benchmark string) map[int64][]feat
 }
 
 func (s *Server) featureAssets(ctx context.Context) ([]map[string]any, error) {
-	rows, err := s.DB.QueryContext(ctx, `SELECT a.id,a.data,g.id,g.revoked,g.last_seen,g.interval_seconds FROM assets a LEFT JOIN agents g ON g.asset_id=a.id ORDER BY a.id`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []map[string]any{}
-	for rows.Next() {
-		var id int64
-		var raw []byte
-		var agentID *string
-		var revoked *bool
-		var seen *time.Time
-		var interval *int
-		if err := rows.Scan(&id, &raw, &agentID, &revoked, &seen, &interval); err != nil {
-			return nil, err
-		}
-		var a map[string]any
-		if err := json.Unmarshal(raw, &a); err != nil {
-			return nil, err
-		}
-		a["id"] = id
-		if agentID != nil {
-			a["status"] = "offline"
-			if revoked != nil && !*revoked && seen != nil && interval != nil && time.Since(*seen) < 3*time.Minute {
-				a["status"] = "online"
-			}
-			if seen != nil {
-				a["last_seen"] = seen.UTC().Format(time.RFC3339Nano)
-			}
-		} else if a["status"] == nil {
-			a["status"] = "unknown"
-		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
+	return s.assetList(ctx)
 }
 
 func (s *Server) featureDashboard(w http.ResponseWriter, r *http.Request) {

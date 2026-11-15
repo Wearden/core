@@ -5,18 +5,16 @@
       "benchmark_id": "ubuntu-22.04-native",
       "ruleset_version": "native-linux-2204-1",
       "total_controls": 100,
-      "compiled_write_ids": 27,
+      "compiled_write_ids": 37,
       "remaining_by_kind": {
         "apt_authentication": 1,
         "apt_https": 1,
         "audit_rules": 10,
         "auditd_enabled": 1,
-        "file_metadata": 2,
         "filesystem_metadata": 3,
         "mount_options": 3,
         "package_installed": 8,
         "pam_history": 1,
-        "policy_config": 8,
         "service_disabled": 12,
         "sshd_config": 14,
         "sudo_logfile": 1,
@@ -369,70 +367,10 @@
           "severity": "medium"
         },
         {
-          "id": "LNX-PAM-002",
-          "kind": "policy_config",
-          "target": "minlen",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-PAM-003",
-          "kind": "policy_config",
-          "target": "dcredit",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-004",
-          "kind": "policy_config",
-          "target": "ucredit",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-005",
-          "kind": "policy_config",
-          "target": "lcredit",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-006",
-          "kind": "policy_config",
-          "target": "ocredit",
-          "severity": "low"
-        },
-        {
           "id": "LNX-PAM-007",
           "kind": "pam_history",
           "target": "/etc/pam.d/common-password",
           "severity": "medium"
-        },
-        {
-          "id": "LNX-PAM-008",
-          "kind": "policy_config",
-          "target": "deny",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-PAM-009",
-          "kind": "policy_config",
-          "target": "PASS_MAX_DAYS",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-010",
-          "kind": "policy_config",
-          "target": "PASS_MIN_DAYS",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-USR-002",
-          "kind": "file_metadata",
-          "target": "/etc/shadow",
-          "severity": "critical"
-        },
-        {
-          "id": "LNX-USR-004",
-          "kind": "file_metadata",
-          "target": "/etc/gshadow",
-          "severity": "critical"
         },
         {
           "id": "LNX-USR-005",
@@ -470,16 +408,14 @@
       "benchmark_id": "ubuntu-24.04-native",
       "ruleset_version": "native-linux-3",
       "total_controls": 88,
-      "compiled_write_ids": 27,
+      "compiled_write_ids": 37,
       "remaining_by_kind": {
         "apt_authentication": 1,
         "apt_https": 1,
-        "file_metadata": 2,
         "filesystem_metadata": 3,
         "mount_options": 3,
         "package_installed": 7,
         "pam_history": 1,
-        "policy_config": 8,
         "service_disabled": 12,
         "sshd_config": 14,
         "sudo_logfile": 1,
@@ -760,70 +696,10 @@
           "severity": "medium"
         },
         {
-          "id": "LNX-PAM-002",
-          "kind": "policy_config",
-          "target": "minlen",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-PAM-003",
-          "kind": "policy_config",
-          "target": "dcredit",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-004",
-          "kind": "policy_config",
-          "target": "ucredit",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-005",
-          "kind": "policy_config",
-          "target": "lcredit",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-006",
-          "kind": "policy_config",
-          "target": "ocredit",
-          "severity": "low"
-        },
-        {
           "id": "LNX-PAM-007",
           "kind": "pam_history",
           "target": "/etc/pam.d/common-password",
           "severity": "medium"
-        },
-        {
-          "id": "LNX-PAM-008",
-          "kind": "policy_config",
-          "target": "deny",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-PAM-009",
-          "kind": "policy_config",
-          "target": "PASS_MAX_DAYS",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-PAM-010",
-          "kind": "policy_config",
-          "target": "PASS_MIN_DAYS",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-USR-002",
-          "kind": "file_metadata",
-          "target": "/etc/shadow",
-          "severity": "critical"
-        },
-        {
-          "id": "LNX-USR-004",
-          "kind": "file_metadata",
-          "target": "/etc/gshadow",
-          "severity": "critical"
         },
         {
           "id": "LNX-USR-005",

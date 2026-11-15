@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"github.com/Wearden/core/internal/security"
 	"net"
 	"net/http"
@@ -25,59 +27,55 @@ type assetInput struct {
 	Tags       []string `json:"tags"`
 }
 
+const agentHealthySQL = `COALESCE(NOT g.revoked AND g.last_seen > now()-interval '3 minutes'
+ AND g.last_seen <= now(),false)`
+
+// All host views derive agent health from the same current heartbeat evidence.
+const assetViewQuery = `SELECT a.id,
+ a.data || jsonb_build_object('credential_username',c.username) ||
+ CASE WHEN g.id IS NULL THEN '{}'::jsonb ELSE jsonb_build_object(
+ 'status',CASE WHEN ` + agentHealthySQL + ` THEN 'online' ELSE 'offline' END,
+ 'last_seen',g.last_seen) END
+ FROM assets a LEFT JOIN agents g ON g.asset_id=a.id
+ LEFT JOIN credentials c ON c.asset_id=a.id`
+
+func decodeAsset(id int64, raw []byte) (map[string]any, error) {
+	var asset map[string]any
+	if err := json.Unmarshal(raw, &asset); err != nil {
+		return nil, err
+	}
+	asset["id"] = id
+	return asset, nil
+}
+
 func (s *Server) asset(ctx context.Context, id int64) (map[string]any, error) {
+	var actualID int64
 	var raw []byte
-	err := s.DB.QueryRowContext(ctx, "SELECT data FROM assets WHERE id=$1", id).Scan(&raw)
-	if err != nil {
+	if err := s.DB.QueryRowContext(ctx, assetViewQuery+" WHERE a.id=$1", id).Scan(&actualID, &raw); err != nil {
 		return nil, err
 	}
-	var a map[string]any
-	if err = json.Unmarshal(raw, &a); err != nil {
-		return nil, err
-	}
-	a["id"] = id
-	var username string
-	if s.DB.QueryRowContext(ctx, "SELECT username FROM credentials WHERE asset_id=$1", id).Scan(&username) == nil {
-		a["credential_username"] = username
-	} else {
-		a["credential_username"] = nil
-	}
-	return a, nil
+	return decodeAsset(actualID, raw)
 }
 func (s *Server) assetList(ctx context.Context) ([]map[string]any, error) {
-	rows, err := s.DB.QueryContext(ctx, "SELECT id,data FROM assets ORDER BY id")
+	rows, err := s.DB.QueryContext(ctx, assetViewQuery+" ORDER BY a.id")
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	out := []map[string]any{}
 	for rows.Next() {
 		var id int64
 		var raw []byte
-		if err = rows.Scan(&id, &raw); err != nil {
-			rows.Close()
+		if err := rows.Scan(&id, &raw); err != nil {
 			return nil, err
 		}
-		var a map[string]any
-		if err = json.Unmarshal(raw, &a); err != nil {
-			rows.Close()
+		asset, err := decodeAsset(id, raw)
+		if err != nil {
 			return nil, err
 		}
-		a["id"] = id
-		a["credential_username"] = nil
-		out = append(out, a)
+		out = append(out, asset)
 	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	for _, a := range out {
-		var username string
-		if s.DB.QueryRowContext(ctx, "SELECT username FROM credentials WHERE asset_id=$1", integer(a["id"])).Scan(&username) == nil {
-			a["credential_username"] = username
-		}
-	}
-	return out, nil
+	return out, rows.Err()
 }
 func (s *Server) assetRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/assets", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
@@ -141,9 +139,12 @@ func (s *Server) assetRoutes(m *http.ServeMux) {
 		w.WriteHeader(204)
 	}))
 	m.HandleFunc("POST /api/assets/{id}/test", s.require("operator", func(w http.ResponseWriter, r *http.Request) {
-		var seen *time.Time
-		err := s.DB.QueryRowContext(r.Context(), "SELECT last_seen FROM agents WHERE asset_id=$1 AND NOT revoked", r.PathValue("id")).Scan(&seen)
-		healthy := err == nil && seen != nil && time.Since(*seen) < 3*time.Minute
+		var healthy bool
+		err := s.DB.QueryRowContext(r.Context(), "SELECT "+agentHealthySQL+" FROM agents g WHERE g.asset_id=$1", r.PathValue("id")).Scan(&healthy)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			s.databaseError(w, err)
+			return
+		}
 		message := "No recent agent heartbeat"
 		if healthy {
 			message = "Agent heartbeat is current"
