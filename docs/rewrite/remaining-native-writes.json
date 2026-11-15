@@ -766,13 +766,11 @@
       "benchmark_id": "server-2022-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 84,
+      "compiled_write_ids": 93,
       "remaining_by_kind": {
         "firewall": 3,
-        "installer_policy": 1,
         "registry": 2,
-        "unsupported": 2,
-        "wmi": 8
+        "unsupported": 2
       },
       "remaining": [
         {
@@ -806,64 +804,10 @@
           "severity": "low"
         },
         {
-          "id": "WIN-SMB-003",
-          "kind": "wmi",
-          "target": "MSFT_SmbServerConfiguration.EnableSMB1Protocol",
-          "severity": "critical"
-        },
-        {
           "id": "WIN-SMB-004",
           "kind": "registry",
           "target": "Start",
           "severity": "high"
-        },
-        {
-          "id": "WIN-SMB-005",
-          "kind": "wmi",
-          "target": "MSFT_SmbServerConfiguration.RequireSecuritySignature",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-SMB-006",
-          "kind": "wmi",
-          "target": "MSFT_SmbClientConfiguration.RequireSecuritySignature",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-DEF-001",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.DisableRealtimeMonitoring",
-          "severity": "critical"
-        },
-        {
-          "id": "WIN-DEF-002",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.MAPSReporting",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-003",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.PUAProtection",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-004",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.DisableScanningNetworkFiles",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-005",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.EnableNetworkProtection",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-DEF-007",
-          "kind": "installer_policy",
-          "target": "AlwaysInstallElevated",
-          "severity": "critical"
         },
         {
           "id": "WIN-DEF-009",
@@ -877,13 +821,11 @@
       "benchmark_id": "windows-10-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 84,
+      "compiled_write_ids": 93,
       "remaining_by_kind": {
         "firewall": 3,
-        "installer_policy": 1,
         "registry": 2,
-        "unsupported": 2,
-        "wmi": 8
+        "unsupported": 2
       },
       "remaining": [
         {
@@ -917,64 +859,10 @@
           "severity": "low"
         },
         {
-          "id": "WIN-SMB-003",
-          "kind": "wmi",
-          "target": "MSFT_SmbServerConfiguration.EnableSMB1Protocol",
-          "severity": "critical"
-        },
-        {
           "id": "WIN-SMB-004",
           "kind": "registry",
           "target": "Start",
           "severity": "high"
-        },
-        {
-          "id": "WIN-SMB-005",
-          "kind": "wmi",
-          "target": "MSFT_SmbServerConfiguration.RequireSecuritySignature",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-SMB-006",
-          "kind": "wmi",
-          "target": "MSFT_SmbClientConfiguration.RequireSecuritySignature",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-DEF-001",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.DisableRealtimeMonitoring",
-          "severity": "critical"
-        },
-        {
-          "id": "WIN-DEF-002",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.MAPSReporting",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-003",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.PUAProtection",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-004",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.DisableScanningNetworkFiles",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-005",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.EnableNetworkProtection",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-DEF-007",
-          "kind": "installer_policy",
-          "target": "AlwaysInstallElevated",
-          "severity": "critical"
         },
         {
           "id": "WIN-DEF-009",
@@ -988,13 +876,11 @@
       "benchmark_id": "windows-11-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 84,
+      "compiled_write_ids": 93,
       "remaining_by_kind": {
         "firewall": 3,
-        "installer_policy": 1,
         "registry": 2,
-        "unsupported": 2,
-        "wmi": 8
+        "unsupported": 2
       },
       "remaining": [
         {
@@ -1028,64 +914,10 @@
           "severity": "low"
         },
         {
-          "id": "WIN-SMB-003",
-          "kind": "wmi",
-          "target": "MSFT_SmbServerConfiguration.EnableSMB1Protocol",
-          "severity": "critical"
-        },
-        {
           "id": "WIN-SMB-004",
           "kind": "registry",
           "target": "Start",
           "severity": "high"
-        },
-        {
-          "id": "WIN-SMB-005",
-          "kind": "wmi",
-          "target": "MSFT_SmbServerConfiguration.RequireSecuritySignature",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-SMB-006",
-          "kind": "wmi",
-          "target": "MSFT_SmbClientConfiguration.RequireSecuritySignature",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-DEF-001",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.DisableRealtimeMonitoring",
-          "severity": "critical"
-        },
-        {
-          "id": "WIN-DEF-002",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.MAPSReporting",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-003",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.PUAProtection",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-004",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.DisableScanningNetworkFiles",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-DEF-005",
-          "kind": "wmi",
-          "target": "MSFT_MpPreference.EnableNetworkProtection",
-          "severity": "high"
-        },
-        {
-          "id": "WIN-DEF-007",
-          "kind": "installer_policy",
-          "target": "AlwaysInstallElevated",
-          "severity": "critical"
         },
         {
           "id": "WIN-DEF-009",
