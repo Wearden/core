@@ -766,9 +766,9 @@
       "benchmark_id": "server-2022-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 96,
+      "compiled_write_ids": 97,
       "remaining_by_kind": {
-        "registry": 2,
+        "registry": 1,
         "unsupported": 2
       },
       "remaining": [
@@ -783,12 +783,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-SMB-004",
-          "kind": "registry",
-          "target": "Start",
-          "severity": "high"
         },
         {
           "id": "WIN-DEF-009",
@@ -802,9 +796,9 @@
       "benchmark_id": "windows-10-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 96,
+      "compiled_write_ids": 97,
       "remaining_by_kind": {
-        "registry": 2,
+        "registry": 1,
         "unsupported": 2
       },
       "remaining": [
@@ -819,12 +813,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-SMB-004",
-          "kind": "registry",
-          "target": "Start",
-          "severity": "high"
         },
         {
           "id": "WIN-DEF-009",
@@ -838,9 +826,9 @@
       "benchmark_id": "windows-11-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 96,
+      "compiled_write_ids": 97,
       "remaining_by_kind": {
-        "registry": 2,
+        "registry": 1,
         "unsupported": 2
       },
       "remaining": [
@@ -855,12 +843,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-SMB-004",
-          "kind": "registry",
-          "target": "Start",
-          "severity": "high"
         },
         {
           "id": "WIN-DEF-009",
