@@ -764,52 +764,43 @@
     },
     {
       "benchmark_id": "server-2022-native-registry",
-      "ruleset_version": "native-windows-5",
+      "ruleset_version": "native-windows-6",
       "total_controls": 100,
-      "compiled_write_ids": 99,
-      "remaining_by_kind": {
-        "registry": 1
-      },
-      "remaining": [
+      "compiled_write_ids": 100,
+      "remaining_by_kind": {},
+      "remaining": [],
+      "conditional_write_limits": [
         {
           "id": "WIN-DEF-009",
-          "kind": "registry",
-          "target": "RunAsPPL",
-          "severity": "high"
+          "boundary": "Windows11 22H2+ uses non-UEFI mode2. Older supported releases refuse a new mode1 transition when kernel Secure Boot is enabled/unavailable. A boot-state change can require manual firmware review; registry restoration never certifies firmware-lock removal."
         }
       ]
     },
     {
       "benchmark_id": "windows-10-native-registry",
-      "ruleset_version": "native-windows-5",
+      "ruleset_version": "native-windows-6",
       "total_controls": 100,
-      "compiled_write_ids": 99,
-      "remaining_by_kind": {
-        "registry": 1
-      },
-      "remaining": [
+      "compiled_write_ids": 100,
+      "remaining_by_kind": {},
+      "remaining": [],
+      "conditional_write_limits": [
         {
           "id": "WIN-DEF-009",
-          "kind": "registry",
-          "target": "RunAsPPL",
-          "severity": "high"
+          "boundary": "Windows11 22H2+ uses non-UEFI mode2. Older supported releases refuse a new mode1 transition when kernel Secure Boot is enabled/unavailable. A boot-state change can require manual firmware review; registry restoration never certifies firmware-lock removal."
         }
       ]
     },
     {
       "benchmark_id": "windows-11-native-registry",
-      "ruleset_version": "native-windows-5",
+      "ruleset_version": "native-windows-6",
       "total_controls": 100,
-      "compiled_write_ids": 99,
-      "remaining_by_kind": {
-        "registry": 1
-      },
-      "remaining": [
+      "compiled_write_ids": 100,
+      "remaining_by_kind": {},
+      "remaining": [],
+      "conditional_write_limits": [
         {
           "id": "WIN-DEF-009",
-          "kind": "registry",
-          "target": "RunAsPPL",
-          "severity": "high"
+          "boundary": "Windows11 22H2+ uses non-UEFI mode2. Older supported releases refuse a new mode1 transition when kernel Secure Boot is enabled/unavailable. A boot-state change can require manual firmware review; registry restoration never certifies firmware-lock removal."
         }
       ]
     }
