@@ -1,0 +1,109 @@
+# Rewrite progress
+
+Updated 2026-11-15. Full Go rewrite remains active. Latest user instruction: complete the project without running tests. All earlier test evidence belongs to the earlier filesystem-only milestone; it does not verify the expanded implementation.
+
+## Implemented source
+
+- Six separate sibling Git repositories retained. Original prototype untouched.
+- Core Go API: PostgreSQL schema/bootstrap, bounded DB pool, Argon2id passwords, hashed opaque access/rotating refresh tokens, RBAC, initial password change, login throttling, assets, encrypted optional host credentials and audit.
+- Agent enrollment tokens scoped to OS/native benchmark, atomic single consumption, hashed agent credentials, revocation, heartbeat and digest-pinned assignment/config delivery.
+- PostgreSQL-backed queued scan jobs, report identity/scope/severity/full-coverage validation, atomic idempotent report persistence and retained React scan/result data shapes.
+- Legacy and native benchmark catalog loading, saved profiles, dashboard/host analytics, heatmap, before/after diff, ATT&CK coverage, copilot with static fallback, CSV/JSON/PDF exports (PDF uses embedded Unicode font and bounded in-memory rendering).
+- Durable scan scheduling/score-drop alert source, bounded public HTTPS webhooks, stale-agent/job expiry worker and authenticated same-origin WebSocket snapshots.
+- React source migrated and branded, Assets agent enrollment/list/revoke added. Optional Guacamole/guacd integration now binds exact token hashes, single-use opening, expiry, active-user revalidation and confirmed connection termination with authenticated internal controls.
+- Docker/compose source and configuration examples added. No real .env copied, opened or generated. No deployment command executed.
+- Linux: full 88-control native catalog, 87 evaluator entries and one explicit unsupported error (USR006); UFW uses a bounded read-only nftables subset. Foreground daemon: private persistent identity, heartbeat/config fetch, assignment digest checks, schedule loop and durable retry spool. No shell execution.
+- Windows: 100-control catalogs per OS; registry/account-policy/rights/audit/service coverage expanded to 98 native entries, 2 explicitly manual in the current source. DPAPI identity, heartbeat/config, periodic scans and durable report spool. The two manual password-policy checks do not inspect password or SAM stores.
+
+- Typed core hardening plan/run/rollback APIs and authenticated agent task/result transport are implemented, with local-only backup locators and idempotent result handling. Linux and Windows mutation engines are integrated; only explicitly reviewed capabilities can be queued (27 Linux,56 Windows). Backups, local crash recovery and durable task-result replay are implemented; independent platform watchdogs compensate unacknowledged applies; actions outside the reviewed allowlists remain disabled.
+- Drift is derived from agent rechecks against applied-change baselines; manual drift refresh queues actual scan jobs.
+
+## Still incomplete for the full goal
+
+- Independent Linux/Windows watchdog source is implemented. High-risk remediation parity remains incomplete: actions outside the reviewed 27 Linux and 56 Windows capabilities are refused.
+- Linux USR006 and two Windows password-policy controls remain manual to avoid credential-store reads. Conservative native interpreters can still return error outside reviewed subsets; no claim of full baseline compliance.
+- Final cross-repository source audit remains in progress. PDF rendering and typed task code are implemented and compile, but no rendering/native/runtime tests were run.
+- Local release packaging script exists. Proto remains a local v0.0.0 workspace dependency; publishing/tags are not performed without separate instruction.
+- Final source parity audit and complete operational documentation.
+
+## Current verification boundary
+
+User explicitly requested no tests. No tests, live agent scans, application startup or compose deployment were executed during the expanded rewrite. Windows amd64 compilation of core, proto, agent-linux and agent-windows passed at the last compiler invocation. Current source has compiler checks; subsequent edits require fresh compilation. React TypeScript compilation and Vite production build passed using the existing legacy node_modules via an ignored local junction; no dependency install was needed. Native application startup and deployment have not been run. Compiling code is not proof of native OS or database/runtime correctness.
+
+## Rulings carried forward
+
+- Unsupported/ambiguous check evidence remains error, never artificial pass. This preserves accounting while making coverage gaps visible.
+- PostgreSQL replaces Celery with durable scan jobs and a background scheduler, not an in-memory fake store. Original data is retained outside the new database.
+- Source-reviewed Go dependencies were approved by the user. Package caches may be written by Go. Automatic PostgreSQL password/service/client-certificate file discovery is disabled in core's DB setup.
+- New core credential vault uses AES-GCM, not the legacy Fernet format. No automatic legacy credential import.
+- Late evidence for an expired/cancelled assigned scan can be durably acknowledged without reviving the terminal scan, avoiding a permanently poisoned agent retry spool. Revoked agents are still rejected.
+- Legacy browser API shapes and benchmark/control IDs are retained where compatible. Native manifests are independently versioned; original CIS labels remain unverified draft content.
+- Test instructions in earlier plans are superseded by the user's current no-test instruction. No claim of runtime verification is made.
+
+Accidental native metadata copies created by a child agent under parent native/windows were preserved rather than automatically deleted, according to the user's artifact cleanup preference. Authoritative content is ruleset/native, and agents use their embedded copies.
+
+## Latest source work
+
+The PDF renderer now uses approved fpdf0.9.0 and embedded GoRegular font from x/image0.45.0. It escapes unsupported/control glyphs visibly, wraps all selected findings, bounds text/pages/output/concurrency, and rejects oversized PDFs explicitly instead of truncating evidence. No sample PDF was generated under the no-test instruction.
+
+Typed task endpoints return HTTP200 matching receipts for initial and duplicate accepted results. Apply statuses are applied/skipped/failed; rollback statuses reverted/failed. Core requires verified after_status=pass plus a local backup locator for applied changes. Agents must opt into remediation locally. Unsupported/risk-heavy actions remain rejected rather than executing YAML commands.
+
+Source-only integration checkpoint: hardening and rollback routes, task deadline expiry, drift recheck/baseline withdrawal, Unicode PDF export and both platform task engines are present. Frontend compilation passed (716 modules,850.97kB main JS before gzip); large-chunk/CJS deprecation warnings remain without unrelated redesign. Go Windows/Linux compilation and bridge JavaScript syntax checks are used, not tests. An isolated container fixture and PowerShell build/distribution script were added but not executed.
+
+## Enrollment, watchdog and UFW checkpoint
+
+Enrollment now persists an immutable local request before sending it; core can replay the same request/credential derivation for a bounded period after a lost response. Linux and Windows persist task journals and run independent helpers; receipt revision0 can be followed by immutable revision1 compensation evidence when an acknowledgement is lost or the safety lease expires. Restoration failures block further mutation pending explicit local recovery. These source paths have not been exercised.
+
+Linux native-linux-3 preserves all 88 controls, with 87 connected evaluator entries and one explicit credential-file-dependent manual entry. FW002..006 use read-only nftables v0.3.0 with raw-expression omission guards, generation stability, deadlines and resource bounds. No firewall-writing API is called. Standalone Linux/Windows Linux-agent compilation passed; no tests, kernel queries or live scans ran. Exact catalog limitations are documented in ruleset/native/linux/ubuntu-24.04/README.md.
+
+## Windows SCM and compiler checkpoint
+
+The Windows agent now has native LocalSystem SCM hosting and explicit install/start/stop/uninstall commands. Installation creates protected fixed Program Files/ProgramData paths and a private bootstrap-token file, then leaves the service stopped. Enrollment secrets are not passed through command-line arguments. Remediation defaults off and is enabled only by the operator's local install/run option, persisted in private service configuration. Uninstall retains binaries, identity, logs and backups. Binary upgrades require separate review. Synchronous native calls can delay service stop. No installer/service operation was executed.
+
+Fresh compiler checks passed for Windows amd64 core/proto/Linux-agent/Windows-agent and Linux amd64 core/proto/Linux-agent after the SCM opt-in and UFW changes. PowerShell release-script parsing and bridge JavaScript syntax also passed. The Linux agent additionally compiled independently of the sibling workspace for Linux and Windows. No tests, application startup, live OS scans, firewall queries or service operations were executed. Runtime correctness remains unverified by design under the user's instruction.
+
+## Typed Linux network-parameter actions
+
+Seven redirect/source-route controls NET002..008 now use the existing durable sysctl snapshot, dedicated configuration file, native recheck, independent watchdog and verified restore path. Core marks these actions risky regardless of the preserved YAML flag and enforces confirmation in run creation. Plan and change records expose the same risk. Linux mutation coverage is now27 controls. NET001 remains excluded until side effects of ip_forward are covered by a multi-setting backup/restore plan. Windows/Linux compiler checks passed after the source change; no tests or host mutations were executed.
+
+## Expanded Windows registry remediation
+
+The existing SYSTEM-only DPAPI/watchdog/registry snapshot path now handles31 reviewed DWORD controls, adding21 controls for signing, UAC, NTLM/LM, RDP and session timeouts. Core requires explicit risk confirmation for these additions and exposes the same risk in plans and persisted change records. Timeouts preserve positive values already tighter than the baseline, reject disabled zero as noncompliant, and keep exact original bytes for rollback. Three OS catalogs were inspected and agree on the fixed values.
+
+Registry handlers preserve value absence, refuse missing keys/unexpected types and detect external drift. Registry configuration recheck does not establish loaded service state or post-reboot behavior; no restart/reboot is performed. Driver startup, LSA protection, strings and non-registry providers still need their own write/restore plans. Both Windows and Linux compiler checks passed after these changes. No tests, native policy changes or live scans were run.
+
+## Local account-policy checkpoint
+
+Windows native write coverage is now38:31 registry controls plus PWD001/PWD003..008 local policy scalars. The compiled account-policy targets use typed NetUserModalsSet levels; originals use a distinct numeric snapshot kind inside existing DPAPI backups/journals. Stronger compliant values remain untouched. LocalSystem, operator risk confirmation, local opt-in, watchdog and native version checks remain mandatory. Domain-controller writes are refused. Password/hash/history contents and SAM files are not opened.
+
+Source audit also found and corrected a watchdog validation mismatch introduced by preserving tighter timeout values: the helper now accepts either the exact compiled baseline or the unchanged compliant original snapshot, using the same validator as journal recovery. No runtime reproduction or tests were performed under the user's no-test instruction. Windows and Linux compiler checks passed.
+
+## Static parity and applicability checkpoint
+
+Source mapping accounts for all57 legacy route declarations, including the three WebSocket patterns and four extension-dispatched exports. route-parity.json records exact current source files/lines and explicitly distinguishes static mapping from runtime parity. All51 original YAML files match the sibling ruleset copies byte-for-byte. All six sibling Git roots were inspected; no parent Git repository exists.
+
+Linux now checks Ubuntu24.04 release metadata before initial enrollment, live scans and fetching new tasks. Only the standard fixed os-release link is permitted. Existing local recovery and retained-result delivery precede the new-work guard. Both target compiler checks passed. No live host metadata, scans or tests ran.
+
+The legacy SSH fixture source is retained under core/lab/ubuntu-target with explicit credential provisioning and no normal compose activation. A source-only Makefile and updated native DEMO_SCRIPT/TARGETS guides now replace obsolete Python/Celery workflow instructions in the new project. No container build/start was performed.
+
+## Completion audit and remaining scoring fidelity
+
+completion-audit.md now separates implemented source, actual compiler/static evidence and unfinished requirements. It records the full remaining mutation scope rather than redefining the goal around the current subset. Source inspection also found that legacy scoring.py rounds passed*100/total, whereas wire.Score currently scales/reorders the floating-point expression before RoundToEven. Decimal-rounding fidelity is a concrete remaining task; no numerical tests were executed.
+
+The Windows scanner, identity and recovery DLL loads now use system-directory loading, and WMI uses an absolute system path with LOAD_LIBRARY_SEARCH_SYSTEM32. Windows amd64/386 compilation passed. Both agent third-party notice files are included by the source distribution script; PowerShell parsing passed without executing that script.
+
+## Scoring operation-order correction
+
+The scoring source gap recorded in the prior checkpoint is now addressed: wire.Score preserves the legacy numerator*100/denominator order and uses one-decimal formatting/parsing instead of scaling by1000 and rounding an integer. The normal CPython3.12 double_round implementation, Python round documentation and local Go strconv documentation/decimal source were inspected. scoring-source-analysis.md records the reasoning and verification boundary. Both target package-tree compiler checks passed; no numerical probes or tests ran.
+
+## Native Windows audit-policy writes
+
+AUD001..018 now use fixed-GUID AuditSetSystemPolicy with the existing DPAPI snapshot/watchdog/restore engine. LocalSystem, local opt-in and explicit core risk confirmation remain mandatory. The selected success/failure pair is read before and after writing; zero restores through the explicit NONE operation rather than UNCHANGED. A separate snapshot tag preserves prior registry/account record compatibility.
+
+The necessary SeSecurityPrivilege is scoped to a temporary locked-thread self token, with existing impersonation refused, NOT_ALL_ASSIGNED checked, cleanup verified and process termination if reversion fails. Ordinary scans do not enable that privilege. Source constants agree with the18 audit controls in every OS catalog. Windows amd64/386 and Linux amd64 package-tree compilation passed. No test or native operation was executed. Windows mutation coverage is now56 controls;44 IDs remain without compiled write handlers.
+
+## Repository checkpoint preparation
+
+Candidate paths were inspected independently in the five changed application/content repositories, with no pre-existing staged changes and no dependency-review sources, node_modules, binaries, private state or actual .env files in the candidate lists. Canonical manifests and imported source content now opt out of newline conversion; the retained lab entrypoint was normalized to LF and gets a Unix-line-ending attribute.
+
+The review also made an additional original-scope gap explicit: the retained Ubuntu22.04 legacy benchmark has100 controls, including12 audit controls, but no native Ubuntu22.04 assignment yet. This is required work, not an intentionally removed platform. No runtime check, image build, test or host operation was performed.

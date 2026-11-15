@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+bin/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.db
+recordings/
+reports/
+coverage.out
+docs/dependency-review/

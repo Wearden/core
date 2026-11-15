@@ -1,0 +1,12 @@
+{
+  "name": "hardenops-guac-tunnel",
+  "private": true,
+  "version": "0.1.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "guacamole-lite": "1.2.0"
+  }
+}
