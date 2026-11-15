@@ -23,7 +23,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 | Linux platform scope | Supported Ubuntu22.04/24.04 metadata before enrollment; assignment release must match before scans and new task work | Namespace metadata is not whole-host attestation; existing recovery/delivery precedes the guard |
 | Windows inspection | Three100-control manifests;98 connected providers and2 manual controls per OS; embedded/canonical bytes match | Complexity/reversible-storage audits remain manual; native availability is unexercised |
 | Windows service hosting | Confirmed installer, LocalSystem SCM hosting, protected state/bootstrap, cancellation/restart source | No service installed or started; binary upgrades require separate review |
-| Typed remediation and rollback | Core task API,37 Linux handlers and83 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
+| Typed remediation and rollback | Core task API,37 Linux handlers and84 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
 | Recovery across main-process loss | Independent platform helpers, durable journals, elapsed-time leases and revisioned compensation | No helper or recovery path executed |
 | Retain stronger compliant policies | Shared ValidApplyTarget permits the compiled target or unchanged compliant original; agent/helper/journal paths use it | Source mismatch fixed; no runtime reproduction under the no-test instruction |
 | Drift | Subsequent report reconciliation against applied baselines; rollback/compensation withdraw baselines | No drift scenario exercised |
