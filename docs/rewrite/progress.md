@@ -107,3 +107,9 @@ The necessary SeSecurityPrivilege is scoped to a temporary locked-thread self to
 Candidate paths were inspected independently in the five changed application/content repositories, with no pre-existing staged changes and no dependency-review sources, node_modules, binaries, private state or actual .env files in the candidate lists. Canonical manifests and imported source content now opt out of newline conversion; the retained lab entrypoint was normalized to LF and gets a Unix-line-ending attribute.
 
 The review also made an additional original-scope gap explicit: the retained Ubuntu22.04 legacy benchmark has100 controls, including12 audit controls, but no native Ubuntu22.04 assignment yet. This is required work, not an intentionally removed platform. No runtime check, image build, test or host operation was performed.
+
+## Separate source checkpoints created
+
+Five changed repositories now have independent initial source checkpoint commits on main: proto, ruleset, agent-linux, agent-windows and core. checkpoints.json records their source commit hashes. The .github repository was preserved unchanged. No parent repository, push, tag or release was created. These checkpoints explicitly describe an incomplete rewrite, not a final delivery.
+
+Agent-created author/committer metadata uses a non-personal role identity. Hooks and signing were disabled per command so no test/signing helper ran, and automatic Git maintenance was disabled for the operation. Staged candidate paths excluded actual .env, private state, dependency-review sources, node_modules and binaries. Protected manifest/YAML/script bytes matched staged blobs; staged whitespace checks passed. Compiler checks passed before committing.

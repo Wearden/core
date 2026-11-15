@@ -35,7 +35,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 | New and retained lab fixtures | lab/agent-linux is primary; lab/ubuntu-target retains the old Ubuntu22.04 SSH source separately | Neither fixture started; SSH reference requires an explicit disposable password |
 | Operating documentation | README, docs/DEMO_SCRIPT.md and docs/TARGETS.md | Source-only walkthrough; no runtime success claimed |
 | Dependency/license handling | Approved pinned modules; per-component third-party notices and release copies | No new global tools installed |
-| Commit each repository separately | Repositories remain independent; current rewrite files are still uncommitted | Per-repository review and commits remain before final handoff; no push/tag/release requested |
+| Commit each repository separately | Five changed repositories have separate source checkpoints on main; hashes are recorded in checkpoints.json; .github remains unchanged | Final review and further implementation commits remain; no push/tag/release performed |
 
 ## Concrete unfinished work
 
@@ -43,7 +43,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 2. Keep the approved nftables dependency read-only. Firewall mutation must not silently expand that approval. IP forwarding also needs a multi-setting restore plan because its kernel side effects exceed the current single-sysctl snapshot.
 3. Resolve the three credential-sensitive manual inspection entries without weakening the current privacy boundary. Missing/ambiguous evidence must remain error throughout.
 4. Finish semantic API/data-shape review. Route registration, compilation and reused TypeScript clients are necessary evidence, not proof of full legacy behavior.
-5. Complete final cross-repository review and separate commits. Keep the proto v0.0.0 bootstrap local to the documented sibling workspace until an explicitly requested publication step.
+5. Complete final cross-repository review and incremental implementation commits; initial separate checkpoints are recorded in checkpoints.json. Keep the proto v0.0.0 bootstrap local to the documented sibling workspace until an explicitly requested publication step.
 
 ## Verification evidence at this checkpoint
 

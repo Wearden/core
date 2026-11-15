@@ -1,0 +1,33 @@
+{
+  "kind": "In-progress local source checkpoints, not a release or completed goal",
+  "date": "2026-11-15",
+  "published": false,
+  "personal_identity_in_new_commit_metadata": false,
+  "repositories": [
+    {
+      "repository": "proto",
+      "source_checkpoint_commit": "d4991b89141b9b4a6165581edaa0e829b0d07aa5",
+      "branch": "main"
+    },
+    {
+      "repository": "ruleset",
+      "source_checkpoint_commit": "91900c6829e1b6cd5c6c4ee5846301f168cbaf96",
+      "branch": "main"
+    },
+    {
+      "repository": "agent-linux",
+      "source_checkpoint_commit": "3b3b7dc4769bf4d307e34c884a6d73104afdc80f",
+      "branch": "main"
+    },
+    {
+      "repository": "agent-windows",
+      "source_checkpoint_commit": "8ddbcb720959eeb3471bd5c936d91f3fa922999b",
+      "branch": "main"
+    },
+    {
+      "repository": "core",
+      "source_checkpoint_commit": "46d8d840c36d42708dc0bac7ef86b233bee01763",
+      "branch": "main"
+    }
+  ]
+}
