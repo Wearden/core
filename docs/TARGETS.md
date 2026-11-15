@@ -2,6 +2,7 @@
 
 | Agent | Native assignment | Required platform | Inspection scope |
 | --- | --- | --- | --- |
+| agent-linux | ubuntu-22.04-native | Ubuntu22.04, Linux amd64 | Same namespace scope, plus read-only audit-rule metadata |
 | agent-linux | ubuntu-24.04-native | Ubuntu24.04, Linux amd64 | Current filesystem/network namespace, reviewed fixed paths and read-only kernel queries |
 | agent-windows | windows-10-native-registry | Windows10 build10240..21999 workstation | Native registry, policy, service and fixed WMI providers |
 | agent-windows | windows-11-native-registry | Windows11 build22000+ workstation | Same reviewed provider catalog |

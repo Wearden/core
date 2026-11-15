@@ -581,7 +581,7 @@
           "method": "POST",
           "path": "/api/scans",
           "source": "core/internal/app/scans.go",
-          "line": 128
+          "line": 130
         }
       ],
       "note": "Source route pattern mapped; runtime behavior not exercised."
@@ -594,7 +594,7 @@
           "method": "GET",
           "path": "/api/scans",
           "source": "core/internal/app/scans.go",
-          "line": 116
+          "line": 118
         }
       ],
       "note": "Source route pattern mapped; runtime behavior not exercised."
@@ -607,7 +607,7 @@
           "method": "GET",
           "path": "/api/scans/{id}",
           "source": "core/internal/app/scans.go",
-          "line": 141
+          "line": 143
         }
       ],
       "note": "Source route pattern mapped; runtime behavior not exercised."
@@ -620,7 +620,7 @@
           "method": "GET",
           "path": "/api/scans/{id}/results",
           "source": "core/internal/app/scans.go",
-          "line": 150
+          "line": 152
         }
       ],
       "note": "Source route pattern mapped; runtime behavior not exercised."
@@ -633,7 +633,7 @@
           "method": "POST",
           "path": "/api/scans/{id}/cancel",
           "source": "core/internal/app/scans.go",
-          "line": 174
+          "line": 176
         }
       ],
       "note": "Source route pattern mapped; runtime behavior not exercised."

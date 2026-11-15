@@ -19,8 +19,8 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 | Enrollment and retry identity | Request-ID protocol, atomic core enrollment and durable private client pending requests | No enrollment performed |
 | Agent scheduling/report delivery | Linux daemon, Windows client/daemon, persistent spools, idempotent ingestion | No report submitted or target contacted |
 | Linux inspection | 88-control native manifest,87 connected providers and one explicit manual control; canonical/embedded digest match | Conservative providers can return error; USR006 remains manual |
-| Ubuntu22.04 legacy baseline | Original100-control YAML is retained and loaded by core | Native Ubuntu22.04 assignment is still missing, including its12 audit controls; full scope includes this baseline |
-| Linux platform scope | RequireUbuntu2404 before initial enrollment, scans and new task work | Namespace metadata is not whole-host attestation; existing recovery/delivery precedes the guard |
+| Ubuntu22.04 legacy baseline | Matching100-control native assignment,99 connected entries and manual USR006; canonical/embedded bytes match | Twelve additional audit checks inspect package/enablement/loaded-rule selectors only; no runtime validation or audit write handlers |
+| Linux platform scope | Supported Ubuntu22.04/24.04 metadata before enrollment; assignment release must match before scans and new task work | Namespace metadata is not whole-host attestation; existing recovery/delivery precedes the guard |
 | Windows inspection | Three100-control manifests;98 connected providers and2 manual controls per OS; embedded/canonical bytes match | Complexity/reversible-storage audits remain manual; native availability is unexercised |
 | Windows service hosting | Confirmed installer, LocalSystem SCM hosting, protected state/bootstrap, cancellation/restart source | No service installed or started; binary upgrades require separate review |
 | Typed remediation and rollback | Core task API,27 Linux handlers and56 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
@@ -39,7 +39,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 
 ## Concrete unfinished work
 
-1. Complete the remaining typed write/restore providers. Ubuntu24.04 has61 control IDs without write handlers and Windows44; the additional Ubuntu22.04 native assignment and its audit controls are also required; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
+1. Complete the remaining typed write/restore providers. Ubuntu24.04 has61 control IDs without write handlers and Windows44; Ubuntu22.04 adds12 read-only audit IDs without write handlers; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
 2. Keep the approved nftables dependency read-only. Firewall mutation must not silently expand that approval. IP forwarding also needs a multi-setting restore plan because its kernel side effects exceed the current single-sysctl snapshot.
 3. Resolve the three credential-sensitive manual inspection entries without weakening the current privacy boundary. Missing/ambiguous evidence must remain error throughout.
 4. Finish semantic API/data-shape review. Route registration, compilation and reused TypeScript clients are necessary evidence, not proof of full legacy behavior.
@@ -57,3 +57,9 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 ## Checkout integrity before checkpoint commits
 
 Review found that platform-dependent Git newline conversion could alter canonical manifest bytes or retained source hashes. Attributes now preserve native JSON/imported YAML/upstream bytes, and the retained container entrypoint uses LF. Its previously generated CRLF shebang was normalized before any image build. Dependency-review sources, node_modules, binaries, private state and actual .env files are excluded from commit candidates. Commit checkpoints do not close the unfinished implementation items above.
+
+## Ubuntu22.04 native inspection checkpoint
+
+The matching native assignment now preserves all100 original IDs/severities. Its99 connected entries include12 additional read-only audit controls, with USR006 still manual. The shared88 definitions match the24.04 catalog. Package status, conservative persistent auditd enablement and bounded AUDIT_LIST_RULES metadata providers are wired into the scanner. Initial enrollment supports either release, while one-shot/daemon scans and new tasks require the matching assignment; retained recovery/results still precede that guard. Core maps the22.04 native ID back to its original baseline.
+
+Windows amd64 and Linux amd64 package-tree compiler checks passed. The Linux agent also compiled standalone for both targets using its pinned x/sys version and an artifact-local proto replacement, with network fetching disabled. Canonical/embedded manifest bytes and SHA256 match. No tests, live audit queries, scans, service actions or deployment ran. Loaded selector presence does not prove global audit enablement, complete rule coverage or event delivery. No new dependency or audit/firewall write capability was added.
