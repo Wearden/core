@@ -11,6 +11,8 @@ func actionSupported(osName, id string) bool {
 	}
 	if osName == "windows" {
 		switch id {
+		case "WIN-SVC-001", "WIN-SVC-002", "WIN-SVC-003", "WIN-SVC-004", "WIN-SVC-005", "WIN-SVC-006":
+			return true
 		case "WIN-SEC-004", "WIN-SEC-005", "WIN-SMB-010":
 			return true
 		case "WIN-AUD-001", "WIN-AUD-002", "WIN-AUD-003", "WIN-AUD-004", "WIN-AUD-005", "WIN-AUD-006", "WIN-AUD-007", "WIN-AUD-008", "WIN-AUD-009", "WIN-AUD-010", "WIN-AUD-011", "WIN-AUD-012", "WIN-AUD-013", "WIN-AUD-014", "WIN-AUD-015", "WIN-AUD-016", "WIN-AUD-017", "WIN-AUD-018":
@@ -40,6 +42,8 @@ func actionRisky(osName, id string, declared bool) bool {
 	}
 	if osName == "windows" {
 		switch id {
+		case "WIN-SVC-001", "WIN-SVC-002", "WIN-SVC-003", "WIN-SVC-004", "WIN-SVC-005", "WIN-SVC-006":
+			return true
 		case "WIN-SEC-004", "WIN-SEC-005", "WIN-SMB-010":
 			return true
 		case "WIN-AUD-001", "WIN-AUD-002", "WIN-AUD-003", "WIN-AUD-004", "WIN-AUD-005", "WIN-AUD-006", "WIN-AUD-007", "WIN-AUD-008", "WIN-AUD-009", "WIN-AUD-010", "WIN-AUD-011", "WIN-AUD-012", "WIN-AUD-013", "WIN-AUD-014", "WIN-AUD-015", "WIN-AUD-016", "WIN-AUD-017", "WIN-AUD-018":
