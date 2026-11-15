@@ -13,6 +13,8 @@ func actionSupported(osName, id string) bool {
 	}
 	if osName == "windows" {
 		switch id {
+		case "WIN-PWD-002", "WIN-PWD-009":
+			return true
 		case "WIN-SMB-004":
 			return true
 		case "WIN-FW-007", "WIN-FW-008", "WIN-FW-009":
@@ -60,6 +62,8 @@ func actionRisky(osName, id string, declared bool) bool {
 	}
 	if osName == "windows" {
 		switch id {
+		case "WIN-PWD-002", "WIN-PWD-009":
+			return true
 		case "WIN-SMB-004":
 			return true
 		case "WIN-FW-007", "WIN-FW-008", "WIN-FW-009":
