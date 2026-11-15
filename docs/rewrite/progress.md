@@ -135,3 +135,11 @@ SVC001..006 now use local typed SCM calls and the existing SYSTEM-only DPAPI/wat
 No service is created/deleted. Stops never force dependent services. Restarts require already running direct dependencies; dependency groups, unavailable evidence, drivers and paused states require manual review. Only the fixed six compiled target names can be changed. Changes and backups sent to core expose fixed descriptions only. Task execution now passes its context into native replacement so service substeps check cancellation/deadlines; compensation keeps its independent context. The prior registry/account/audit snapshot formats remain unchanged.
 
 Windows write coverage is65 controls, with35 IDs remaining. Windows amd64/386 and Linux amd64 package compilation passed. No tests, live service queries/actions or watchdog execution ran. These are source/compiler checkpoints, not a runtime recovery claim.
+
+## Local LSA right assignment writers
+
+URA001..012 now have compiled membership plans, core risk gating and canonical binary SID snapshots under their own tag. LocalSystem/private DPAPI/watchdog requirements remain. The local LSA handle requests only view/lookup and optional policy account-record creation for writes; domain controllers are refused. No secret query, name lookup, remote handle, shell/secedit or remove-all-rights call is used. Individual set mutations recheck expected membership and task context before each call. Recovery handles only approved original/target membership combinations and restores the exact original set. A256-member bound and remove-before-add ordering keep all intermediates serializable.
+
+Contains-mode deny/network plans preserve existing assignments; exact plans use baseline defaults, including the four impersonation SIDs. Native catalog4 tightens URA007 and service runtime observations so reports can detect those post-apply regressions. The importer source reflects version4 and the strict impersonation matcher. All three canonical/embedded copies remain identical, with100 controls and98 connected entries each. Original legacy YAML is untouched.
+
+Windows coverage is77 typed writers;23 remain. Windows amd64/386 and Linux amd64 compilation passed. Python catalog-importer syntax parsing did not execute it. No tests, LSA/SCM queries or mutations, service operations or watchdog execution ran.

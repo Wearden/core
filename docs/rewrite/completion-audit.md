@@ -23,7 +23,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 | Linux platform scope | Supported Ubuntu22.04/24.04 metadata before enrollment; assignment release must match before scans and new task work | Namespace metadata is not whole-host attestation; existing recovery/delivery precedes the guard |
 | Windows inspection | Three100-control manifests;98 connected providers and2 manual controls per OS; embedded/canonical bytes match | Complexity/reversible-storage audits remain manual; native availability is unexercised |
 | Windows service hosting | Confirmed installer, LocalSystem SCM hosting, protected state/bootstrap, cancellation/restart source | No service installed or started; binary upgrades require separate review |
-| Typed remediation and rollback | Core task API,27 Linux handlers and65 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
+| Typed remediation and rollback | Core task API,27 Linux handlers and77 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
 | Recovery across main-process loss | Independent platform helpers, durable journals, elapsed-time leases and revisioned compensation | No helper or recovery path executed |
 | Retain stronger compliant policies | Shared ValidApplyTarget permits the compiled target or unchanged compliant original; agent/helper/journal paths use it | Source mismatch fixed; no runtime reproduction under the no-test instruction |
 | Drift | Subsequent report reconciliation against applied baselines; rollback/compensation withdraw baselines | No drift scenario exercised |
@@ -39,7 +39,7 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 
 ## Concrete unfinished work
 
-1. Complete the remaining typed write/restore providers. Ubuntu24.04 has61 control IDs without write handlers and Windows35; Ubuntu22.04 adds12 read-only audit IDs without write handlers; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
+1. Complete the remaining typed write/restore providers. Ubuntu24.04 has61 control IDs without write handlers and Windows23; Ubuntu22.04 adds12 read-only audit IDs without write handlers; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
 2. Keep the approved nftables dependency read-only. Firewall mutation must not silently expand that approval. IP forwarding also needs a multi-setting restore plan because its kernel side effects exceed the current single-sysctl snapshot.
 3. Resolve the three credential-sensitive manual inspection entries without weakening the current privacy boundary. Missing/ambiguous evidence must remain error throughout.
 4. Finish semantic API/data-shape review. Route registration, compilation and reused TypeScript clients are necessary evidence, not proof of full legacy behavior.
@@ -73,3 +73,9 @@ Windows now has59 compiled handlers:31 DWORD policies, two fixed baseline notice
 All six Windows service IDs now have typed SCM actions with explicit core risk confirmation, raising write coverage to65 controls. The selected service is disabled/stopped; the exact startup, delayed-start and stable runtime tuple is saved privately with a fingerprint of unmodified basic SCM configuration. Missing services remain untouched. Recovery handles journaled partial transitions while rejecting configuration drift. Direct dependencies must already run before restarting; dependency groups and force-stopping dependents are refused. Task context checks bound cooperative write steps; compensation is independent of the expired task context. Native synchronous calls remain unpreemptible. Source limits and inspected vendor references are recorded in the Windows README.
 
 Windows amd64/386 and Linux amd64 compiler checks passed after implementation. No tests, service queries, native changes, helper execution or runtime validation ran. The original read-only service audit checks startup type; service actions additionally verify stopped runtime state. Process memory, in-flight jobs and custom startup arguments are outside this policy-state snapshot.
+
+## Native user-right and catalog4 checkpoint
+
+All12 Windows user-right controls now have typed local LSA actions with explicit core risk gating, private canonical SID-set backups and compensation of approved partial membership changes. Windows write coverage is77 controls, with23 remaining. Domain controllers are refused. Each call changes only the selected right; secret/private information and remove-all privileges are never requested. Deny/network contains targets preserve unrelated assignments; exact-set targets match the reviewed baseline remediation. No SID/account name is sent to core.
+
+Native-windows-4 retains all100 IDs/severities and98 connected providers per OS. URA007 now compares its exact four-SID baseline, and service audits require disabled startup plus stopped runtime state. These deliberate native semantic corrections close drift gaps; original YAML bytes remain unchanged. Canonical/embedded copies match and new hashes are documented. The catalog importer was syntax-parsed without execution. Windows amd64/386 and Linux amd64 compilation passed; no tests, native queries, policy writes or recovery exercise ran.
