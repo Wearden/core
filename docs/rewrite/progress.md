@@ -167,3 +167,7 @@ Preview source review additionally covered selection A/B/A and overlapping respo
 Failed-control preselection now also rejects late results after selection/preview generation changes and surfaces current request failures through the existing error UI. Earlier overlapping preselection requests cannot replace newer selections. TypeScript no-emit compilation passed; no test, browser or API call ran.
 
 Hardening request-state review separated planning from apply-in-flight state. Selection changes can invalidate previews without clearing the apply guard; a second apply or preview cannot start while run creation is pending. TypeScript no-emit compilation passed. No runtime/API operation or test was performed.
+
+Hardening cancellation failures now appear outside the applied-change-only rollback toolbar. The cancel button is disabled while pending; English/Azerbaijani fallback messages were added. TypeScript no-emit compilation passed; no test or live API operation ran.
+
+Rollback run navigation now resets selection/name/detail/error state. Selected rollback IDs are intersected with currently applied changes, so a polling status update cannot leave obsolete IDs in the request or count. TypeScript no-emit compilation passed; no tests or live rollback ran.
