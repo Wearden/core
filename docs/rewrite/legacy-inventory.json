@@ -1,0 +1,493 @@
+{
+  "source": "legacy hardenops prototype",
+  "extraction": "Python AST, no imports or execution of legacy application",
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/analytics/dashboard",
+      "source": "backend/app/routers/analytics.py",
+      "line": 16,
+      "handler": "dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/analytics/hosts/{asset_id}",
+      "source": "backend/app/routers/analytics.py",
+      "line": 54,
+      "handler": "host_analytics"
+    },
+    {
+      "method": "GET",
+      "path": "/api/analytics/heatmap",
+      "source": "backend/app/routers/analytics.py",
+      "line": 129,
+      "handler": "heatmap"
+    },
+    {
+      "method": "GET",
+      "path": "/api/analytics/diff",
+      "source": "backend/app/routers/analytics.py",
+      "line": 140,
+      "handler": "before_after_diff"
+    },
+    {
+      "method": "GET",
+      "path": "/api/assets",
+      "source": "backend/app/routers/assets.py",
+      "line": 33,
+      "handler": "list_assets"
+    },
+    {
+      "method": "POST",
+      "path": "/api/assets",
+      "source": "backend/app/routers/assets.py",
+      "line": 40,
+      "handler": "create_asset"
+    },
+    {
+      "method": "GET",
+      "path": "/api/assets/{asset_id}",
+      "source": "backend/app/routers/assets.py",
+      "line": 57,
+      "handler": "get_asset"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/assets/{asset_id}",
+      "source": "backend/app/routers/assets.py",
+      "line": 64,
+      "handler": "update_asset"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/assets/{asset_id}",
+      "source": "backend/app/routers/assets.py",
+      "line": 87,
+      "handler": "delete_asset"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/assets/{asset_id}/credential",
+      "source": "backend/app/routers/assets.py",
+      "line": 104,
+      "handler": "set_credential"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/assets/{asset_id}/credential",
+      "source": "backend/app/routers/assets.py",
+      "line": 134,
+      "handler": "clear_credential"
+    },
+    {
+      "method": "POST",
+      "path": "/api/assets/{asset_id}/test",
+      "source": "backend/app/routers/assets.py",
+      "line": 148,
+      "handler": "test_connection"
+    },
+    {
+      "method": "GET",
+      "path": "/api/assets/{asset_id}/history",
+      "source": "backend/app/routers/assets.py",
+      "line": 204,
+      "handler": "status_history"
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit",
+      "source": "backend/app/routers/audit.py",
+      "line": 13,
+      "handler": "list_audit"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "source": "backend/app/routers/auth.py",
+      "line": 37,
+      "handler": "login"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "source": "backend/app/routers/auth.py",
+      "line": 53,
+      "handler": "refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me",
+      "source": "backend/app/routers/auth.py",
+      "line": 65,
+      "handler": "me"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/change-password",
+      "source": "backend/app/routers/auth.py",
+      "line": 70,
+      "handler": "change_password"
+    },
+    {
+      "method": "GET",
+      "path": "/api/benchmarks",
+      "source": "backend/app/routers/benchmarks.py",
+      "line": 65,
+      "handler": "list_benchmarks"
+    },
+    {
+      "method": "GET",
+      "path": "/api/benchmarks/{bid}/controls",
+      "source": "backend/app/routers/benchmarks.py",
+      "line": 79,
+      "handler": "list_controls"
+    },
+    {
+      "method": "GET",
+      "path": "/api/benchmarks/{bid}/controls/{cid}",
+      "source": "backend/app/routers/benchmarks.py",
+      "line": 119,
+      "handler": "get_control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/benchmarks/{bid}/profiles",
+      "source": "backend/app/routers/benchmarks.py",
+      "line": 128,
+      "handler": "list_profiles"
+    },
+    {
+      "method": "POST",
+      "path": "/api/benchmarks/{bid}/profiles",
+      "source": "backend/app/routers/benchmarks.py",
+      "line": 153,
+      "handler": "create_profile"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/benchmarks/{bid}/profiles/{pid}",
+      "source": "backend/app/routers/benchmarks.py",
+      "line": 179,
+      "handler": "delete_profile"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hardening/plan",
+      "source": "backend/app/routers/hardening.py",
+      "line": 115,
+      "handler": "plan"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hardening/runs",
+      "source": "backend/app/routers/hardening.py",
+      "line": 161,
+      "handler": "create_run"
+    },
+    {
+      "method": "GET",
+      "path": "/api/hardening/runs",
+      "source": "backend/app/routers/hardening.py",
+      "line": 218,
+      "handler": "list_runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/hardening/runs/{run_id}",
+      "source": "backend/app/routers/hardening.py",
+      "line": 224,
+      "handler": "get_run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hardening/runs/{run_id}/cancel",
+      "source": "backend/app/routers/hardening.py",
+      "line": 235,
+      "handler": "cancel_run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hardening/runs/{run_id}/rollback",
+      "source": "backend/app/routers/hardening.py",
+      "line": 257,
+      "handler": "rollback"
+    },
+    {
+      "method": "GET",
+      "path": "/api/hardening/rollbacks",
+      "source": "backend/app/routers/hardening.py",
+      "line": 296,
+      "handler": "list_rollbacks"
+    },
+    {
+      "method": "WEBSOCKET",
+      "path": "/ws/hardening/{run_id}",
+      "source": "backend/app/routers/hardening_ws.py",
+      "line": 43,
+      "handler": "hardening_feed"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "source": "backend/app/routers/health.py",
+      "line": 11,
+      "handler": "health"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health/ready",
+      "source": "backend/app/routers/health.py",
+      "line": 17,
+      "handler": "ready"
+    },
+    {
+      "method": "GET",
+      "path": "/api/attack/coverage",
+      "source": "backend/app/routers/intel.py",
+      "line": 18,
+      "handler": "attack_coverage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/copilot/status",
+      "source": "backend/app/routers/intel.py",
+      "line": 29,
+      "handler": "copilot_status"
+    },
+    {
+      "method": "POST",
+      "path": "/api/copilot/explain",
+      "source": "backend/app/routers/intel.py",
+      "line": 34,
+      "handler": "explain"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drift",
+      "source": "backend/app/routers/intel.py",
+      "line": 46,
+      "handler": "list_drift"
+    },
+    {
+      "method": "POST",
+      "path": "/api/drift/run",
+      "source": "backend/app/routers/intel.py",
+      "line": 58,
+      "handler": "run_drift_now"
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/scans/{scan_id}.csv",
+      "source": "backend/app/routers/reports.py",
+      "line": 71,
+      "handler": "scan_csv"
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/scans/{scan_id}.json",
+      "source": "backend/app/routers/reports.py",
+      "line": 85,
+      "handler": "scan_json"
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/scans/{scan_id}.pdf",
+      "source": "backend/app/routers/reports.py",
+      "line": 124,
+      "handler": "scan_pdf"
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/hardening/{run_id}.csv",
+      "source": "backend/app/routers/reports.py",
+      "line": 136,
+      "handler": "hardening_csv"
+    },
+    {
+      "method": "WEBSOCKET",
+      "path": "/ws/scans/{scan_id}",
+      "source": "backend/app/routers/scan_ws.py",
+      "line": 54,
+      "handler": "scan_feed"
+    },
+    {
+      "method": "POST",
+      "path": "/api/scans",
+      "source": "backend/app/routers/scans.py",
+      "line": 76,
+      "handler": "create_scan"
+    },
+    {
+      "method": "GET",
+      "path": "/api/scans",
+      "source": "backend/app/routers/scans.py",
+      "line": 138,
+      "handler": "list_scans"
+    },
+    {
+      "method": "GET",
+      "path": "/api/scans/{scan_id}",
+      "source": "backend/app/routers/scans.py",
+      "line": 144,
+      "handler": "get_scan"
+    },
+    {
+      "method": "GET",
+      "path": "/api/scans/{scan_id}/results",
+      "source": "backend/app/routers/scans.py",
+      "line": 154,
+      "handler": "scan_results"
+    },
+    {
+      "method": "POST",
+      "path": "/api/scans/{scan_id}/cancel",
+      "source": "backend/app/routers/scans.py",
+      "line": 201,
+      "handler": "cancel_scan"
+    },
+    {
+      "method": "GET",
+      "path": "/api/schedules",
+      "source": "backend/app/routers/schedules.py",
+      "line": 58,
+      "handler": "list_schedules"
+    },
+    {
+      "method": "POST",
+      "path": "/api/schedules",
+      "source": "backend/app/routers/schedules.py",
+      "line": 63,
+      "handler": "create_schedule"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/schedules/{schedule_id}",
+      "source": "backend/app/routers/schedules.py",
+      "line": 99,
+      "handler": "delete_schedule"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions",
+      "source": "backend/app/routers/sessions.py",
+      "line": 48,
+      "handler": "open_session"
+    },
+    {
+      "method": "GET",
+      "path": "/api/sessions",
+      "source": "backend/app/routers/sessions.py",
+      "line": 127,
+      "handler": "list_sessions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/{session_id}/end",
+      "source": "backend/app/routers/sessions.py",
+      "line": 137,
+      "handler": "end_session"
+    },
+    {
+      "method": "GET",
+      "path": "/api/sessions/{session_id}/recording",
+      "source": "backend/app/routers/sessions.py",
+      "line": 154,
+      "handler": "download_recording"
+    },
+    {
+      "method": "WEBSOCKET",
+      "path": "/ws/hosts",
+      "source": "backend/app/routers/ws.py",
+      "line": 42,
+      "handler": "hosts_feed"
+    }
+  ],
+  "models": [
+    "User",
+    "AuditLog",
+    "Asset",
+    "Credential",
+    "HostStatusSample",
+    "RemoteSession",
+    "Scan",
+    "ScanHostResult",
+    "ControlResult",
+    "HardenRun",
+    "HardenChange",
+    "HardenRollback",
+    "DriftEvent",
+    "BenchmarkProfile",
+    "ScanSchedule"
+  ],
+  "frontend_pages": [
+    "Assets",
+    "AttackMatrix",
+    "Audit",
+    "Benchmarks",
+    "ChangePassword",
+    "Dashboard",
+    "Hardening",
+    "HardeningRun",
+    "HostAnalytics",
+    "Login",
+    "Placeholder",
+    "Reports",
+    "Rollback",
+    "ScanDetail",
+    "Scans",
+    "Sessions"
+  ],
+  "benchmark_files": [
+    "linux/ubuntu-22.04/01-filesystem.yaml",
+    "linux/ubuntu-22.04/02-packages.yaml",
+    "linux/ubuntu-22.04/03-services.yaml",
+    "linux/ubuntu-22.04/04-network-sysctl.yaml",
+    "linux/ubuntu-22.04/05-firewall.yaml",
+    "linux/ubuntu-22.04/06-auditd.yaml",
+    "linux/ubuntu-22.04/07-logging.yaml",
+    "linux/ubuntu-22.04/08-ssh.yaml",
+    "linux/ubuntu-22.04/09-pam.yaml",
+    "linux/ubuntu-22.04/10-users-permissions.yaml",
+    "linux/ubuntu-22.04/benchmark.yaml",
+    "linux/ubuntu-24.04/01-filesystem.yaml",
+    "linux/ubuntu-24.04/02-packages.yaml",
+    "linux/ubuntu-24.04/03-services.yaml",
+    "linux/ubuntu-24.04/04-network-sysctl.yaml",
+    "linux/ubuntu-24.04/05-firewall.yaml",
+    "linux/ubuntu-24.04/07-logging.yaml",
+    "linux/ubuntu-24.04/08-ssh.yaml",
+    "linux/ubuntu-24.04/09-pam.yaml",
+    "linux/ubuntu-24.04/10-users-permissions.yaml",
+    "linux/ubuntu-24.04/benchmark.yaml",
+    "windows/server-2022/01-password-lockout.yaml",
+    "windows/server-2022/02-user-rights.yaml",
+    "windows/server-2022/03-security-options.yaml",
+    "windows/server-2022/04-firewall.yaml",
+    "windows/server-2022/05-audit-policy.yaml",
+    "windows/server-2022/06-services.yaml",
+    "windows/server-2022/07-smb-ntlm-lsa.yaml",
+    "windows/server-2022/08-rdp.yaml",
+    "windows/server-2022/09-defender-misc.yaml",
+    "windows/server-2022/benchmark.yaml",
+    "windows/windows-10/01-password-lockout.yaml",
+    "windows/windows-10/02-user-rights.yaml",
+    "windows/windows-10/03-security-options.yaml",
+    "windows/windows-10/04-firewall.yaml",
+    "windows/windows-10/05-audit-policy.yaml",
+    "windows/windows-10/06-services.yaml",
+    "windows/windows-10/07-smb-ntlm-lsa.yaml",
+    "windows/windows-10/08-rdp.yaml",
+    "windows/windows-10/09-defender-misc.yaml",
+    "windows/windows-10/benchmark.yaml",
+    "windows/windows-11/01-password-lockout.yaml",
+    "windows/windows-11/02-user-rights.yaml",
+    "windows/windows-11/03-security-options.yaml",
+    "windows/windows-11/04-firewall.yaml",
+    "windows/windows-11/05-audit-policy.yaml",
+    "windows/windows-11/06-services.yaml",
+    "windows/windows-11/07-smb-ntlm-lsa.yaml",
+    "windows/windows-11/08-rdp.yaml",
+    "windows/windows-11/09-defender-misc.yaml",
+    "windows/windows-11/benchmark.yaml"
+  ]
+}

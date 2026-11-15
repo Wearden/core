@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.env
+.env.*
+.cache
+coverage
+*.pem
+*.key
+*.pfx
+*.p12
+credentials

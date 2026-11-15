@@ -1,0 +1,746 @@
+{
+  "scope": "Static source mapping only, not HTTP/WebSocket testing or runtime parity proof.",
+  "routes": [
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/analytics/dashboard",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/analytics/dashboard",
+          "source": "core/internal/app/features.go",
+          "line": 18
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/analytics/hosts/{asset_id}",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/analytics/hosts/{id}",
+          "source": "core/internal/app/features.go",
+          "line": 19
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/analytics/heatmap",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/analytics/heatmap",
+          "source": "core/internal/app/features.go",
+          "line": 20
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/analytics/diff",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/analytics/diff",
+          "source": "core/internal/app/features.go",
+          "line": 21
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/assets",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/assets",
+          "source": "core/internal/app/assets.go",
+          "line": 83
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/assets",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/assets",
+          "source": "core/internal/app/assets.go",
+          "line": 100
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/assets/{asset_id}",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/assets/{id}",
+          "source": "core/internal/app/assets.go",
+          "line": 91
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "PUT",
+      "legacy_path": "/api/assets/{asset_id}",
+      "source_matches": [
+        {
+          "method": "PUT",
+          "path": "/api/assets/{id}",
+          "source": "core/internal/app/assets.go",
+          "line": 101
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "DELETE",
+      "legacy_path": "/api/assets/{asset_id}",
+      "source_matches": [
+        {
+          "method": "DELETE",
+          "path": "/api/assets/{id}",
+          "source": "core/internal/app/assets.go",
+          "line": 102
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "PUT",
+      "legacy_path": "/api/assets/{asset_id}/credential",
+      "source_matches": [
+        {
+          "method": "PUT",
+          "path": "/api/assets/{id}/credential",
+          "source": "core/internal/app/assets.go",
+          "line": 134
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "DELETE",
+      "legacy_path": "/api/assets/{asset_id}/credential",
+      "source_matches": [
+        {
+          "method": "DELETE",
+          "path": "/api/assets/{id}/credential",
+          "source": "core/internal/app/assets.go",
+          "line": 135
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/assets/{asset_id}/test",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/assets/{id}/test",
+          "source": "core/internal/app/assets.go",
+          "line": 143
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/assets/{asset_id}/history",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/assets/{id}/history",
+          "source": "core/internal/app/assets.go",
+          "line": 153
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/audit",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/audit",
+          "source": "core/internal/app/features.go",
+          "line": 17
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/auth/login",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "source": "core/internal/app/app.go",
+          "line": 158
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/auth/refresh",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/auth/refresh",
+          "source": "core/internal/app/app.go",
+          "line": 159
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/auth/me",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/auth/me",
+          "source": "core/internal/app/app.go",
+          "line": 160
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/auth/change-password",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/auth/change-password",
+          "source": "core/internal/app/app.go",
+          "line": 161
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/benchmarks",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/benchmarks",
+          "source": "core/internal/app/benchmarks.go",
+          "line": 12
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/benchmarks/{bid}/controls",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/benchmarks/{bid}/controls",
+          "source": "core/internal/app/benchmarks.go",
+          "line": 24
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/benchmarks/{bid}/controls/{cid}",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/benchmarks/{bid}/controls/{cid}",
+          "source": "core/internal/app/benchmarks.go",
+          "line": 52
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/benchmarks/{bid}/profiles",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/benchmarks/{bid}/profiles",
+          "source": "core/internal/app/benchmarks.go",
+          "line": 65
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/benchmarks/{bid}/profiles",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/benchmarks/{bid}/profiles",
+          "source": "core/internal/app/benchmarks.go",
+          "line": 87
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "DELETE",
+      "legacy_path": "/api/benchmarks/{bid}/profiles/{pid}",
+      "source_matches": [
+        {
+          "method": "DELETE",
+          "path": "/api/benchmarks/{bid}/profiles/{pid}",
+          "source": "core/internal/app/benchmarks.go",
+          "line": 125
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/hardening/plan",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/hardening/plan",
+          "source": "core/internal/app/hardening.go",
+          "line": 25
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/hardening/runs",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/hardening/runs",
+          "source": "core/internal/app/hardening.go",
+          "line": 26
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/hardening/runs",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/hardening/runs",
+          "source": "core/internal/app/hardening.go",
+          "line": 27
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/hardening/runs/{run_id}",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/hardening/runs/{id}",
+          "source": "core/internal/app/hardening.go",
+          "line": 38
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/hardening/runs/{run_id}/cancel",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/hardening/runs/{id}/cancel",
+          "source": "core/internal/app/hardening.go",
+          "line": 46
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/hardening/runs/{run_id}/rollback",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/hardening/runs/{id}/rollback",
+          "source": "core/internal/app/hardening.go",
+          "line": 47
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/hardening/rollbacks",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/hardening/rollbacks",
+          "source": "core/internal/app/hardening.go",
+          "line": 48
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "WEBSOCKET",
+      "legacy_path": "/ws/hardening/{run_id}",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/ws/hardening/{id}",
+          "source": "core/internal/app/websocket.go",
+          "line": 41
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/health",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/health",
+          "source": "core/internal/app/app.go",
+          "line": 148
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/health/ready",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/health/ready",
+          "source": "core/internal/app/app.go",
+          "line": 149
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/attack/coverage",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/attack/coverage",
+          "source": "core/internal/app/features.go",
+          "line": 22
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/copilot/status",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/copilot/status",
+          "source": "core/internal/app/features.go",
+          "line": 23
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/copilot/explain",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/copilot/explain",
+          "source": "core/internal/app/features.go",
+          "line": 26
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/drift",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/drift",
+          "source": "core/internal/app/drift.go",
+          "line": 15
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/drift/run",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/drift/run",
+          "source": "core/internal/app/drift.go",
+          "line": 43
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/reports/scans/{scan_id}.csv",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/reports/scans/{file}",
+          "source": "core/internal/app/features.go",
+          "line": 27
+        }
+      ],
+      "note": "Extension-specific legacy route maps to the bounded {file} export dispatcher; formats inspected in report_exports.go. Runtime not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/reports/scans/{scan_id}.json",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/reports/scans/{file}",
+          "source": "core/internal/app/features.go",
+          "line": 27
+        }
+      ],
+      "note": "Extension-specific legacy route maps to the bounded {file} export dispatcher; formats inspected in report_exports.go. Runtime not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/reports/scans/{scan_id}.pdf",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/reports/scans/{file}",
+          "source": "core/internal/app/features.go",
+          "line": 27
+        }
+      ],
+      "note": "Extension-specific legacy route maps to the bounded {file} export dispatcher; formats inspected in report_exports.go. Runtime not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/reports/hardening/{run_id}.csv",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/reports/hardening/{file}",
+          "source": "core/internal/app/features.go",
+          "line": 28
+        }
+      ],
+      "note": "Extension-specific legacy route maps to the bounded {file} export dispatcher; formats inspected in report_exports.go. Runtime not exercised."
+    },
+    {
+      "legacy_method": "WEBSOCKET",
+      "legacy_path": "/ws/scans/{scan_id}",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/ws/scans/{id}",
+          "source": "core/internal/app/websocket.go",
+          "line": 41
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/scans",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/scans",
+          "source": "core/internal/app/scans.go",
+          "line": 128
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/scans",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/scans",
+          "source": "core/internal/app/scans.go",
+          "line": 116
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/scans/{scan_id}",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/scans/{id}",
+          "source": "core/internal/app/scans.go",
+          "line": 141
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/scans/{scan_id}/results",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/scans/{id}/results",
+          "source": "core/internal/app/scans.go",
+          "line": 150
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/scans/{scan_id}/cancel",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/scans/{id}/cancel",
+          "source": "core/internal/app/scans.go",
+          "line": 174
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/schedules",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/schedules",
+          "source": "core/internal/app/scheduling.go",
+          "line": 51
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/schedules",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/schedules",
+          "source": "core/internal/app/scheduling.go",
+          "line": 80
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "DELETE",
+      "legacy_path": "/api/schedules/{schedule_id}",
+      "source_matches": [
+        {
+          "method": "DELETE",
+          "path": "/api/schedules/{id}",
+          "source": "core/internal/app/scheduling.go",
+          "line": 162
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/sessions",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/sessions",
+          "source": "core/internal/app/features.go",
+          "line": 30
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/sessions",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/sessions",
+          "source": "core/internal/app/features.go",
+          "line": 29
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "POST",
+      "legacy_path": "/api/sessions/{session_id}/end",
+      "source_matches": [
+        {
+          "method": "POST",
+          "path": "/api/sessions/{id}/end",
+          "source": "core/internal/app/features.go",
+          "line": 31
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "GET",
+      "legacy_path": "/api/sessions/{session_id}/recording",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/api/sessions/{id}/recording",
+          "source": "core/internal/app/features.go",
+          "line": 32
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    },
+    {
+      "legacy_method": "WEBSOCKET",
+      "legacy_path": "/ws/hosts",
+      "source_matches": [
+        {
+          "method": "GET",
+          "path": "/ws/hosts",
+          "source": "core/internal/app/websocket.go",
+          "line": 41
+        }
+      ],
+      "note": "Source route pattern mapped; runtime behavior not exercised."
+    }
+  ]
+}

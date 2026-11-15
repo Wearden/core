@@ -1,0 +1,18 @@
+# Disposable local agent fixture. It observes its own container namespace, not the host.
+services:
+  lab-agent:
+    profiles: [agent-lab]
+    build:
+      context: ..
+      dockerfile: core/lab/agent-linux/Dockerfile
+    network_mode: service:backend
+    depends_on:
+      - backend
+    environment:
+      WEARDEN_ENROLLMENT_TOKEN: ${WEARDEN_ENROLLMENT_TOKEN:?create a native Linux enrollment token}
+    command: ["-daemon", "-core-url", "http://127.0.0.1:8000", "-state-dir", "/var/lib/wearden-agent"]
+    volumes:
+      - lab_agent_state:/var/lib/wearden-agent
+    restart: unless-stopped
+volumes:
+  lab_agent_state:

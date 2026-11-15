@@ -1,0 +1,2 @@
+# Container entrypoints must retain Unix shebang/newline bytes.
+*.sh text eol=lf
