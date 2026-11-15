@@ -21,9 +21,9 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 | Linux inspection | 88-control native manifest,87 connected providers and one explicit manual control; canonical/embedded digest match | Conservative providers can return error; USR006 remains manual |
 | Ubuntu22.04 legacy baseline | Matching100-control native assignment,99 connected entries and manual USR006; canonical/embedded bytes match | Twelve additional audit checks inspect package/enablement/loaded-rule selectors only; no runtime validation or audit write handlers |
 | Linux platform scope | Supported Ubuntu22.04/24.04 metadata before enrollment; assignment release must match before scans and new task work | Namespace metadata is not whole-host attestation; existing recovery/delivery precedes the guard |
-| Windows inspection | Three100-control manifests;98 connected providers and2 manual controls per OS; embedded/canonical bytes match | Complexity/reversible-storage audits remain manual; native availability is unexercised |
+| Windows inspection | Three100-control manifests;100 connected evaluator entries per OS; embedded/canonical bytes match | Complexity/reversible-storage use local SAM policy metadata; native availability remains unexercised |
 | Windows service hosting | Confirmed installer, LocalSystem SCM hosting, protected state/bootstrap, cancellation/restart source | No service installed or started; binary upgrades require separate review |
-| Typed remediation and rollback | Core task API,37 Linux handlers and97 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
+| Typed remediation and rollback | Core task API,37 Linux handlers and99 Windows handlers; private backups and exact native restores | Full prototype remediation parity remains incomplete |
 | Recovery across main-process loss | Independent platform helpers, durable journals, elapsed-time leases and revisioned compensation | No helper or recovery path executed |
 | Retain stronger compliant policies | Shared ValidApplyTarget permits the compiled target or unchanged compliant original; agent/helper/journal paths use it | Source mismatch fixed; no runtime reproduction under the no-test instruction |
 | Drift | Subsequent report reconciliation against applied baselines; rollback/compensation withdraw baselines | No drift scenario exercised |
@@ -39,9 +39,9 @@ The later user instructions authorize a Go core and complete rewrite, supersedin
 
 ## Concrete unfinished work
 
-1. Complete the remaining typed write/restore providers. Ubuntu24.04 has51 control IDs without write handlers and Windows3; Ubuntu22.04 has63, including12 read-only audit IDs; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
+1. Complete the remaining typed write/restore providers. Ubuntu24.04 has51 control IDs without write handlers and Windows1; Ubuntu22.04 has63, including12 read-only audit IDs; not every audit can be safely fixed by the same generic operation. Implement their actual semantics, backup scope and error paths instead of enabling arbitrary YAML commands.
 2. Keep the approved nftables dependency read-only. Firewall mutation must not silently expand that approval. IP forwarding also needs a multi-setting restore plan because its kernel side effects exceed the current single-sysctl snapshot.
-3. Resolve the three credential-sensitive manual inspection entries without weakening the current privacy boundary. Missing/ambiguous evidence must remain error throughout.
+3. Resolve the remaining Linux USR006 credential-sensitive manual inspection entry without weakening the current privacy boundary. Missing/ambiguous evidence must remain error throughout.
 4. Finish semantic API/data-shape review. Route registration, compilation and reused TypeScript clients are necessary evidence, not proof of full legacy behavior.
 5. Complete final cross-repository review and incremental implementation commits; initial separate checkpoints are recorded in checkpoints.json. Keep the proto v0.0.0 bootstrap local to the documented sibling workspace until an explicitly requested publication step.
 
