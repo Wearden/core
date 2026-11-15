@@ -109,7 +109,7 @@ func (s *Server) streamUser(ctx context.Context, token, required string) (User, 
 }
 
 func (s *Server) streamHosts(ctx context.Context) ([]map[string]any, error) {
-	rows, err := s.DB.QueryContext(ctx, "SELECT id,data FROM assets ORDER BY id LIMIT 2001")
+	rows, err := s.DB.QueryContext(ctx, assetViewQuery+" ORDER BY a.id LIMIT 2001")
 	if err != nil {
 		return nil, err
 	}
