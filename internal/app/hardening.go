@@ -125,6 +125,9 @@ func (s *Server) hardeningPlan(w http.ResponseWriter, r *http.Request) {
 		if actionRisky(b.OS, id, c.Risky) {
 			warnings = append(warnings, "Risk confirmation required for "+id)
 		}
+		if b.OS == "windows" && id == "WIN-DEF-009" {
+			warnings = append(warnings, "LSA protection requires a restart. Windows11 22H2+ uses a mode without UEFI lock; older Windows with Secure Boot can require manual configuration. Registry rollback does not remove firmware locks.")
+		}
 		controls = append(controls, map[string]any{"id": id, "title": c.Title, "severity": c.Severity, "risky": actionRisky(b.OS, id, c.Risky), "reboot_required": c.RebootRequired, "commands": "Native agent action for " + id, "backups": []string{"Local private agent backup"}, "rollback": "restore_backup", "rollback_command": nil})
 	}
 	hosts := []any{}
