@@ -766,9 +766,8 @@
       "benchmark_id": "server-2022-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 93,
+      "compiled_write_ids": 96,
       "remaining_by_kind": {
-        "firewall": 3,
         "registry": 2,
         "unsupported": 2
       },
@@ -784,24 +783,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-FW-007",
-          "kind": "firewall",
-          "target": "Domain.LogBlocked",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-FW-008",
-          "kind": "firewall",
-          "target": "Public.LogBlocked",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-FW-009",
-          "kind": "firewall",
-          "target": "Public.LogMaxSizeKilobytes",
-          "severity": "low"
         },
         {
           "id": "WIN-SMB-004",
@@ -821,9 +802,8 @@
       "benchmark_id": "windows-10-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 93,
+      "compiled_write_ids": 96,
       "remaining_by_kind": {
-        "firewall": 3,
         "registry": 2,
         "unsupported": 2
       },
@@ -839,24 +819,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-FW-007",
-          "kind": "firewall",
-          "target": "Domain.LogBlocked",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-FW-008",
-          "kind": "firewall",
-          "target": "Public.LogBlocked",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-FW-009",
-          "kind": "firewall",
-          "target": "Public.LogMaxSizeKilobytes",
-          "severity": "low"
         },
         {
           "id": "WIN-SMB-004",
@@ -876,9 +838,8 @@
       "benchmark_id": "windows-11-native-registry",
       "ruleset_version": "native-windows-4",
       "total_controls": 100,
-      "compiled_write_ids": 93,
+      "compiled_write_ids": 96,
       "remaining_by_kind": {
-        "firewall": 3,
         "registry": 2,
         "unsupported": 2
       },
@@ -894,24 +855,6 @@
           "kind": "unsupported",
           "target": "",
           "severity": "critical"
-        },
-        {
-          "id": "WIN-FW-007",
-          "kind": "firewall",
-          "target": "Domain.LogBlocked",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-FW-008",
-          "kind": "firewall",
-          "target": "Public.LogBlocked",
-          "severity": "medium"
-        },
-        {
-          "id": "WIN-FW-009",
-          "kind": "firewall",
-          "target": "Public.LogMaxSizeKilobytes",
-          "severity": "low"
         },
         {
           "id": "WIN-SMB-004",
