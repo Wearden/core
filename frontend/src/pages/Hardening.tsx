@@ -43,10 +43,14 @@ export function NewHardening({
   const plan = review?.key === selectionKey ? review.plan : null;
   const [confirmRisky, setConfirmRisky] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [planning, setBusy] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const busy = planning || applying;
   const planRequest = useRef(0);
+  const selectionRequest = useRef(0);
   useEffect(() => {
     planRequest.current++;
+    selectionRequest.current++;
     setReview(null);
     setConfirmRisky(false);
     setBusy(false);
@@ -63,11 +67,23 @@ export function NewHardening({
   // Failed controls from the chosen scan are preselected: hardening starts from a check result.
   const preselectFromScan = async () => {
     if (!scanId) return;
-    const failed = await scansApi.results(scanId, undefined, "fail");
-    setControls(new Set(failed.map((r) => r.control_id)));
+    const requestId = ++selectionRequest.current;
+    const generation = planRequest.current;
+    setError(null);
+    try {
+      const failed = await scansApi.results(scanId, undefined, "fail");
+      if (requestId === selectionRequest.current && generation === planRequest.current) {
+        setControls(new Set(failed.map((r) => r.control_id)));
+      }
+    } catch (err) {
+      if (requestId === selectionRequest.current && generation === planRequest.current) {
+        setError(err instanceof Error ? err.message : t("hard.planFailed"));
+      }
+    }
   };
 
   const doPlan = async () => {
+    if (applying) return;
     const requestId = ++planRequest.current;
     setReview(null);
     setConfirmRisky(false);
@@ -86,7 +102,7 @@ export function NewHardening({
   const apply = async () => {
     if (!plan || busy || (riskyPicked > 0 && !confirmRisky)) return;
     setError(null);
-    setBusy(true);
+    setApplying(true);
     try {
       const run = await hardeningApi.create({
         name: name.trim() || undefined,
@@ -100,7 +116,7 @@ export function NewHardening({
     } catch (err) {
       setError(err instanceof Error ? err.message : t("hard.startFailed"));
     } finally {
-      setBusy(false);
+      setApplying(false);
     }
   };
 
@@ -192,7 +208,7 @@ export function NewHardening({
                 <li key={c.id} className="rounded bg-slate-950 p-2">
                   <div className="font-medium">{c.title} <span className="font-mono text-xs text-slate-500">{c.id}</span></div>
                   <pre className="mt-1 overflow-x-auto text-xs text-slate-300">{c.commands}</pre>
-                  <div className="text-xs text-slate-500">{t("hard.backsUp")} {c.backups.join(", ") || t("hard.nothing")} · {t("hard.rollbackLabel")} {c.rollback}{c.reboot_required ? ` · ${t("hard.reboot")}` : ""}</div>
+                  <div className="text-xs text-slate-500">{t("hard.backsUp")} {c.backups.join(", ") || t("hard.nothing")} Â· {t("hard.rollbackLabel")} {c.rollback}{c.reboot_required ? ` Â· ${t("hard.reboot")}` : ""}</div>
                 </li>
               ))}
             </ol>
@@ -270,7 +286,7 @@ export default function Hardening() {
                   <td className="px-4 py-3"><StatusPill status={r.status} /></td>
                   <td className="px-4 py-3 text-slate-400">{Math.min(r.done_changes, r.total_changes)} / {r.total_changes}</td>
                   <td className="px-4 py-3">{r.applied_count}</td>
-                  <td className="px-4 py-3 text-xs text-slate-400">{r.started_at ? new Date(r.started_at).toLocaleString() : "—"}</td>
+                  <td className="px-4 py-3 text-xs text-slate-400">{r.started_at ? new Date(r.started_at).toLocaleString() : "â€”"}</td>
                 </tr>
               ))}
             </tbody>
