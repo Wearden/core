@@ -6,6 +6,7 @@ export interface Agent {
   hostname: string;
   os: "linux" | "windows";
   benchmark_id: string;
+  version?: string;
   status: string;
   last_seen: string | null;
 }

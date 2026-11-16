@@ -41,3 +41,25 @@ export const aiApi = {
   stored: (scanId: string) => request<AiAnalysis>(`/ai/analyses/${scanId}`),
   analyze: (scanId: string, language: string) => request<AiAnalysis>("/ai/analyze", { method: "POST", body: JSON.stringify({ scan_id: scanId, language }) }),
 };
+
+export interface UserRow {
+  id: number;
+  username: string;
+  role: "viewer" | "operator" | "admin";
+  active: boolean;
+  must_change_password: boolean;
+  created_at: string;
+}
+
+export const usersApi = {
+  list: () => request<UserRow[]>("/users"),
+  create: (body: { username: string; password: string; role: UserRow["role"] }) => request<unknown>("/users", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: number, body: { role?: UserRow["role"]; active?: boolean }) => request<void>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  resetPassword: (id: number, password: string) => request<void>(`/users/${id}/reset-password`, { method: "POST", body: JSON.stringify({ password }) }),
+  changeOwnPassword: (current: string, next: string) => request<void>("/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: current, new_password: next }) }),
+};
+
+export const aiAdminApi = {
+  test: () => request<{ ok: boolean; message: string }>("/ai/test", { method: "POST" }),
+  models: () => request<{ id: string; name: string }[]>("/ai/models"),
+};

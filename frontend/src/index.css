@@ -162,3 +162,6 @@ button, a, select, summary { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 ::selection { background: rgb(var(--slate-700)); color: rgb(var(--slate-50)); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Table density preference (Settings, Appearance). */
+:root[data-density="compact"] table :is(td, th) { padding-top: 0.3rem; padding-bottom: 0.3rem; }
