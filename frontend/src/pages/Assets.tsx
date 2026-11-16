@@ -138,9 +138,7 @@ export default function Assets() {
                 <th className="px-4 py-3">{t("col.name")}</th>
                 <th className="px-4 py-3">Host</th>
                 <th className="px-4 py-3">{t("col.os")}</th>
-                <th className="px-4 py-3">{t("col.latency")}</th>
                 <th className="px-4 py-3">{t("col.uptime")}</th>
-                <th className="px-4 py-3">{t("col.credential")}</th>
                 <th className="px-4 py-3 text-right">{t("col.actions")}</th>
               </tr>
             </thead>
@@ -167,27 +165,11 @@ export default function Assets() {
                       <div>{a.os_detected ?? a.os_version ?? (a.os_type === "linux" ? "Linux" : "Windows")}</div>
                       {a.privilege && <div className="text-xs text-slate-500">{t("assets.privilege")}: {a.privilege}</div>}
                     </td>
-                    <td className="px-4 py-3">{a.latency_ms !== null ? `${a.latency_ms.toFixed(1)} ms` : "-"}</td>
                     <td className="px-4 py-3"><Sparkline assetId={a.id} /></td>
-                    <td className="px-4 py-3">
-                      {a.credential_username ? (
-                        <span className="rounded bg-slate-800 px-2 py-0.5 text-xs">{a.credential_username}</span>
-                      ) : (
-                        <span className="text-xs text-amber-400">{t("assets.noCred")}</span>
-                      )}
-                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-wrap justify-end gap-2">
                         {canOperate && (
                           <>
-                            <button
-                              onClick={() => runTest(a)}
-                              disabled={!a.credential_username || result === "running"}
-                              className="rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800 disabled:opacity-40"
-                              title={a.credential_username ? t("assets.testTip") : t("assets.setCredFirst")}
-                            >
-                              {result === "running" ? t("assets.testing") : t("common.test")}
-                            </button>
                             <button
                               onClick={() => connect(a)}
                               disabled={!a.credential_username || opening === a.id}

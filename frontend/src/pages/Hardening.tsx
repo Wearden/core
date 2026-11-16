@@ -32,7 +32,15 @@ export function NewHardening({
   const scans = useQuery({ queryKey: ["scans"], queryFn: scansApi.list });
 
   const [bid, setBid] = useState(initialBenchmarkId ?? "");
-  const activeBid = bid || benches.data?.[0]?.id || "";
+  // Pick the benchmark that matches an enrolled host instead of the first one alphabetically; hide internal native manifests.
+  const readable = useMemo(() => {
+    const all = benches.data ?? [];
+    const named = all.filter((b) => !b.id.includes("native"));
+    return named.length ? named : all;
+  }, [benches.data]);
+  const hostOs = new Set((assets.data ?? []).map((a) => a.os_type));
+  const activeBid = bid || readable.find((b) => hostOs.has(b.os as never))?.id || readable[0]?.id || "";
+  const [controlFilter, setControlFilter] = useState("");
   const bench = benches.data?.find((b) => b.id === activeBid);
   const [hosts, setHosts] = useState<Set<number>>(new Set());
   const [scanId, setScanId] = useState("");
@@ -142,7 +150,7 @@ export function NewHardening({
           <label className="text-sm">
             <span className="text-slate-300">{t("hard.benchmark")}</span>
             <select className={`${field} mt-1 w-full`} value={activeBid} onChange={(e) => { setBid(e.target.value); setControls(new Set()); setReview(null); }}>
-              {(benches.data ?? []).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {readable.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </label>
           <label className="text-sm">
@@ -155,7 +163,7 @@ export function NewHardening({
         </div>
 
         <fieldset>
-          <legend className="text-sm text-slate-300">{t("hard.hosts")}</legend>
+          <legend className="text-sm font-medium text-slate-200">1. {t("hard.hosts")}</legend>
           <ul className="mt-2 space-y-1">
             {eligible.map((a) => (
               <li key={a.id}>
@@ -165,21 +173,22 @@ export function NewHardening({
                 </label>
               </li>
             ))}
-            {eligible.length === 0 && <li className="text-sm text-amber-300">{t("hard.noHosts")}</li>}
+            {eligible.length === 0 && <li className="text-sm text-slate-400">{t("hard.noHosts")}</li>}
           </ul>
         </fieldset>
 
         <fieldset>
           <div className="flex items-center justify-between">
-            <legend className="text-sm text-slate-300">{t("hard.controls")} ({controls.size} {t("hard.selected")})</legend>
+            <legend className="text-sm font-medium text-slate-200">2. {t("hard.controls")} ({controls.size} {t("hard.selected")})</legend>
             <div className="flex gap-3 text-sm">
               <button onClick={preselectFromScan} disabled={!scanId} className="text-cyan-300 hover:underline disabled:opacity-40">{t("hard.selectFailed")}</button>
               <button onClick={() => setControls(new Set((profile.data ?? []).map((c) => c.id)))} className="text-cyan-300 hover:underline">{t("hard.selectAll")}</button>
               <button onClick={() => setControls(new Set())} className="text-slate-400 hover:underline">{t("common.clear")}</button>
             </div>
           </div>
+          <input type="search" value={controlFilter} onChange={(e) => setControlFilter(e.target.value)} placeholder="Filter controls" className={`${field} mt-2 w-full`} aria-label="filter controls" />
           <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto">
-            {(profile.data ?? []).map((c) => (
+            {(profile.data ?? []).filter((c) => !controlFilter.trim() || c.title.toLowerCase().includes(controlFilter.trim().toLowerCase()) || c.id.toLowerCase().includes(controlFilter.trim().toLowerCase())).map((c) => (
               <li key={c.id}>
                 <label className="flex items-center gap-3 rounded px-2 py-1 text-sm hover:bg-slate-800">
                   <input type="checkbox" checked={controls.has(c.id)} onChange={() => setControls((s) => { const n = new Set(s); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })} />
@@ -196,7 +205,7 @@ export function NewHardening({
           <button onClick={doPlan} disabled={busy || hosts.size === 0 || controls.size === 0} className="rounded-md border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800 disabled:opacity-40">
             {t("hard.dryRun")}
           </button>
-          <span className="text-xs text-slate-500">{t("hard.dryNote")}</span>
+          <span className="text-xs text-slate-500">3. {t("hard.dryNote")}</span>
         </div>
 
         {plan && (
@@ -228,7 +237,7 @@ export function NewHardening({
           <button
             onClick={apply}
             disabled={!plan || busy || (riskyPicked > 0 && !confirmRisky)}
-            className="rounded-md bg-amber-600 px-4 py-2 font-medium text-white hover:bg-amber-500 disabled:opacity-40"
+            className="rounded-md bg-cyan-600 px-4 py-2 font-medium hover:bg-cyan-500 disabled:opacity-40"
           >
             {t("hard.apply")}
           </button>
@@ -256,7 +265,7 @@ export default function Hardening() {
           <p className="text-sm text-slate-400">{t("hard.subtitle")}</p>
         </div>
         {canOperate && (
-          <button onClick={() => setCreating(true)} className="rounded-md bg-amber-600 px-4 py-2 font-medium text-white hover:bg-amber-500">{t("hard.newRun")}</button>
+          <button onClick={() => setCreating(true)} className="rounded-md bg-cyan-600 px-4 py-2 font-medium hover:bg-cyan-500">{t("hard.newRun")}</button>
         )}
       </div>
 

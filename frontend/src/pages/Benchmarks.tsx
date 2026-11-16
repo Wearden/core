@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { benchmarksApi, ControlSummary, Profile } from "../benchmarksApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { Chips } from "../components/ui";
 import { NewHardening } from "./Hardening";
 
 /** Short label that tells Windows 10, Windows 11 and Ubuntu 24.04 apart. Falls back to the OS name. */
@@ -68,7 +69,7 @@ function ControlRow({
             <button
               onClick={onHarden}
               title={t("bm.hardenOneTip")}
-              className="rounded border border-amber-700 px-2 py-1 text-xs text-amber-200 hover:bg-amber-950/50"
+              className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800"
             >
               {t("bm.hardenOne")}
             </button>
@@ -115,7 +116,14 @@ export default function Benchmarks() {
 
   const benches = useQuery({ queryKey: ["benchmarks"], queryFn: benchmarksApi.list });
   const [bid, setBid] = useState<string | null>(null);
-  const activeId = bid ?? benches.data?.[0]?.id ?? null;
+  const [osTab, setOsTab] = useState<"linux" | "windows">("linux");
+  // Internal native manifests are hidden here; people choose among the readable benchmarks of one OS.
+  const osBenchmarks = useMemo(() => {
+    const all = (benches.data ?? []).filter((b) => b.os === osTab);
+    const readable = all.filter((b) => !b.id.includes("native"));
+    return readable.length ? readable : all;
+  }, [benches.data, osTab]);
+  const activeId = bid ?? osBenchmarks[0]?.id ?? null;
 
   const controls = useQuery({
     queryKey: ["controls", activeId],
@@ -179,24 +187,24 @@ export default function Benchmarks() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t("bm.title")}</h1>
-          <p className="text-sm text-slate-400">{t("bm.subtitle")}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("bm.title")}</h1>
+          <p className="mt-1 text-sm text-slate-500">{t("bm.subtitle")}</p>
         </div>
-        <div className="flex gap-2">
-          {(benches.data ?? []).map((b) => (
-            <button
-              key={b.id}
-              onClick={() => {
-                setBid(b.id);
-                setSelected(new Set());
-              }}
-              className={`rounded-md px-3 py-2 text-sm ${
-                activeId === b.id ? "bg-cyan-700 text-white" : "border border-slate-700 text-slate-300 hover:bg-slate-800"
-              }`}
-            >
-              {benchLabel(b.name, b.os)} · {b.control_count}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <Chips
+            label="operating system"
+            value={osTab}
+            onChange={(v) => { setOsTab(v); setBid(null); setSelected(new Set()); }}
+            options={[{ id: "linux", label: "Linux" }, { id: "windows", label: "Windows" }]}
+          />
+          <select
+            className={field}
+            aria-label="benchmark"
+            value={activeId ?? ""}
+            onChange={(e) => { setBid(e.target.value); setSelected(new Set()); }}
+          >
+            {osBenchmarks.map((b) => <option key={b.id} value={b.id}>{benchLabel(b.name, b.os)} · {b.control_count}</option>)}
+          </select>
         </div>
       </div>
 
@@ -278,7 +286,7 @@ export default function Benchmarks() {
             onClick={() => setHardening(Array.from(selected))}
             disabled={selected.size === 0}
             title={t("bm.hardenSelTip")}
-            className="ml-auto rounded-md bg-amber-600 px-3 py-1.5 font-medium text-white hover:bg-amber-500 disabled:opacity-40"
+            className="ml-auto rounded-md bg-cyan-600 px-3 py-1.5 font-medium hover:bg-cyan-500 disabled:opacity-40"
           >
             {t("bm.hardenSel")} ({selected.size})
           </button>

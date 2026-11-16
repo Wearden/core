@@ -1,7 +1,9 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api";
 import { useI18n } from "../i18n";
+import { Bars, ChartCard, useChartColors } from "../components/charts";
+import { Chips, EmptyState, PageHeader, searchCls, tableWrap, theadCls } from "../components/ui";
 
 interface Technique {
   id: string;
@@ -11,93 +13,123 @@ interface Technique {
   after: number | null;
 }
 
-function cellColor(v: number | null): string {
-  if (v === null) return "bg-slate-900 text-slate-600";
-  if (v >= 90) return "bg-emerald-800/80 text-emerald-100";
-  if (v >= 70) return "bg-amber-800/80 text-amber-100";
-  return "bg-red-900/80 text-red-100";
+function Cell({ v }: { v: number | null }) {
+  if (v === null) return <span className="text-slate-600">-</span>;
+  const tone = v >= 90 ? "bg-emerald-400" : v >= 70 ? "bg-amber-400" : "bg-red-400";
+  return (
+    <span className="inline-flex items-center gap-2 text-xs text-slate-200">
+      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${tone}`} />
+      {Math.round(v)}%
+    </span>
+  );
 }
+
+type View = "gaps" | "all" | "covered";
+const PREVIEW = 15;
 
 /** Techniques the benchmark mitigates, with coverage before and after hardening. */
 export default function AttackMatrix() {
-  const { t } = useI18n();
-  const q = useQuery({
-    queryKey: ["attack"],
-    queryFn: () => api.attack("ubuntu-24.04-cis"),
-    refetchInterval: 30_000,
-  });
+  const { t, lang } = useI18n();
+  const L = (en: string, az: string) => (lang === "az" ? az : en);
+  const c = useChartColors();
+  const q = useQuery({ queryKey: ["attack"], queryFn: () => api.attack("ubuntu-24.04-cis"), refetchInterval: 30_000 });
   const d = q.data;
-  const top = d ? [...d.techniques].filter((t) => t.after !== null).sort((a, b) => (a.after ?? 0) - (b.after ?? 0)).slice(0, 12) : [];
+  const [view, setView] = useState<View>("gaps");
+  const [text, setText] = useState("");
+  const [expanded, setExpanded] = useState(false);
+
+  const top = useMemo(() => (d ? [...d.techniques].filter((x) => x.after !== null).sort((a, b) => (a.after ?? 0) - (b.after ?? 0)).slice(0, 10) : []), [d]);
+  const rows = useMemo(() => {
+    const needle = text.trim().toLowerCase();
+    return (d?.techniques ?? [])
+      .filter((x: Technique) => (view === "all" ? true : x.after === null ? false : view === "covered" ? x.after >= (d?.threshold ?? 90) : x.after < (d?.threshold ?? 90)))
+      .filter((x: Technique) => !needle || `${x.id} ${x.name}`.toLowerCase().includes(needle))
+      .sort((a: Technique, b: Technique) => (a.after ?? 101) - (b.after ?? 101));
+  }, [d, view, text]);
+  const shown = expanded ? rows : rows.slice(0, PREVIEW);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t("atk.title")}</h1>
-        <p className="text-sm text-slate-400">{t("atk.subtitle")}</p>
-      </div>
-
+      <PageHeader title={t("atk.title")} subtitle={t("atk.subtitle")} />
       {q.error && <p className="text-red-400">{t("atk.loadError")}: {(q.error as Error).message}</p>}
       {d && (
         <>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm text-slate-400">{t("atk.mapped")}</p>
-              <p className="mt-2 text-3xl font-semibold text-cyan-300">{d.total}</p>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+              <p className="text-xs uppercase tracking-wide text-slate-500">{t("atk.mapped")}</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-50">{d.total}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm text-slate-400">{t("atk.coveredBefore").replace("{th}", String(d.threshold))}</p>
-              <p className="mt-2 text-3xl font-semibold text-amber-300">{d.mitigated_before}</p>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+              <p className="text-xs uppercase tracking-wide text-slate-500">{t("atk.coveredBefore").replace("{th}", String(d.threshold))}</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-50">{d.mitigated_before}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm text-slate-400">{t("atk.coveredNow").replace("{th}", String(d.threshold))}</p>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+              <p className="text-xs uppercase tracking-wide text-slate-500">{t("atk.coveredNow").replace("{th}", String(d.threshold))}</p>
               <p className="mt-2 text-3xl font-semibold text-emerald-300">{d.mitigated_after}</p>
               <p className="mt-1 text-xs text-slate-500">{d.hosts_assessed} {t("atk.hostsAssessed")}</p>
             </div>
           </div>
 
           {top.length > 0 && (
-            <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <h2 className="mb-2 font-semibold">{t("atk.weakest")}</h2>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={top.map((t) => ({ name: `${t.id} ${t.name}`.slice(0, 40), before: t.before ?? 0, after: t.after ?? 0 }))} layout="vertical" margin={{ left: 30 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                    <XAxis type="number" domain={[0, 100]} stroke="#737373" fontSize={12} />
-                    <YAxis type="category" dataKey="name" stroke="#737373" fontSize={11} width={260} />
-                    <Tooltip contentStyle={{ background: "#171717", border: "1px solid #262626" }} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
-                    <Legend />
-                    <Bar dataKey="before" name={t("atk.beforePct")} fill="#f87171" />
-                    <Bar dataKey="after" name={t("atk.afterPct")} fill="#34d399" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
+            <ChartCard title={t("atk.weakest")} subtitle={L("The ten techniques with the lowest coverage now", "Hazırda ən aşağı əhatəli on texnika")}>
+              <Bars
+                horizontal
+                yWidth={92}
+                data={top.map((x) => ({ name: x.id, before: x.before ?? 0, after: x.after ?? 0 }))}
+                xKey="name"
+                height={Math.max(220, top.length * 34)}
+                series={[{ key: "before", name: t("atk.beforePct"), color: c.soft }, { key: "after", name: t("atk.afterPct"), color: c.pass }]}
+              />
+            </ChartCard>
           )}
 
-          <section className="overflow-x-auto rounded-xl border border-slate-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900 text-slate-400">
-                <tr>
-                  <th className="px-4 py-3">{t("atk.technique")}</th>
-                  <th className="px-4 py-3">{t("col.name")}</th>
-                  <th className="px-4 py-3">{t("atk.controls")}</th>
-                  <th className="px-4 py-3 text-center">{t("atk.before")}</th>
-                  <th className="px-4 py-3 text-center">{t("atk.after")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {d.techniques.map((tech: Technique) => (
-                  <tr key={tech.id} className="hover:bg-slate-900/60">
-                    <td className="px-4 py-2 font-mono text-xs">{tech.id}</td>
-                    <td className="px-4 py-2">{tech.name || <span className="text-slate-500">{t("atk.noName")}</span>}</td>
-                    <td className="px-4 py-2 font-mono text-xs text-slate-400">{tech.controls.length}</td>
-                    <td className="px-4 py-2 text-center"><span className={`inline-block w-20 rounded px-2 py-1 text-xs ${cellColor(tech.before)}`}>{tech.before === null ? "-" : `${tech.before}%`}</span></td>
-                    <td className="px-4 py-2 text-center"><span className={`inline-block w-20 rounded px-2 py-1 text-xs ${cellColor(tech.after)}`}>{tech.after === null ? "-" : `${tech.after}%`}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Chips
+                label="technique filter"
+                value={view}
+                onChange={(v) => { setView(v); setExpanded(false); }}
+                options={[
+                  { id: "gaps", label: L("Gaps", "Boşluqlar") },
+                  { id: "covered", label: L("Covered", "Əhatə olunub") },
+                  { id: "all", label: L("All", "Hamısı"), count: d.techniques.length },
+                ]}
+              />
+              <input type="search" className={searchCls} placeholder={L("Search technique ID or name", "Texnika ID və ya adı ilə axtar")} value={text} onChange={(e) => setText(e.target.value)} />
+            </div>
+            {rows.length === 0 ? <EmptyState title={L("No techniques in this view", "Bu görünüşdə texnika yoxdur")} hint={L("Switch the filter or clear the search.", "Süzgəci dəyişin və ya axtarışı təmizləyin.")} /> : (
+              <div className={tableWrap}>
+                <table className="w-full text-left text-sm">
+                  <thead className={theadCls}>
+                    <tr>
+                      <th className="px-4 py-2.5 font-medium">{t("atk.technique")}</th>
+                      <th className="px-4 py-2.5 font-medium">{t("atk.controls")}</th>
+                      <th className="px-4 py-2.5 font-medium">{t("atk.before")}</th>
+                      <th className="px-4 py-2.5 font-medium">{t("atk.after")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/70">
+                    {shown.map((tech: Technique) => (
+                      <tr key={tech.id} className="hover:bg-slate-900/60">
+                        <td className="px-4 py-2">
+                          <span className="font-mono text-xs text-slate-100">{tech.id}</span>
+                          {tech.name && tech.name !== tech.id && <span className="ml-2 text-slate-400">{tech.name}</span>}
+                        </td>
+                        <td className="px-4 py-2 text-xs text-slate-400">{tech.controls.length}</td>
+                        <td className="px-4 py-2"><Cell v={tech.before} /></td>
+                        <td className="px-4 py-2"><Cell v={tech.after} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {rows.length > PREVIEW && (
+                  <button onClick={() => setExpanded(!expanded)} className="w-full border-t border-slate-800 py-2.5 text-xs text-slate-400 hover:bg-slate-900 hover:text-slate-100">
+                    {expanded ? L("Show fewer", "Daha az göstər") : L(`Show all ${rows.length}`, `Hamısını göstər (${rows.length})`)}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

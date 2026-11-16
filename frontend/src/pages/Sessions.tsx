@@ -4,9 +4,10 @@ import { sessionsApi } from "../sessionsApi";
 import RecordingPlayer from "../components/RecordingPlayer";
 import type { RemoteSessionRow } from "../sessionTypes";
 import { useI18n } from "../i18n";
+import { EmptyState, PageHeader } from "../components/ui";
 
 export default function Sessions() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { data = [], isLoading, error } = useQuery({
     queryKey: ["sessions"],
     queryFn: sessionsApi.list,
@@ -16,16 +17,14 @@ export default function Sessions() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t("ses.title")}</h1>
-        <p className="text-sm text-slate-400">{t("ses.subtitle")}</p>
-      </div>
+      <PageHeader title={t("ses.title")} subtitle={t("ses.subtitle")} />
       {error && <p className="text-red-400">{t("ses.loadError")}: {(error as Error).message}</p>}
       {isLoading && <p className="text-slate-400">{t("common.loading")}</p>}
       {!isLoading && data.length === 0 && (
-        <div className="rounded-xl border border-dashed border-slate-700 p-10 text-center text-slate-400">
-          {t("ses.none")}
-        </div>
+        <EmptyState
+          title={t("ses.none")}
+          hint={lang === "az" ? "Sessiyalar yalnız uzaq qoşulma konfiqurasiya olunanda və Aktivlər səhifəsindən Connect basılanda görünür." : "Sessions appear here after you use Connect on the Assets page, which needs remote access configured."}
+        />
       )}
       {data.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-slate-800">

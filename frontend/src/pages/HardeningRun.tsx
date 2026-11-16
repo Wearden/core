@@ -115,7 +115,7 @@ export default function HardeningRun() {
 
       <div>
         <div className="h-3 w-full overflow-hidden rounded bg-slate-800">
-          <div className="h-full bg-amber-500 transition-all duration-300" style={{ width: `${pct}%` }} />
+          <div className="h-full bg-cyan-500 transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
         <div className="mt-1 text-sm text-slate-400">{done} {t("scan.of")} {r.total_changes} {t("hr.changes")} · {pct}%</div>
         {r.message && <p className="mt-2 text-sm text-slate-300">{r.message}</p>}
