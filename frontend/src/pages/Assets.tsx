@@ -213,6 +213,7 @@ export default function Assets() {
         exportName="wearden-hosts"
         loading={isLoading}
         onRowClick={(a) => openDrawer(a.id)}
+        filterState={{ value: { q, osFilter, statusFilter }, onChange: (v) => { const f = v as { q: string; osFilter: typeof osFilter; statusFilter: typeof statusFilter }; setQ(f.q ?? ""); setOsFilter(f.osFilter ?? "all"); setStatusFilter(f.statusFilter ?? "all"); } }}
         selection={canOperate ? { selected: picked, onChange: setPicked } : undefined}
         initialSort={{ id: "name", dir: "asc" }}
         emptyTitle={assets.length === 0 ? t("assets.none") : lang === "az" ? "Uyğun host yoxdur" : "No matching hosts"}

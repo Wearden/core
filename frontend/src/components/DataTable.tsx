@@ -40,6 +40,7 @@ interface View {
   hidden: string[];
   pageSize: number;
   sort: { id: string; dir: "asc" | "desc" } | null;
+  filters?: unknown;
 }
 
 function loadViews(key: string | undefined): View[] {
@@ -76,6 +77,7 @@ export default function DataTable<T>({
   rowClassName,
   expanded,
   selection,
+  filterState,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -95,6 +97,8 @@ export default function DataTable<T>({
   /** Detail shown under a row; clicking the row toggles it. */
   expanded?: (row: T) => ReactNode;
   /** Adds a checkbox column. Selection is owned by the page so bulk actions can use it. */
+  /** Page filters (search, chips) that saved views should remember. */
+  filterState?: { value: unknown; onChange: (v: unknown) => void };
   selection?: { selected: Set<string | number>; onChange: (next: Set<string | number>) => void };
 }) {
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs(storageKey, columns as Column<never>[], pageSizes[1] ?? pageSizes[0]));
@@ -115,12 +119,13 @@ export default function DataTable<T>({
   const saveView = () => {
     const name = viewName.trim().slice(0, 40);
     if (!name) return;
-    persistViews([...views.filter((v) => v.name !== name), { name, hidden: prefs.hidden, pageSize: prefs.pageSize, sort }]);
+    persistViews([...views.filter((v) => v.name !== name), { name, hidden: prefs.hidden, pageSize: prefs.pageSize, sort, filters: filterState?.value }]);
     setViewName("");
   };
   const applyView = (v: View) => {
     setPrefs({ hidden: v.hidden.filter((h) => columns.some((c) => c.id === h && !c.locked)), pageSize: v.pageSize });
     setSort(v.sort && columns.some((c) => c.id === v.sort!.id) ? v.sort : null);
+    if (v.filters !== undefined) filterState?.onChange(v.filters);
     setPage(0);
     setViewMenu(false);
   };
@@ -199,7 +204,7 @@ export default function DataTable<T>({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">{toolbar}</div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="ml-auto flex items-center gap-2 text-xs">
           {storageKey && (
             <div className="relative" ref={viewRef}>
               <button onClick={() => setViewMenu(!viewMenu)} aria-expanded={viewMenu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Views{views.length ? ` (${views.length})` : ""}</button>

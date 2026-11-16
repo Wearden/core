@@ -75,6 +75,7 @@ export default function Audit() {
         columns={columns}
         rowKey={(r) => r.id}
         storageKey="audit"
+        filterState={{ value: { group, q }, onChange: (v) => { const f = v as { group: Group; q: string }; setGroup(f.group ?? "people"); setQ(f.q ?? ""); } }}
         exportName="wearden-audit"
         loading={isLoading}
         pageSizes={[25, 50, 100, 250]}
