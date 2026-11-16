@@ -39,7 +39,7 @@ function NewPamScan({ onClose }: { onClose: () => void }) {
     setBusy(true);
     try {
       const scan = await pamApi.scan({ name: name.trim() || undefined, benchmark_id: activeBid, profile_id: activeProfile, asset_ids: Array.from(picked) });
-      navigate(`/scans/${scan.id}`);
+      navigate(`/pam/scans/${scan.id}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -107,7 +107,7 @@ export default function PamScans() {
   }, [all, q]);
   const columns: Column<ScanSummary>[] = [
     { id: "name", header: t("col.scan"), locked: true, sort: (a, b) => a.name.localeCompare(b.name), csv: (s) => s.name,
-      cell: (s) => (<><Link to={`/scans/${s.id}`} className="font-medium text-slate-50 hover:underline">{s.name}</Link><div className="text-xs text-slate-500">{s.created_by}</div></>) },
+      cell: (s) => (<><Link to={`/pam/scans/${s.id}`} className="font-medium text-slate-50 hover:underline">{s.name}</Link><div className="text-xs text-slate-500">{s.created_by}</div></>) },
     { id: "benchmark", header: "Benchmark", sort: (a, b) => a.benchmark_id.localeCompare(b.benchmark_id), csv: (s) => s.benchmark_id, cell: (s) => <span className="font-mono text-xs text-slate-400">{s.benchmark_id}</span> },
     { id: "hosts", header: t("col.hosts"), sort: (a, b) => a.host_count - b.host_count, csv: (s) => s.host_count, cell: (s) => s.host_count },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (s) => s.status, cell: (s) => <StatusPill status={s.status} /> },
@@ -130,7 +130,7 @@ export default function PamScans() {
         exportName="pam-scans"
         loading={scans.isLoading}
         initialSort={{ id: "started", dir: "desc" }}
-        onRowClick={(s) => navigate(`/scans/${s.id}`)}
+        onRowClick={(s) => navigate(`/pam/scans/${s.id}`)}
         emptyTitle={L("No PAM scans yet", "Hələ PAM skanı yoxdur")}
         toolbar={<input type="search" className={searchCls} placeholder={t("search.scans")} value={q} onChange={(e) => setQ(e.target.value)} />}
       />

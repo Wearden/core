@@ -102,7 +102,11 @@ export default function ScanDetail() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to="/scans" className="text-sm text-slate-500 hover:text-slate-200">{t("scan.allScans")}</Link>
+        {s.mode === "pam" ? (
+          <Link to="/pam/scans" className="text-sm text-slate-500 hover:text-slate-200">{t("scan.allPamScans")}</Link>
+        ) : (
+          <Link to="/scans" className="text-sm text-slate-500 hover:text-slate-200">{t("scan.allScans")}</Link>
+        )}
       </div>
       <PageHeader
         title={s.name}
@@ -155,7 +159,7 @@ export default function ScanDetail() {
               <div className="flex min-w-0 items-center gap-3">
                 <HostIcon os={h.os_detected?.toLowerCase().includes("windows") ? "windows" : "linux"} size={32} />
                 <div className="min-w-0">
-                  {h.asset_id ? <Link to={`/assets?host=${h.asset_id}`} className="block truncate font-semibold text-slate-50 hover:underline">{h.asset_name}</Link> : <div className="truncate font-semibold">{h.asset_name}</div>}
+                  {h.asset_id ? <Link to={s.mode === "pam" ? "/pam/assets" : `/assets?host=${h.asset_id}`} className="block truncate font-semibold text-slate-50 hover:underline">{h.asset_name}</Link> : <div className="truncate font-semibold">{h.asset_name}</div>}
                   <div className="truncate font-mono text-xs text-slate-500">{h.host}</div>
                 </div>
               </div>

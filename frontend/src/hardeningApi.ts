@@ -68,6 +68,8 @@ export interface RunDetail extends RunSummary {
 /** One rollback process: a request to undo some or all applied changes of a hardening run. */
 export interface RollbackProcess {
   id: string;
+  /** "pam" for rollbacks of PAM runs, done by core over SSH or WinRM. */
+  mode?: string;
   run_id: string;
   run_name: string;
   name: string;

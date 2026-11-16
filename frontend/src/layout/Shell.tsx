@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, request } from "../api";
 import { assetsApi } from "../assetsApi";
 import { scansApi } from "../scansApi";
+import { isPam } from "../types";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { applyAppearance, getMotion, getThemePref, Motion, setMotion, setThemePref, ThemePref } from "../theme";
@@ -28,6 +29,7 @@ const ICONS: Record<string, string> = {
   "/pam/assets": "M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5zM12 15v2",
   "/pam/scans": "M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM8 10.5h5",
   "/pam/hardening": "M12 3l8 3v6c0 4.5-3.2 8.2-8 9-4.8-.8-8-4.5-8-9V6zM12 9v4M12 16h.01",
+  "/pam/rollback": "M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3M14 15h.01",
 };
 
 const GROUPS = [
@@ -49,6 +51,7 @@ const GROUPS = [
       { to: "/pam/assets", key: "nav.pamAssets", hint: "" },
       { to: "/pam/scans", key: "nav.pamScans", hint: "" },
       { to: "/pam/hardening", key: "nav.pamHardening", hint: "" },
+      { to: "/pam/rollback", key: "nav.pamRollback", hint: "" },
     ],
   },
   {
@@ -98,11 +101,17 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
   const ready = useQuery({ queryKey: ["ready"], queryFn: api.ready, refetchInterval: 10_000 });
   const scans = useQuery({ queryKey: ["scans"], queryFn: scansApi.list, refetchInterval: 30_000 });
   const assets = useQuery({ queryKey: ["assets"], queryFn: assetsApi.list, refetchInterval: 30_000 });
-  const activeScans = (scans.data ?? []).filter((x) => x.status === "queued" || x.status === "running" || x.status === "cancel_requested").length;
-  const offline = (assets.data ?? []).filter((x) => x.status === "offline").length;
+  // Agent and PAM work are counted on their own menu items.
+  const isActive = (x: { status: string }) => x.status === "queued" || x.status === "running" || x.status === "cancel_requested";
+  const activeScans = (scans.data ?? []).filter((x) => x.mode !== "pam" && isActive(x)).length;
+  const activePamScans = (scans.data ?? []).filter((x) => x.mode === "pam" && isActive(x)).length;
+  const offline = (assets.data ?? []).filter((x) => !isPam(x) && x.status === "offline").length;
+  const offlinePam = (assets.data ?? []).filter((x) => isPam(x) && x.status === "offline").length;
   const badge: Record<string, { n: number; tone: string; title: string }> = {
     "/scans": { n: activeScans, tone: "bg-slate-100 text-slate-950", title: az ? "aktiv yoxlama" : "active scans" },
     "/assets": { n: offline, tone: "bg-red-400 text-slate-950", title: az ? "oflayn host" : "offline hosts" },
+    "/pam/scans": { n: activePamScans, tone: "bg-slate-100 text-slate-950", title: az ? "aktiv PAM skanı" : "active PAM scans" },
+    "/pam/assets": { n: offlinePam, tone: "bg-red-400 text-slate-950", title: az ? "oflayn PAM hostu" : "offline PAM hosts" },
   };
   const apiOk = health.data?.status === "ok" && ready.data?.database === "ok";
   const statusText = health.isLoading ? "..." : apiOk ? (az ? "Sistem işləyir" : "All systems normal") : az ? "Problem var" : "Service issue";

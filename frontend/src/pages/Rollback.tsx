@@ -9,12 +9,16 @@ import { useI18n } from "../i18n";
 
 type Filter = "all" | "active" | "completed" | "failed";
 
-/** Rollback processes only. Hardening runs are listed in the Hardening menu, where a rollback is started. */
-export default function Rollback() {
+/**
+ * Rollback processes only. Hardening runs are listed in the Hardening menu, where a rollback is started.
+ * With pam set, it lists the rollbacks of PAM runs; otherwise the rollbacks of agent runs.
+ */
+export default function Rollback({ pam = false }: { pam?: boolean }) {
   const { t, lang } = useI18n();
   const L = (en: string, az: string) => (lang === "az" ? az : en);
   const rollbacks = useQuery({ queryKey: ["rollbacks"], queryFn: hardeningApi.rollbacks, refetchInterval: 5_000 });
-  const all = rollbacks.data ?? [];
+  const all = useMemo(() => (rollbacks.data ?? []).filter((r) => (r.mode === "pam") === pam), [rollbacks.data, pam]);
+  const runBase = pam ? "/pam/hardening" : "/hardening";
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const isActive = (r: RollbackProcess) => ["queued", "running", "rollback_queued"].includes(r.status);
@@ -35,7 +39,7 @@ export default function Rollback() {
       id: "name", header: t("rb.process"), locked: true, sort: (a, b) => a.name.localeCompare(b.name), csv: (r) => r.name,
       cell: (r) => (
         <>
-          <Link to={`/hardening/${r.run_id}`} className="font-medium text-slate-50 hover:underline">{r.name}</Link>
+          <Link to={`${runBase}/${r.run_id}`} className="font-medium text-slate-50 hover:underline">{r.name}</Link>
           {r.legacy && <div className="text-xs text-slate-500">{t("rb.legacy")}</div>}
           {r.message && <div className="text-xs text-red-300">{r.message}</div>}
         </>
@@ -77,16 +81,16 @@ export default function Rollback() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title={t("rb.title")}
-        subtitle={`${t("rb.subtitle2")} ${t("rb.howTo")}`}
-        action={<Link to="/hardening" className="rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-900">{t("rb.openHardening")}</Link>}
+        title={pam ? L("PAM rollback", "PAM geri qaytarma") : t("rb.title")}
+        subtitle={pam ? L("Rollbacks of PAM hardening runs, done by core over SSH or WinRM. To start one, open a run in PAM hardening and use the roll back buttons.", "PAM möhkəmləndirmə işlərinin core tərəfindən SSH və ya WinRM ilə edilən geri qaytarmaları. Başlatmaq üçün PAM möhkəmləndirmədə işi açın və geri qaytarma düymələrindən istifadə edin.") : `${t("rb.subtitle2")} ${t("rb.howTo")}`}
+        action={<Link to={runBase} className="rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-900">{pam ? L("Open PAM hardening", "PAM möhkəmləndirməni aç") : t("rb.openHardening")}</Link>}
       />
       {rollbacks.error && <p className="text-red-400">{t("rb.loadFail")}</p>}
       <DataTable
         rows={rows}
         columns={columns}
         rowKey={(r) => r.id}
-        storageKey="rollbacks"
+        storageKey={pam ? "pam-rollbacks" : "rollbacks"}
         exportName="rollbacks"
         loading={rollbacks.isLoading}
         initialSort={{ id: "started", dir: "desc" }}

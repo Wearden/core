@@ -13,6 +13,7 @@ import StatusPill from "../components/StatusPill";
 import DataTable, { Column } from "../components/DataTable";
 import { Chips, PageHeader, searchCls } from "../components/ui";
 import SearchBox, { matchesSearch } from "../components/SearchBox";
+import ScanResultPicker from "../components/ScanResultPicker";
 
 const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
@@ -50,6 +51,8 @@ export function NewHardening({
   const activeBid = bid || fromAgent || readable.find((b) => hostOs.has(b.os as never))?.id || readable[0]?.id || "";
   const [controlFilter, setControlFilter] = useState("");
   const bench = benches.data?.find((b) => b.id === activeBid);
+  // Newest first; PAM scans are offered on the PAM hardening page.
+  const agentScans = useMemo(() => (scans.data ?? []).filter((s) => s.mode !== "pam" && s.done_checks > 0).sort((a, b) => b.created_at.localeCompare(a.created_at)), [scans.data]);
   const [hosts, setHosts] = useState<Set<number>>(new Set());
   const [scanId, setScanId] = useState("");
   const [name, setName] = useState("");
@@ -179,9 +182,23 @@ export function NewHardening({
           </label>
           <label className="text-sm">
             <span className="text-slate-300">{t("hard.fromScan")}</span>
-            <select className={`${field} mt-1 w-full`} value={scanId} onChange={(e) => setScanId(e.target.value)}>
+            <select
+              className={`${field} mt-1 w-full`}
+              value={scanId}
+              onChange={(e) => {
+                const id = e.target.value;
+                setScanId(id);
+                // Every earlier agent scan is listed; choosing one switches to its benchmark.
+                const scan = (scans.data ?? []).find((s) => s.id === id);
+                const target = scan ? scan.benchmark_id.replace(/-native(-registry)?$/, "-cis") : "";
+                if (target && target !== activeBid && readable.some((b) => b.id === target)) {
+                  setBid(target);
+                  setControls(new Set());
+                }
+              }}
+            >
               <option value="">{t("hard.noScan")}</option>
-              {(scans.data ?? []).filter((s) => s.mode !== "pam" && s.benchmark_id === activeBid).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {agentScans.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.status} · {new Date(s.created_at).toLocaleString()}</option>)}
             </select>
           </label>
         </div>
@@ -214,13 +231,18 @@ export function NewHardening({
               <button onClick={() => setControls(new Set())} className="text-slate-400 hover:underline">{t("common.clear")}</button>
             </div>
           </div>
+          {scanId && (
+            <div className="mt-2">
+              <ScanResultPicker scanId={scanId} known={new Set((profile.data ?? []).map((c) => c.id))} onSelect={(ids) => setControls(new Set(ids))} />
+            </div>
+          )}
           <input type="search" value={controlFilter} onChange={(e) => setControlFilter(e.target.value)} placeholder="Filter controls" className={`${field} mt-2 w-full`} aria-label="filter controls" />
           <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto">
             {(profile.data ?? []).filter((c) => !controlFilter.trim() || c.title.toLowerCase().includes(controlFilter.trim().toLowerCase()) || c.id.toLowerCase().includes(controlFilter.trim().toLowerCase())).map((c) => (
               <li key={c.id}>
                 <label className="flex items-center gap-3 rounded px-2 py-1 text-sm hover:bg-slate-800">
                   <input type="checkbox" checked={controls.has(c.id)} onChange={() => setControls((s) => { const n = new Set(s); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })} />
-                  <span className="flex-1">{c.title}</span>
+                  <span className={`flex-1 ${c.risky ? "font-medium text-red-400" : ""}`}>{c.title}</span>
                   <span className="text-xs text-slate-400">{c.severity}</span>
                   {c.risky && <span className="rounded bg-red-950 px-2 py-0.5 text-xs text-red-300">{t("hard.risky")}</span>}
                 </label>
