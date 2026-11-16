@@ -12,6 +12,7 @@ import StatusPill from "../components/StatusPill";
 import DataTable, { Column } from "../components/DataTable";
 import { PageHeader, searchCls } from "../components/ui";
 import { isPam } from "../types";
+import ScanResultPicker from "../components/ScanResultPicker";
 
 const field = "mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
@@ -40,7 +41,8 @@ function NewPamHardening({ onClose }: { onClose: () => void }) {
   const bench = benchmarks.data?.find((b) => b.id === activeBid);
   const catalog = useQuery({ queryKey: ["controls", activeBid], queryFn: () => benchmarksApi.controls(activeBid), enabled: !!activeBid });
   const eligible = useMemo(() => (assets.data ?? []).filter((a) => isPam(a) && bench && a.os_type === bench.os), [assets.data, bench]);
-  const pamScans = (scans.data ?? []).filter((s) => s.mode === "pam" && s.benchmark_id === activeBid && s.status === "completed");
+  // Every earlier PAM scan with results, newest first; choosing one switches to its benchmark.
+  const pamScans = (scans.data ?? []).filter((s) => s.mode === "pam" && s.done_checks > 0).sort((a, b) => b.created_at.localeCompare(a.created_at));
   const shown = (catalog.data ?? []).filter((c) => !filter.trim() || `${c.id} ${c.title} ${c.category}`.toLowerCase().includes(filter.trim().toLowerCase()));
   const riskyPicked = (catalog.data ?? []).filter((c) => c.risky && controls.has(c.id)).length;
 
@@ -51,15 +53,14 @@ function NewPamHardening({ onClose }: { onClose: () => void }) {
     apply(next);
   };
 
-  // Preselect the controls that failed in a completed PAM scan.
-  const fromScan = async (id: string) => {
+  const fromScan = (id: string) => {
     setScanId(id);
-    if (!id) return;
-    try {
-      const failed = await scansApi.results(id, undefined, "fail");
-      setControls(new Set(failed.map((r) => r.control_id)));
-    } catch (err) {
-      setError((err as Error).message);
+    setError(null);
+    const scan = pamScans.find((s) => s.id === id);
+    if (scan && scan.benchmark_id !== activeBid) {
+      setBid(scan.benchmark_id);
+      setHosts(new Set());
+      setControls(new Set());
     }
   };
 
@@ -69,7 +70,7 @@ function NewPamHardening({ onClose }: { onClose: () => void }) {
     setBusy(true);
     try {
       const run = await pamApi.harden({ name: name.trim() || undefined, benchmark_id: activeBid, asset_ids: Array.from(hosts), rule_ids: Array.from(controls), confirm_risky: confirmRisky, scan_id: scanId || null });
-      navigate(`/hardening/${run.id}`);
+      navigate(`/pam/hardening/${run.id}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -93,7 +94,7 @@ function NewPamHardening({ onClose }: { onClose: () => void }) {
           <label className="text-sm"><span className="text-slate-300">{L("Start from a PAM scan (optional)", "PAM skanından başla (istəyə bağlı)")}</span>
             <select className={field} value={scanId} onChange={(e) => fromScan(e.target.value)}>
               <option value="">{L("No scan", "Skan yoxdur")}</option>
-              {pamScans.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {pamScans.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.status} · {new Date(s.created_at).toLocaleString()}</option>)}
             </select>
           </label>
         </div>
@@ -110,6 +111,7 @@ function NewPamHardening({ onClose }: { onClose: () => void }) {
         </fieldset>
         <fieldset className="space-y-2">
           <legend className="mb-1 text-sm text-slate-300">{L("Controls", "Nəzarətlər")} ({controls.size})</legend>
+          {scanId && <ScanResultPicker scanId={scanId} known={new Set((catalog.data ?? []).map((c) => c.id))} onSelect={(ids) => setControls(new Set(ids))} />}
           <div className="flex flex-wrap gap-2">
             <input type="search" className={`${searchCls} !max-w-xs`} placeholder={L("Filter controls", "Nəzarətləri süz")} value={filter} onChange={(e) => setFilter(e.target.value)} />
             <button type="button" className="rounded-md border border-slate-700 px-3 text-xs hover:bg-slate-800" onClick={() => setControls(new Set([...controls, ...shown.map((c) => c.id)]))}>{L("Select shown", "Göstəriləni seç")}</button>
@@ -120,8 +122,9 @@ function NewPamHardening({ onClose }: { onClose: () => void }) {
               <label key={c.id} className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-1" checked={controls.has(c.id)} onChange={() => toggle(controls, c.id, setControls)} />
                 <span>
-                  <span className="font-mono text-xs text-slate-400">{c.id}</span> <span className="text-slate-100">{c.title}</span>
-                  <span className="ml-2 text-xs text-slate-500">{c.severity}{c.risky ? ` · ${L("risky", "riskli")}` : ""}{c.reboot_required ? ` · ${L("reboot", "yenidən başlatma")}` : ""}</span>
+                  <span className={`font-mono text-xs ${c.risky ? "text-red-400" : "text-slate-400"}`}>{c.id}</span> <span className={c.risky ? "font-medium text-red-400" : "text-slate-100"}>{c.title}</span>
+                  <span className="ml-2 text-xs text-slate-500">{c.severity}{c.reboot_required ? ` · ${L("reboot", "yenidən başlatma")}` : ""}</span>
+                  {c.risky && <span className="ml-2 rounded bg-red-950 px-2 py-0.5 text-xs text-red-300">{L("risky", "riskli")}</span>}
                 </span>
               </label>
             ))}
@@ -164,7 +167,7 @@ export default function PamHardening() {
   }, [all, q]);
   const columns: Column<RunSummary>[] = [
     { id: "name", header: L("Run", "İcra"), locked: true, sort: (a, b) => a.name.localeCompare(b.name), csv: (r) => r.name,
-      cell: (r) => (<><Link to={`/hardening/${r.id}`} className="font-medium text-slate-50 hover:underline">{r.name}</Link><div className="text-xs text-slate-500">{r.created_by}</div></>) },
+      cell: (r) => (<><Link to={`/pam/hardening/${r.id}`} className="font-medium text-slate-50 hover:underline">{r.name}</Link><div className="text-xs text-slate-500">{r.created_by}</div></>) },
     { id: "benchmark", header: "Benchmark", sort: (a, b) => a.benchmark_id.localeCompare(b.benchmark_id), csv: (r) => r.benchmark_id, cell: (r) => <span className="font-mono text-xs text-slate-400">{r.benchmark_id}</span> },
     { id: "hosts", header: t("col.hosts"), sort: (a, b) => a.host_count - b.host_count, csv: (r) => r.host_count, cell: (r) => r.host_count },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (r) => r.status, cell: (r) => <StatusPill status={r.status} /> },
@@ -187,7 +190,7 @@ export default function PamHardening() {
         exportName="pam-hardening"
         loading={runs.isLoading}
         initialSort={{ id: "created", dir: "desc" }}
-        onRowClick={(r) => navigate(`/hardening/${r.id}`)}
+        onRowClick={(r) => navigate(`/pam/hardening/${r.id}`)}
         emptyTitle={L("No PAM hardening runs yet", "Hələ PAM möhkəmləndirməsi yoxdur")}
         toolbar={<input type="search" className={searchCls} placeholder={L("Search runs", "İcraları axtar")} value={q} onChange={(e) => setQ(e.target.value)} />}
       />

@@ -85,7 +85,10 @@ export default function App() {
             <Route path="/rollback" element={<Rollback />} />
             <Route path="/pam/assets" element={<PamAssets />} />
             <Route path="/pam/scans" element={<PamScans />} />
+            <Route path="/pam/scans/:id" element={<ScanDetail />} />
             <Route path="/pam/hardening" element={<PamHardening />} />
+            <Route path="/pam/hardening/:id" element={<HardeningRun />} />
+            <Route path="/pam/rollback" element={<Rollback pam />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/attack" element={<AttackMatrix />} />
             <Route path="/hosts/:id" element={<HostRedirect />} />
