@@ -5,7 +5,7 @@ import Shell from "./layout/Shell";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
-import Placeholder from "./pages/Placeholder";
+import Settings from "./pages/Settings";
 import Assets from "./pages/Assets";
 import Audit from "./pages/Audit";
 import Sessions from "./pages/Sessions";
@@ -44,11 +44,6 @@ function LoginRoute() {
   return <Login />;
 }
 
-const PHASES: Record<string, { title: string; phase: number }> = {
-  "/settings": { title: "nav.settings", phase: 8 },
-  // "/reports" is a real page now (see routes below)
-};
-
 export default function App() {
   return (
     <BrowserRouter>
@@ -83,13 +78,7 @@ export default function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/attack" element={<AttackMatrix />} />
             <Route path="/hosts/:id" element={<HostAnalytics />} />
-            {Object.entries(PHASES).map(([path, info]) => (
-              <Route
-                key={path}
-                path={path}
-                element={<Placeholder title={info.title} phase={info.phase} />}
-              />
-            ))}
+            <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

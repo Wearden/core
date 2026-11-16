@@ -167,6 +167,8 @@ func (s *Server) Handler() http.Handler {
 	s.hardeningRoutes(m)
 	s.driftRoutes(m)
 	s.featureRoutes(m)
+	s.settingsRoutes(m)
+	s.aiRoutes(m)
 	s.scheduleRoutes(m)
 	s.websocketRoutes(m)
 	s.sessionControlRoutes(m)

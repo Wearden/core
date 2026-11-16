@@ -7,6 +7,7 @@ import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import StatusPill from "../components/StatusPill";
 import CopilotPanel from "../components/CopilotPanel";
+import AiAnalysisPanel from "../components/AiAnalysisPanel";
 import ControlInfo from "../components/ControlInfo";
 
 const SEVERITY_STYLE: Record<string, string> = {
@@ -94,6 +95,8 @@ export default function ScanDetail() {
         </div>
         {s.message && <p className="mt-2 text-sm text-red-300">{s.message}</p>}
       </div>
+
+      {finished && s.status === "completed" && <AiAnalysisPanel scanId={id!} benchmarkId={scanBenchmark} />}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {s.hosts.map((h) => (
