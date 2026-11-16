@@ -98,7 +98,11 @@ export default function HardeningRun() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link to="/hardening" className="text-sm text-slate-400 hover:text-slate-200">{t("hr.allRuns")}</Link>
+          {r.mode === "pam" ? (
+            <Link to="/pam/hardening" className="text-sm text-slate-400 hover:text-slate-200">{t("hr.allPamRuns")}</Link>
+          ) : (
+            <Link to="/hardening" className="text-sm text-slate-400 hover:text-slate-200">{t("hr.allRuns")}</Link>
+          )}
           <h1 className="mt-1 text-2xl font-bold">{r.name}</h1>
           <p className="text-sm text-slate-400">
             <span className="font-mono text-slate-300">{shortId("H", r.id)}</span> · {r.host_count} {t("scan.hostsCount")} · {r.total_changes} {t("hr.changes")} · {t("hr.by")} {r.created_by} ·{" "}
