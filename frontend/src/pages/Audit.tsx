@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { assetsApi } from "../assetsApi";
 import { useI18n } from "../i18n";
-import { Chips, EmptyState, PageHeader, ShortId, relativeTime, searchCls, tableWrap, theadCls } from "../components/ui";
+import { Chips, PageHeader, ShortId, relativeTime, searchCls } from "../components/ui";
+import DataTable, { Column } from "../components/DataTable";
+
+type Row = Awaited<ReturnType<typeof assetsApi.audit>>[number];
 
 type Group = "people" | "all" | "signin" | "hardening" | "agents" | "settings";
 
@@ -31,6 +34,20 @@ export default function Audit() {
     });
   }, [data, group, q]);
 
+  const columns: Column<Row>[] = [
+    { id: "time", header: t("audit.time"), sort: (x, y) => Date.parse(x.created_at) - Date.parse(y.created_at), csv: (r) => r.created_at, locked: true, cell: (r) => <span className="whitespace-nowrap text-xs text-slate-500" title={new Date(r.created_at).toLocaleString()}>{relativeTime(r.created_at)}</span> },
+    { id: "user", header: t("audit.user"), sort: (x, y) => (x.username ?? "").localeCompare(y.username ?? ""), csv: (r) => r.username, cell: (r) => <span className="text-slate-300">{r.username ?? "-"}</span> },
+    { id: "action", header: t("audit.action"), sort: (x, y) => x.action.localeCompare(y.action), csv: (r) => r.action, cell: (r) => <span className="font-mono text-xs text-slate-200">{r.action}</span> },
+    { id: "target", header: t("audit.target"), csv: (r) => r.target, cell: (r) => <ShortId value={r.target} /> },
+    { id: "result", header: t("audit.result"), sort: (x, y) => Number(x.success) - Number(y.success), csv: (r) => (r.success ? "ok" : "failed"), cell: (r) => (
+      <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
+        <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${r.success ? "bg-emerald-400" : "bg-red-400"}`} />
+        {r.success ? t("audit.ok") : t("dash.failed")}
+      </span>
+    ) },
+    { id: "detail", header: t("audit.detail"), csv: (r) => r.detail, cell: (r) => <span className="block max-w-xs truncate text-xs text-slate-500" title={r.detail ?? ""}>{r.detail ?? ""}</span> },
+  ];
+
   const count = (g: Group) => data.filter((r) => (g === "all" ? true : g === "people" ? groupOf(r.action) !== "agents" && !r.action.startsWith("hardening.task_result") && !r.action.startsWith("scan.queued") : groupOf(r.action) === g)).length;
 
   return (
@@ -53,41 +70,18 @@ export default function Audit() {
         <input type="search" className={searchCls} placeholder={L("Search action, user or target", "Əməliyyat, istifadəçi və ya hədəf üzrə axtar")} value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       {error && <p className="text-red-400">{t("audit.loadError")}: {(error as Error).message}</p>}
-      {isLoading && <p className="text-slate-500">{t("common.loading")}</p>}
-      {!isLoading && rows.length === 0 && <EmptyState title={L("No matching events", "Uyğun hadisə yoxdur")} hint={L("Try another filter or clear the search.", "Başqa süzgəc seçin və ya axtarışı təmizləyin.")} />}
-      {rows.length > 0 && (
-        <div className={tableWrap}>
-          <table className="w-full text-left text-sm">
-            <thead className={theadCls}>
-              <tr>
-                <th className="px-4 py-2.5 font-medium">{t("audit.time")}</th>
-                <th className="px-4 py-2.5 font-medium">{t("audit.user")}</th>
-                <th className="px-4 py-2.5 font-medium">{t("audit.action")}</th>
-                <th className="px-4 py-2.5 font-medium">{t("audit.target")}</th>
-                <th className="px-4 py-2.5 font-medium">{t("audit.result")}</th>
-                <th className="px-4 py-2.5 font-medium">{t("audit.detail")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/70">
-              {rows.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-900/60">
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-slate-500" title={new Date(row.created_at).toLocaleString()}>{relativeTime(row.created_at)}</td>
-                  <td className="px-4 py-2 text-slate-300">{row.username ?? "-"}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-200">{row.action}</td>
-                  <td className="px-4 py-2"><ShortId value={row.target} /></td>
-                  <td className="px-4 py-2">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
-                      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${row.success ? "bg-emerald-400" : "bg-red-400"}`} />
-                      {row.success ? t("audit.ok") : t("dash.failed")}
-                    </span>
-                  </td>
-                  <td className="max-w-xs truncate px-4 py-2 text-xs text-slate-500" title={row.detail ?? ""}>{row.detail ?? ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        rows={rows}
+        columns={columns}
+        rowKey={(r) => r.id}
+        storageKey="audit"
+        exportName="wearden-audit"
+        loading={isLoading}
+        pageSizes={[25, 50, 100, 250]}
+        initialSort={{ id: "time", dir: "desc" }}
+        emptyTitle={L("No matching events", "Uyğun hadisə yoxdur")}
+        emptyHint={L("Try another filter or clear the search.", "Başqa süzgəc seçin və ya axtarışı təmizləyin.")}
+      />
     </div>
   );
 }
