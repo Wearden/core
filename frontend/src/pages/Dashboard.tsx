@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Chips } from "../components/ui";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, request } from "../api";
@@ -48,10 +49,14 @@ export default function Dashboard() {
   });
 
   // Newest completed scans drive every trend; the newest one drives the per-control charts.
+  const [range, setRangeState] = useState<"5" | "8" | "12" | "24">(() => {
+    try { const v = localStorage.getItem("wearden.dash.range"); return v === "5" || v === "12" || v === "24" ? v : "8"; } catch { return "8"; }
+  });
+  const setRange = (v: "5" | "8" | "12" | "24") => { setRangeState(v); try { localStorage.setItem("wearden.dash.range", v); } catch { /* convenience only */ } };
   const scans = useQuery({ queryKey: ["scans"], queryFn: scansApi.list, refetchInterval: 30_000 });
   const completed = useMemo(
-    () => (scans.data ?? []).filter((s) => s.status === "completed").sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8),
-    [scans.data],
+    () => (scans.data ?? []).filter((s) => s.status === "completed").sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, Number(range)),
+    [scans.data, range],
   );
   const latest = completed[0];
   const details = useQuery({
@@ -117,8 +122,8 @@ export default function Dashboard() {
   }, [agents.data]);
 
   const hardening = useMemo(
-    () => [...(runs.data ?? [])].slice(0, 8).reverse().map((r) => ({ name: short(r.created_at), applied: r.applied_count, other: Math.max(0, r.total_changes - r.applied_count) })),
-    [runs.data],
+    () => [...(runs.data ?? [])].slice(0, Number(range)).reverse().map((r) => ({ name: short(r.created_at), applied: r.applied_count, other: Math.max(0, r.total_changes - r.applied_count) })),
+    [runs.data, range],
   );
 
   const hostStatus = d
@@ -135,11 +140,17 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("nav.dashboard")}</h1>
-        <p className="text-sm text-slate-500">
-          {t("dash.welcome")}, {user?.username}. API {health.data?.status === "ok" ? t("dash.apiOnline") : t("dash.apiDown")} · {t("dash.database")} {db.data?.database === "ok" ? t("dash.dbOk") : t("dash.dbDown")}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("nav.dashboard")}</h1>
+          <p className="text-sm text-slate-500">
+            {t("dash.welcome")}, {user?.username}. API {health.data?.status === "ok" ? t("dash.apiOnline") : t("dash.apiDown")} · {t("dash.database")} {db.data?.database === "ok" ? t("dash.dbOk") : t("dash.dbDown")}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          {L("Trend window", "Trend aralığı")}
+          <Chips label="trend window" value={range} onChange={setRange} options={[{ id: "5", label: L("Last 5", "Son 5") }, { id: "8", label: L("Last 8", "Son 8") }, { id: "12", label: L("Last 12", "Son 12") }, { id: "24", label: L("Last 24", "Son 24") }]} />
+        </div>
       </div>
 
       {d && (
