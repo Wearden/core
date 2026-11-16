@@ -11,6 +11,7 @@
 #
 # Options:
 #   --version TAG        release tag to install (default: the latest release)
+#   --mirror URL         download from your own server instead of GitHub (layout: URL/core/..., URL/agent-linux/..., URL/agent-windows/...)
 #   --url URL            public address of this core, for example https://wearden.example.com
 #   --listen ADDR        address core listens on (default 127.0.0.1:8000; put a TLS reverse proxy in front)
 #   --database-url URL   existing PostgreSQL, for example postgresql://user:pass@host:5432/wearden?sslmode=require
@@ -23,6 +24,7 @@ set -eu
 
 ORG="Wearden"
 VERSION=""
+MIRROR=""
 URL=""
 LISTEN="127.0.0.1:8000"
 DBURL=""
@@ -40,6 +42,7 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --version) [ $# -ge 2 ] || die "--version needs a value"; VERSION="$2"; shift 2 ;;
+    --mirror) [ $# -ge 2 ] || die "--mirror needs a value"; MIRROR="$2"; shift 2 ;;
     --url) [ $# -ge 2 ] || die "--url needs a value"; URL="$2"; shift 2 ;;
     --listen) [ $# -ge 2 ] || die "--listen needs a value"; LISTEN="$2"; shift 2 ;;
     --database-url) [ $# -ge 2 ] || die "--database-url needs a value"; DBURL="$2"; shift 2 ;;
@@ -49,7 +52,7 @@ while [ $# -gt 0 ]; do
     --uninstall) UNINSTALL=1; shift ;;
     --purge) PURGE=1; shift ;;
     --yes) YES=1; shift ;;
-    -h|--help) sed -n '2,24p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,25p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1" ;;
   esac
 done
@@ -57,7 +60,8 @@ done
 case "$VERSION" in *[!A-Za-z0-9._-]*) die "the version has unexpected characters" ;; esac
 case "$LISTEN" in *[!][A-Za-z0-9.:-]*) die "the listen address has unexpected characters" ;; esac
 case "$URL" in ''|https://*|http://*) ;; *) die "--url must start with http:// or https://" ;; esac
-case "$URL" in *[\ \"\\\$\`]*) die "--url has unexpected characters" ;; esac
+case "$URL$MIRROR" in *[\ \"\\\$\`]*) die "--url and --mirror may not contain spaces, quotes or shell characters" ;; esac
+case "$MIRROR" in ""|https://*|http://*) ;; *) die "--mirror must start with http:// or https://" ;; esac
 case "$DIR$DATA" in *[!A-Za-z0-9._/-]*) die "directories may only contain letters, digits and . _ / -" ;; esac
 
 [ "$(id -u)" -eq 0 ] || die "run as root, for example: curl -fsSL <url> | sudo sh"
@@ -88,7 +92,9 @@ if [ "$UNINSTALL" -eq 1 ]; then
 fi
 
 asset_url() { # repo file
-  if [ -n "$VERSION" ]; then
+  if [ -n "$MIRROR" ]; then
+    printf '%s/%s/%s' "${MIRROR%/}" "$1" "$2"
+  elif [ -n "$VERSION" ]; then
     printf 'https://github.com/%s/%s/releases/download/%s/%s' "$ORG" "$1" "$VERSION" "$2"
   else
     printf 'https://github.com/%s/%s/releases/latest/download/%s' "$ORG" "$1" "$2"
@@ -114,7 +120,7 @@ say "Downloading the core release ..."
 fetch_verified core wearden-core-linux-amd64.tar.gz
 mkdir -p "$tmp/core"
 tar -xzf "$tmp/wearden-core-linux-amd64.tar.gz" -C "$tmp/core"
-[ -x "$tmp/core/wearden-core" ] || die "the archive does not contain wearden-core"
+[ -f "$tmp/core/wearden-core" ] || die "the archive does not contain wearden-core"
 
 id wearden >/dev/null 2>&1 || useradd --system --home-dir "$DATA" --shell /usr/sbin/nologin wearden
 mkdir -p "$DIR" "$DATA/recordings" "$DATA/downloads" /etc/wearden

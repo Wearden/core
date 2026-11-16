@@ -13,6 +13,7 @@
   Running it again upgrades in place; the environment file, the database and the data are kept.
 
 .PARAMETER Version    Release tag to install (default: the latest release).
+.PARAMETER Mirror     Download from your own server instead of GitHub (layout: Mirror/core/..., Mirror/agent-linux/..., Mirror/agent-windows/...).
 .PARAMETER DatabaseUrl PostgreSQL URL, required on the first install.
 .PARAMETER Url        Public address of this core, for example https://wearden.example.com.
 .PARAMETER Listen     Address core listens on (default 127.0.0.1:8000; put a TLS reverse proxy in front).
@@ -24,6 +25,7 @@
 [CmdletBinding()]
 param(
   [string]$Version = '',
+  [string]$Mirror = '',
   [string]$DatabaseUrl = '',
   [string]$Url = '',
   [string]$Listen = '127.0.0.1:8000',
@@ -47,6 +49,7 @@ function Fail($m) { throw "error: $m" }
 
 if ($Version -and $Version -notmatch '^[A-Za-z0-9._-]+$') { Fail 'the version has unexpected characters' }
 if ($Listen -notmatch '^[A-Za-z0-9.:\[\]-]+$') { Fail 'the listen address has unexpected characters' }
+if ($Mirror -and $Mirror -notmatch '^https?://[A-Za-z0-9.:/_-]+$') { Fail '-Mirror must be an http or https address' }
 if ($Url -and $Url -notmatch '^https?://[A-Za-z0-9.:/_-]+$') { Fail '-Url must be an http or https address' }
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Fail 'run this in an elevated (administrator) PowerShell' }
@@ -71,6 +74,7 @@ if ($Uninstall) {
 }
 
 function Get-AssetUrl([string]$Repo, [string]$File) {
+  if ($Mirror) { return ($Mirror.TrimEnd('/') + "/$Repo/$File") }
   if ($Version) { return "https://github.com/$Org/$Repo/releases/download/$Version/$File" }
   return "https://github.com/$Org/$Repo/releases/latest/download/$File"
 }

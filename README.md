@@ -28,6 +28,8 @@ $f = "$env:TEMP\install-core.ps1"; irm https://github.com/Wearden/core/releases/
 
 Both installers check every download against the release `SHA256SUMS`, write the environment file with freshly generated secrets, install core as a service (systemd unit, or a scheduled task running as SYSTEM), and download the Linux and Windows agents so your workstations can install them from this core. Open the address they print and register: the first account becomes the one and only administrator, later registrations wait for its approval. Core listens on `127.0.0.1:8000` by default; put a TLS reverse proxy (Caddy or nginx) in front and pass its https address as `--url` / `-Url`. Agents refuse plain http for a core on another machine.
 
+To install from your own file server (air gapped networks, an internal mirror) pass `--mirror https://files.example.com` / `-Mirror ...`; it needs the files at `<mirror>/core/...`, `<mirror>/agent-linux/...` and `<mirror>/agent-windows/...` with their `SHA256SUMS`.
+
 Run the same command again to upgrade; the environment file, the database and the data are kept. Pin a version with `--version <tag>` / `-Version <tag>` in production, or download the script first and read it. Remove with `--uninstall` / `-Uninstall` (data is kept) or `--uninstall --purge --yes` / `-Uninstall -Purge -Yes` (deletes the data too).
 
 Workstations install the agent with the one command shown in Assets, Agents, Enroll a new agent:
@@ -38,7 +40,7 @@ curl -fsSL https://wearden.example.com/install-agent.sh | sudo sh -s -- --token 
 
 To build the release assets yourself, run `sh core/scripts/build-release.sh v1.0.0` from the folder that holds `core`, `proto` and `ruleset` (needs Go, Node, tar and zip).
 
-Docker alternative that builds from source: `scripts/install.sh` (see below, optional automatic HTTPS with `--domain`). None of the installers has been run end to end yet; see `docs/rewrite/progress.md`.
+Docker alternative that builds from source: `scripts/install.sh` (see below, optional automatic HTTPS with `--domain`). The Linux installer was run end to end on the test VM against a local mirror; the Windows installer and the GitHub Actions workflows have not been run. See `docs/rewrite/progress.md`.
 
 ## Implemented source
 
