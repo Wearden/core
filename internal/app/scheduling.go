@@ -415,6 +415,7 @@ func (s *Server) expireScanJobs(ctx context.Context) error {
 }
 
 func (s *Server) RunWorker(ctx context.Context) {
+	var lastLogPrune time.Time
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	for {
@@ -433,6 +434,10 @@ func (s *Server) RunWorker(ctx context.Context) {
 		}
 		if err := s.expireScanJobs(cycle); err != nil && cycle.Err() == nil {
 			slog.Error("agent job expiry failed")
+		}
+		if time.Since(lastLogPrune) > time.Hour {
+			lastLogPrune = time.Now()
+			s.pruneAgentLogs(cycle)
 		}
 		for n := 0; n < 16 && cycle.Err() == nil; n++ {
 			found, err := s.processSchedule(cycle)

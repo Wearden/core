@@ -1,9 +1,10 @@
-import { FormEvent, useState } from "react";
+import { Fragment, FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { agentsApi, EnrollmentToken } from "../agentsApi";
 import { benchmarksApi } from "../benchmarksApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import AgentLogs from "./AgentLogs";
 
 const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm";
 
@@ -18,6 +19,7 @@ export default function AgentManagement() {
   const [os, setOs] = useState<"linux" | "windows">("linux");
   const [benchmarkId, setBenchmarkId] = useState("");
   const [ttl, setTtl] = useState(15);
+  const [logsFor, setLogsFor] = useState<string | null>(null);
   const [token, setToken] = useState<EnrollmentToken | null>(null);
   const eligible = (benchmarks.data ?? []).filter((b) => b.os === os);
   const activeBenchmark = eligible.find((b) => b.id === benchmarkId)?.id ?? eligible[0]?.id ?? "";
@@ -70,11 +72,12 @@ export default function AgentManagement() {
       {!!agents.data?.length && (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-slate-400"><tr><th className="p-2">Host</th><th className="p-2">OS</th><th className="p-2">Benchmark</th><th className="p-2">{t("col.status")}</th><th className="p-2">{az ? "Son əlaqə" : "Last seen"}</th>{isAdmin && <th className="p-2">{t("col.actions")}</th>}</tr></thead>
-            <tbody>{agents.data?.map((agent) => <tr key={agent.id} className="border-t border-slate-800">
+            <thead className="text-slate-400"><tr><th className="p-2">Host</th><th className="p-2">OS</th><th className="p-2">Benchmark</th><th className="p-2">{t("col.status")}</th><th className="p-2">{az ? "Son əlaqə" : "Last seen"}</th><th className="p-2">Logs</th>{isAdmin && <th className="p-2">{t("col.actions")}</th>}</tr></thead>
+            <tbody>{agents.data?.map((agent) => <Fragment key={agent.id}><tr className="border-t border-slate-800">
               <td className="p-2">{agent.hostname}</td><td className="p-2">{agent.os}</td><td className="p-2">{agent.benchmark_id}</td><td className="p-2">{agent.status}</td><td className="p-2">{agent.last_seen ?? "-"}</td>
+              <td className="p-2"><button className="text-cyan-300 hover:underline" onClick={() => setLogsFor(logsFor === agent.id ? null : agent.id)}>{logsFor === agent.id ? (az ? "Gizlət" : "Hide") : (az ? "Göstər" : "Show")}</button></td>
               {isAdmin && <td className="p-2"><button disabled={agent.status === "revoked" || revoke.isPending} className="rounded border border-red-900 px-2 py-1 text-red-400 disabled:opacity-40" onClick={() => window.confirm(az ? `${agent.hostname} agentinin girişini ləğv etmək?` : `Revoke access for ${agent.hostname}?`) && revoke.mutate(agent.id)}>{az ? "Girişi ləğv et" : "Revoke"}</button></td>}
-            </tr>)}</tbody>
+            </tr>{logsFor === agent.id && <tr><td colSpan={isAdmin ? 7 : 6} className="p-2"><AgentLogs agentId={agent.id} /></td></tr>}</Fragment>)}</tbody>
           </table>
         </div>
       )}
