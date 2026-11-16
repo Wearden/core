@@ -66,7 +66,16 @@ systemctl enable --now wearden-agent
 echo "Wearden agent installed. It enrolls itself with $CORE_URL and appears under Assets."
 `
 
-var downloadName = regexp.MustCompile(`^(wearden-agent-linux-amd64|SHA256SUMS)$`)
+var downloadName = regexp.MustCompile(`^(wearden-agent-linux-amd64|wearden-agent-windows-amd64\.exe|SHA256SUMS)$`)
+
+// downloadAvailable reports whether a published agent file can be served.
+func (s *Server) downloadAvailable(name string) bool {
+	if s.Config.DownloadsDir == "" || !downloadName.MatchString(name) {
+		return false
+	}
+	info, err := os.Stat(filepath.Join(s.Config.DownloadsDir, name))
+	return err == nil && info.Mode().IsRegular()
+}
 var originHost = regexp.MustCompile(`^[A-Za-z0-9.-]+(:\d{1,5})?$`)
 
 // publicURL prefers the configured origin; otherwise it uses the request host
@@ -111,7 +120,12 @@ func (s *Server) installRoutes(mux *http.ServeMux) {
 		http.ServeFile(w, r, path)
 	})
 	mux.HandleFunc("GET /api/agents/install-info", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
-		_, err := os.Stat(filepath.Join(s.Config.DownloadsDir, "wearden-agent-linux-amd64"))
-		writeJSON(w, 200, map[string]any{"linux_available": s.Config.DownloadsDir != "" && err == nil})
+		sums := s.downloadAvailable("SHA256SUMS")
+		writeJSON(w, 200, map[string]any{
+			"linux_available":   s.downloadAvailable(linuxAgentBinary),
+			"windows_available": s.downloadAvailable(windowsAgentBinary),
+			// Remote installation also needs the checksum list and an HTTPS origin the host can reach.
+			"remote_install_ready": sums && strings.HasPrefix(s.publicURL(r), "https://"),
+		})
 	}))
 }
