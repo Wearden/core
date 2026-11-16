@@ -139,7 +139,7 @@ export default function DataTable<T>({
         <div className="flex flex-wrap items-center gap-2">{toolbar}</div>
         <div className="flex items-center gap-2 text-xs">
           <div className="relative" ref={menuRef}>
-            <button onClick={() => setMenu(!menu)} aria-expanded={menu} className="rounded-md border border-slate-800 px-3 py-1.5 text-slate-300 hover:bg-slate-900">Columns</button>
+            <button onClick={() => setMenu(!menu)} aria-expanded={menu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Columns</button>
             {menu && (
               <div className="absolute right-0 z-20 mt-1 w-52 rounded-lg border border-slate-700 bg-slate-900 p-2 shadow-xl">
                 {columns.filter((c) => !c.locked).map((c) => (
@@ -151,7 +151,7 @@ export default function DataTable<T>({
               </div>
             )}
           </div>
-          {exportName && <button onClick={exportCsv} disabled={sorted.length === 0} className="rounded-md border border-slate-800 px-3 py-1.5 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Export CSV</button>}
+          {exportName && <button onClick={exportCsv} disabled={sorted.length === 0} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Export CSV</button>}
         </div>
       </div>
 
@@ -209,13 +209,13 @@ export default function DataTable<T>({
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5">
                 Rows
-                <select value={prefs.pageSize} onChange={(e) => { setPrefs((p) => ({ ...p, pageSize: Number(e.target.value) })); setPage(0); }} className="rounded-md border border-slate-800 bg-slate-950 px-1.5 py-1 text-slate-300">
+                <select value={prefs.pageSize} onChange={(e) => { setPrefs((p) => ({ ...p, pageSize: Number(e.target.value) })); setPage(0); }} className="h-8 rounded-md border border-slate-800 bg-slate-950 px-1.5 text-slate-300">
                   {pageSizes.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </label>
-              <button onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label="Previous page" className="rounded-md border border-slate-800 px-2.5 py-1 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Prev</button>
+              <button onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label="Previous page" className="inline-flex h-8 items-center rounded-md border border-slate-800 px-2.5 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Prev</button>
               <span>{current + 1} / {pages}</span>
-              <button onClick={() => setPage(Math.min(pages - 1, current + 1))} disabled={current >= pages - 1} aria-label="Next page" className="rounded-md border border-slate-800 px-2.5 py-1 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Next</button>
+              <button onClick={() => setPage(Math.min(pages - 1, current + 1))} disabled={current >= pages - 1} aria-label="Next page" className="inline-flex h-8 items-center rounded-md border border-slate-800 px-2.5 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Next</button>
             </div>
           </div>
         </>
