@@ -112,6 +112,14 @@ export default function Login() {
               </p>
             </div>
 
+            {canRegister && !firstRun && mode !== "requested" && (
+              <div role="tablist" aria-label={az ? "Giriş və ya hesab sorğusu" : "Sign in or request an account"} className="grid grid-cols-2 gap-1 rounded-lg border border-slate-800 bg-slate-950 p-1">
+                {([["signin", az ? "Daxil ol" : "Sign in"], ["register", az ? "Hesab sorğusu" : "Request account"]] as const).map(([id, label]) => (
+                  <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => switchMode(id)} className={`h-9 rounded-md text-sm transition-colors ${mode === id ? "bg-slate-100 font-medium text-slate-950" : "text-slate-400 hover:text-slate-100"}`}>{label}</button>
+                ))}
+              </div>
+            )}
+
             {mode === "requested" ? (
               <button type="button" onClick={() => switchMode("signin")} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-700 text-sm font-medium text-slate-200 hover:bg-slate-800">
                 {az ? "Girişə qayıt" : "Back to sign in"}
@@ -180,13 +188,7 @@ export default function Login() {
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-3 text-xs text-slate-500">
-            {mode === "signin" && canRegister ? (
-              <button type="button" onClick={() => switchMode("register")} className="text-left text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline">{az ? "Hesabınız yoxdur? Sorğu göndərin" : "No account? Request one"}</button>
-            ) : mode === "register" && !firstRun ? (
-              <button type="button" onClick={() => switchMode("signin")} className="text-left text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline">{az ? "Hesabınız var? Daxil olun" : "Have an account? Sign in"}</button>
-            ) : (
-              <span>{firstRun ? (az ? "İlk quraşdırma" : "First time setup") : az ? "Giriş problemi? Administratorla əlaqə saxlayın." : "Need access? Contact your administrator."}</span>
-            )}
+            <span>{firstRun ? (az ? "İlk quraşdırma" : "First time setup") : az ? "Giriş problemi? Administratorla əlaqə saxlayın." : "Need access? Contact your administrator."}</span>
             <span className="flex overflow-hidden rounded-md border border-slate-800" role="group" aria-label="language">
               {(["en", "az"] as const).map((l) => (
                 <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l} className={`px-2 py-1 uppercase ${lang === l ? "bg-slate-100 text-slate-950" : "text-slate-400 hover:bg-slate-800"}`}>{l}</button>
