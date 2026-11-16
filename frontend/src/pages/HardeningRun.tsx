@@ -9,6 +9,7 @@ import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { useFeedback } from "../components/feedback";
 import StatusPill from "../components/StatusPill";
+import { download } from "../analyticsApi";
 
 const STATUS_STYLE: Record<string, string> = {
   applied: "bg-emerald-900/60 text-emerald-200",
@@ -109,7 +110,17 @@ export default function HardeningRun() {
             <span className={connected ? "text-emerald-400" : "text-amber-400"}>{connected ? t("scan.live") : t("scan.reconnecting")}</span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs text-slate-500">{t("nav.reports")}:</span>
+          {(["pdf", "csv", "json"] as const).map((ext) => (
+            <button
+              key={ext}
+              onClick={() => download(`/reports/hardening/${r.id}.${ext}`, `hardening-${r.id}.${ext}`).catch((err: Error) => setError(err.message))}
+              className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800"
+            >
+              {ext.toUpperCase()}
+            </button>
+          ))}
           <StatusPill status={r.status} />
           {canOperate && !finished && (
             <button onClick={() => cancel.mutate()} disabled={cancel.isPending} className="rounded-md border border-red-900 px-3 py-1.5 text-sm text-red-300 hover:bg-red-950/50 disabled:opacity-40">{t("hr.stop")}</button>

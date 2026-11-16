@@ -65,9 +65,11 @@ func (s *Server) featureScanExport(w http.ResponseWriter, r *http.Request) {
 	s.featureCSV(w, "scan.csv", columns, featureMaps(doc["results"]))
 }
 
+var changeColumns = []string{"asset_name", "host", "control_id", "severity", "risky", "status", "before_status", "before_value", "after_status", "after_value", "rollback_status", "rollback_value", "message", "remediation_output", "rollback_output"}
+
 func (s *Server) featureHardeningExport(w http.ResponseWriter, r *http.Request) {
 	id, ext, ok := featureExportFile(r.PathValue("file"))
-	if !ok || !oneOfFeature(ext, "csv", "json") {
+	if !ok || !oneOfFeature(ext, "csv", "json", "pdf") {
 		problem(w, 404, "Report format not found")
 		return
 	}
@@ -77,13 +79,77 @@ func (s *Server) featureHardeningExport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	s.audit(r, "report.hardening_export", id, true, ext)
-	if ext == "json" {
+	switch ext {
+	case "pdf":
+		s.writePDF(w, "hardening.pdf", func() ([]byte, error) { return hardeningPDF(doc) })
+	case "json":
 		w.Header().Set("Content-Disposition", `attachment; filename="hardening.json"`)
 		writeJSON(w, 200, doc)
+	default:
+		s.featureCSV(w, "hardening.csv", changeColumns, featureMaps(doc["changes"]))
+	}
+}
+
+// featureRollbackExport reports one rollback process with the changes of its run that
+// were rolled back.
+func (s *Server) featureRollbackExport(w http.ResponseWriter, r *http.Request) {
+	id, ext, ok := featureExportFile(r.PathValue("file"))
+	if !ok || !oneOfFeature(ext, "csv", "json", "pdf") {
+		problem(w, 404, "Report format not found")
 		return
 	}
-	columns := []string{"asset_name", "host", "control_id", "severity", "status", "before_status", "before_value", "after_status", "after_value", "rollback_status", "rollback_value", "message", "remediation_output", "rollback_output"}
-	s.featureCSV(w, "hardening.csv", columns, featureMaps(doc["changes"]))
+	rollback, err := s.Store.Get(r.Context(), "rollbacks", id)
+	if err != nil {
+		s.databaseError(w, err)
+		return
+	}
+	changes := []map[string]any{}
+	if run, err := s.Store.Get(r.Context(), "hardening", text(rollback["run_id"])); err == nil {
+		for _, c := range featureMaps(run["changes"]) {
+			if text(c["rollback_status"]) != "" {
+				changes = append(changes, c)
+			}
+		}
+	}
+	s.audit(r, "report.rollback_export", id, true, ext)
+	switch ext {
+	case "pdf":
+		s.writePDF(w, "rollback.pdf", func() ([]byte, error) { return rollbackPDF(rollback, changes) })
+	case "json":
+		out := map[string]any{}
+		for k, v := range rollback {
+			out[k] = v
+		}
+		out["changes"] = changes
+		w.Header().Set("Content-Disposition", `attachment; filename="rollback.json"`)
+		writeJSON(w, 200, out)
+	default:
+		s.featureCSV(w, "rollback.csv", changeColumns, changes)
+	}
+}
+
+func (s *Server) writePDF(w http.ResponseWriter, filename string, render func() ([]byte, error)) {
+	select {
+	case pdfSlots <- struct{}{}:
+		defer func() { <-pdfSlots }()
+	default:
+		problem(w, 429, "PDF renderer busy; retry later")
+		return
+	}
+	data, err := render()
+	if err != nil {
+		if errors.Is(err, errPDFTooLarge) {
+			problem(w, 413, err.Error())
+		} else {
+			problem(w, 500, "PDF rendering failed")
+		}
+		return
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	if _, err := w.Write(data); err != nil {
+		slog.Error("PDF response write failed")
+	}
 }
 
 func (s *Server) featureCSV(w http.ResponseWriter, filename string, columns []string, rows []map[string]any) {
