@@ -26,8 +26,8 @@ type Server struct {
 	mu         sync.Mutex
 	attempts   map[string]attempt
 	loginSlots chan struct{}
-	// agentlessRuns tracks background SSH and WinRM runs; see agentless.go.
-	agentlessRuns *agentlessState
+	// pam holds the lifetime of PAM (SSH and WinRM) runs; see pam.go.
+	pam *pamState
 }
 type attempt struct {
 	Count int
@@ -164,7 +164,7 @@ func (s *Server) Handler() http.Handler {
 	s.agentLogRoutes(m)
 	s.installRoutes(m)
 	s.remoteInstallRoutes(m)
-	s.agentlessRoutes(m)
+	s.pamRoutes(m)
 	s.aiRoutes(m)
 	s.userRoutes(m)
 	s.roleRoutes(m)
