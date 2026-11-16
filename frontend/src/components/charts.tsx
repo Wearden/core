@@ -127,7 +127,7 @@ export function TrendArea({ data, xKey, series, height = 240, domain }: { data: 
           <YAxis stroke={c.muted} fontSize={11} tickLine={false} axisLine={false} domain={domain} />
           <Tooltip content={<Tip c={c} />} cursor={{ stroke: c.soft, strokeDasharray: "3 3" }} />
           {series.map((s) => (
-            <Area key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2} fill={`url(#g-${s.key})`} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+            <Area key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2} fill={`url(#g-${s.key})`} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} isAnimationActive={false} />
           ))}
         </AreaChart>
       </ResponsiveContainer>
@@ -156,7 +156,7 @@ export function Bars({ data, xKey, series, height = 240, horizontal = false, sta
           )}
           <Tooltip content={<Tip c={c} />} cursor={{ fill: c.grid, opacity: 0.4 }} />
           {series.map((s, i) => (
-            <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} stackId={stacked ? "a" : undefined} radius={stacked ? (i === series.length - 1 ? [4, 4, 0, 0] : 0) : [4, 4, 0, 0]} maxBarSize={horizontal ? 20 : 36} />
+            <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} stackId={stacked ? "a" : undefined} radius={stacked ? (i === series.length - 1 ? [4, 4, 0, 0] : 0) : [4, 4, 0, 0]} maxBarSize={horizontal ? 20 : 36} isAnimationActive={false} />
           ))}
         </BarChart>
       </ResponsiveContainer>
@@ -172,7 +172,7 @@ export function Ring({ data, centerValue, centerLabel, height = 200 }: { data: {
     <div className="relative" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie data={shown.length ? shown : [{ name: "none", value: 1, color: c.grid }]} dataKey="value" nameKey="name" innerRadius="68%" outerRadius="92%" paddingAngle={shown.length > 1 ? 3 : 0} stroke="none" cornerRadius={4}>
+          <Pie data={shown.length ? shown : [{ name: "none", value: 1, color: c.grid }]} dataKey="value" nameKey="name" innerRadius="68%" outerRadius="92%" paddingAngle={shown.length > 1 ? 3 : 0} stroke="none" cornerRadius={4} isAnimationActive={false}>
             {(shown.length ? shown : [{ name: "none", value: 1, color: c.grid }]).map((d) => <Cell key={d.name} fill={d.color} />)}
           </Pie>
           <Tooltip content={<Tip c={c} />} />
