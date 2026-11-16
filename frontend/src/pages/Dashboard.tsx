@@ -19,9 +19,9 @@ interface DriftRow {
 
 function Kpi({ label, value, hint, spark, tone }: { label: string; value: string | number; hint?: string; spark?: number[]; tone?: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 md:p-5">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-2 text-3xl font-semibold tracking-tight ${tone ?? "text-slate-50"}`}>{value}</p>
+      <p className={`mt-2 text-2xl md:text-3xl font-semibold tracking-tight ${tone ?? "text-slate-50"}`}>{value}</p>
       {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
       {spark && <div className="mt-2"><Spark values={spark} /></div>}
     </div>
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
       {d && (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
             <Kpi label={t("dash.hosts")} value={d.hosts_total} hint={`${d.hosts_scanned} ${t("dash.scanned")}`} />
             <Kpi label={t("dash.onlineOffline")} value={`${d.hosts_online} / ${d.hosts_offline}`} tone={d.hosts_offline ? "text-red-300" : "text-emerald-300"} hint={`${d.hosts_degraded} ${t("dash.degraded")}`} />
             <Kpi label={t("dash.average")} value={d.average_score === null ? "-" : `${d.average_score.toFixed(1)}%`} spark={trend.map((p) => p.score)} />

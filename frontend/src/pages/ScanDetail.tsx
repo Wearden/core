@@ -1,7 +1,7 @@
-import { Fragment, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { scansApi } from "../scansApi";
+import { ControlResultRow, scansApi } from "../scansApi";
 import { useScanSocket } from "../hooks/useScanSocket";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
@@ -9,209 +9,228 @@ import StatusPill from "../components/StatusPill";
 import CopilotPanel from "../components/CopilotPanel";
 import AiAnalysisPanel from "../components/AiAnalysisPanel";
 import ControlInfo from "../components/ControlInfo";
+import DataTable, { Column } from "../components/DataTable";
+import HostIcon from "../components/HostIcon";
+import { Bars, ChartCard, Legend, Ring, useChartColors } from "../components/charts";
+import { Chips, PageHeader, searchCls } from "../components/ui";
+import { SkeletonRows, useFeedback } from "../components/feedback";
 
-const SEVERITY_STYLE: Record<string, string> = {
-  low: "text-slate-400",
-  medium: "text-amber-300",
-  high: "text-orange-300",
-  critical: "text-red-300 font-semibold",
-};
+const SEVERITY_ORDER: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+const SEVERITY_DOT: Record<string, string> = { critical: "bg-red-400", high: "bg-orange-400", medium: "bg-amber-400", low: "bg-slate-500" };
 
 function scoreText(v: number | null): string {
   return v === null ? "-" : `${v.toFixed(1)}%`;
 }
 
+type StatusFilter = "fail" | "error" | "pass" | "not_applicable" | "all";
+
 export default function ScanDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const L = (en: string, az: string) => (lang === "az" ? az : en);
+  const c = useChartColors();
   const queryClient = useQueryClient();
+  const { confirm, toast } = useFeedback();
   const canOperate = user?.role === "admin" || user?.role === "operator";
   const { connected, feed } = useScanSocket(id);
 
-  const scan = useQuery({
-    queryKey: ["scan", id],
-    queryFn: () => scansApi.get(id!),
-    enabled: !!id,
-    refetchInterval: 10_000,
-  });
-
+  const scan = useQuery({ queryKey: ["scan", id], queryFn: () => scansApi.get(id!), enabled: !!id, refetchInterval: 10_000 });
   const [hostFilter, setHostFilter] = useState<number | "">("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [openRow, setOpenRow] = useState<number | null>(null);
+  const [status, setStatus] = useState<StatusFilter>("fail");
+  const [severity, setSeverity] = useState("");
+  const [q, setQ] = useState("");
 
   const results = useQuery({
-    queryKey: ["scan-results", id, hostFilter, statusFilter, scan.data?.done_checks],
-    queryFn: () => scansApi.results(id!, hostFilter === "" ? undefined : hostFilter, statusFilter || undefined),
+    queryKey: ["scan-results", id, hostFilter, scan.data?.done_checks],
+    queryFn: () => scansApi.results(id!, hostFilter === "" ? undefined : hostFilter),
     enabled: !!id,
   });
 
   const cancel = useMutation({
     mutationFn: () => scansApi.cancel(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scan", id] }),
+    onSuccess: () => {
+      toast(L("Scan cancellation requested.", "Yoxlamanın ləğvi tələb olundu."), "success");
+      return queryClient.invalidateQueries({ queryKey: ["scan", id] });
+    },
+    onError: (e) => toast((e as Error).message, "error"),
   });
+
+  const rows = results.data ?? [];
+  const counts = useMemo(() => ({
+    fail: rows.filter((r) => r.status === "fail").length,
+    error: rows.filter((r) => r.status === "error").length,
+    pass: rows.filter((r) => r.status === "pass").length,
+    not_applicable: rows.filter((r) => r.status === "not_applicable").length,
+    all: rows.length,
+  }), [rows]);
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return rows.filter((r) => (status === "all" || r.status === status) && (!severity || r.severity === severity) && (!needle || `${r.title} ${r.control_id} ${r.category} ${r.asset_name}`.toLowerCase().includes(needle)));
+  }, [rows, status, severity, q]);
+
+  const bySeverity = useMemo(
+    () => ["critical", "high", "medium", "low"].map((sev) => ({ name: sev, fail: rows.filter((r) => r.severity === sev && r.status === "fail").length, error: rows.filter((r) => r.severity === sev && r.status === "error").length, pass: rows.filter((r) => r.severity === sev && r.status === "pass").length })),
+    [rows],
+  );
 
   if (scan.error) return <p className="text-red-400">{t("scan.notFound")}</p>;
   const s = scan.data;
-  if (!s) return <p className="text-slate-400">{t("common.loading")}</p>;
+  if (!s) return <SkeletonRows rows={6} />;
 
   const pct = s.total_checks ? Math.round((s.done_checks / s.total_checks) * 100) : 0;
-  const scanBenchmark = s.benchmark_id;
   const finished = ["completed", "cancelled", "failed"].includes(s.status);
-  const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
-  // Shows a translated explanation, or nothing when there is no text for that status.
+  const scored = s.hosts.filter((h) => h.score !== null);
+  const avg = scored.length ? scored.reduce((a, h) => a + (h.score ?? 0), 0) / scored.length : null;
   const explain = (key: string) => {
     const text = t(key);
     return text === key ? null : text;
   };
 
+  const columns: Column<ControlResultRow>[] = [
+    { id: "host", header: t("col.host"), sort: (a, b) => a.asset_name.localeCompare(b.asset_name), csv: (r) => r.asset_name, cell: (r) => <span className="text-xs text-slate-300">{r.asset_name}</span>, defaultHidden: s.hosts.length < 2 },
+    { id: "control", header: t("col.control"), locked: true, sort: (a, b) => a.title.localeCompare(b.title), csv: (r) => `${r.control_id} ${r.title}`,
+      cell: (r) => (<><div className="text-slate-100">{r.title}</div><div className="text-xs text-slate-500"><span className="font-mono">{r.control_id}</span>{r.category && <span> · {r.category}</span>}</div></>) },
+    { id: "severity", header: t("col.severity"), sort: (a, b) => (SEVERITY_ORDER[a.severity] ?? 0) - (SEVERITY_ORDER[b.severity] ?? 0), csv: (r) => r.severity,
+      cell: (r) => <span className="inline-flex items-center gap-1.5 text-xs text-slate-200"><span aria-hidden className={`h-1.5 w-1.5 rounded-full ${SEVERITY_DOT[r.severity] ?? "bg-slate-500"}`} />{r.severity}</span> },
+    { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (r) => r.status, cell: (r) => <StatusPill status={r.status} /> },
+    { id: "found", header: t("scan.found"), csv: (r) => r.actual ?? "", cell: (r) => <span className="block max-w-[14rem] truncate font-mono text-xs text-slate-400" title={r.actual ?? ""}>{r.actual ?? "-"}</span> },
+    { id: "expected", header: t("scan.expected"), defaultHidden: true, csv: (r) => r.expected, cell: (r) => <span className="block max-w-[14rem] truncate font-mono text-xs text-slate-400" title={r.expected}>{r.expected}</span> },
+    { id: "duration", header: "ms", defaultHidden: true, sort: (a, b) => a.duration_ms - b.duration_ms, csv: (r) => r.duration_ms, cell: (r) => <span className="text-xs text-slate-500">{r.duration_ms}</span> },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link to="/scans" className="text-sm text-slate-400 hover:text-slate-200">{t("scan.allScans")}</Link>
-          <h1 className="mt-1 text-2xl font-bold">{s.name}</h1>
-          <p className="text-sm text-slate-400">
-            {s.profile_name} · {s.host_count} {t("scan.hostsCount")} ·{" "}
-            <span className={connected ? "text-emerald-400" : "text-amber-400"}>{connected ? t("scan.live") : t("scan.reconnecting")}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <StatusPill status={s.status} />
-          {canOperate && !finished && (
-            <button onClick={() => cancel.mutate()} disabled={cancel.isPending} className="rounded-md border border-red-900 px-3 py-1.5 text-sm text-red-300 hover:bg-red-950/50">
-              {t("scan.cancel")}
-            </button>
-          )}
-        </div>
+      <div>
+        <Link to="/scans" className="text-sm text-slate-500 hover:text-slate-200">{t("scan.allScans")}</Link>
       </div>
+      <PageHeader
+        title={s.name}
+        subtitle={`${s.profile_name} · ${s.host_count} ${t("scan.hostsCount")} · ${connected ? t("scan.live") : t("scan.reconnecting")}`}
+        action={
+          <div className="flex items-center gap-3">
+            <StatusPill status={s.status} />
+            {canOperate && !finished && (
+              <button
+                onClick={async () => (await confirm({ title: L("Cancel this scan?", "Bu yoxlama ləğv edilsin?"), message: L("Checks already finished are kept.", "Bitmiş yoxlamalar saxlanılır."), confirmLabel: t("scan.cancel"), cancelLabel: L("Keep running", "Davam etsin"), danger: true })) && cancel.mutate()}
+                disabled={cancel.isPending}
+                className="rounded-md border border-slate-700 px-3 py-2 text-sm text-red-300 hover:bg-slate-900 disabled:opacity-40"
+              >
+                {t("scan.cancel")}
+              </button>
+            )}
+          </div>
+        }
+      />
 
       <div>
-        <div className="h-3 w-full overflow-hidden rounded bg-slate-800">
-          <div className="h-full bg-cyan-500 transition-all duration-300" style={{ width: `${pct}%` }} />
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <div className="h-full rounded-full bg-cyan-500 transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
-        <div className="mt-1 text-sm text-slate-400">
-          {s.done_checks} {t("scan.of")} {s.total_checks} {t("scan.checks")} · {pct}%
-        </div>
+        <div className="mt-1 text-xs text-slate-500">{s.done_checks} {t("scan.of")} {s.total_checks} {t("scan.checks")} · {pct}%</div>
         {s.message && <p className="mt-2 text-sm text-red-300">{s.message}</p>}
       </div>
 
-      {finished && s.status === "completed" && <AiAnalysisPanel scanId={id!} benchmarkId={scanBenchmark} />}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ChartCard title={L("Overall result", "Ümumi nəticə")} subtitle={avg === null ? undefined : `${L("Average compliance", "Orta uyğunluq")} ${avg.toFixed(1)}%`}>
+          <Ring
+            height={170}
+            centerValue={`${Math.round((counts.pass / Math.max(1, counts.pass + counts.fail + counts.error)) * 100)}%`}
+            centerLabel={L("passing", "keçir")}
+            data={[{ name: "pass", value: counts.pass, color: c.pass }, { name: "fail", value: counts.fail, color: c.fail }, { name: "error", value: counts.error, color: c.error }]}
+          />
+          <div className="mt-3"><Legend items={[{ name: `pass (${counts.pass})`, color: c.pass }, { name: `fail (${counts.fail})`, color: c.fail }, { name: `error (${counts.error})`, color: c.error }]} /></div>
+        </ChartCard>
+        <ChartCard className="lg:col-span-2" title={L("Findings by severity", "Ciddilik üzrə nəticələr")}>
+          <Bars stacked height={190} xKey="name" data={bySeverity} series={[{ key: "pass", name: "pass", color: c.pass }, { key: "fail", name: "fail", color: c.fail }, { key: "error", name: "error", color: c.error }]} />
+        </ChartCard>
+      </div>
+
+      {finished && s.status === "completed" && <AiAnalysisPanel scanId={id!} benchmarkId={s.benchmark_id} />}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {s.hosts.map((h) => (
-          <div key={h.id} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                {h.asset_id ? (
-                  <Link to={`/hosts/${h.asset_id}`} className="font-semibold text-cyan-300 hover:underline">{h.asset_name}</Link>
-                ) : (
-                  <div className="font-semibold">{h.asset_name}</div>
-                )}
-                <div className="font-mono text-xs text-slate-500">{h.host}</div>
+          <div key={h.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <HostIcon os={h.os_detected?.toLowerCase().includes("windows") ? "windows" : "linux"} size={32} />
+                <div className="min-w-0">
+                  {h.asset_id ? <Link to={`/assets?host=${h.asset_id}`} className="block truncate font-semibold text-slate-50 hover:underline">{h.asset_name}</Link> : <div className="truncate font-semibold">{h.asset_name}</div>}
+                  <div className="truncate font-mono text-xs text-slate-500">{h.host}</div>
+                </div>
               </div>
               <StatusPill status={h.status} />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <div className="text-slate-400">{t("scan.compliance")}</div>
-                <div className="text-2xl font-semibold text-cyan-300">{scoreText(h.score)}</div>
-              </div>
-              <div>
-                <div className="text-slate-400">{t("scan.weighted")}</div>
-                <div className="text-2xl font-semibold text-cyan-300">{scoreText(h.weighted_score)}</div>
-              </div>
+              <div><div className="text-xs text-slate-500">{t("scan.compliance")}</div><div className="text-2xl font-semibold text-slate-50">{scoreText(h.score)}</div></div>
+              <div><div className="text-xs text-slate-500">{t("scan.weighted")}</div><div className="text-2xl font-semibold text-slate-50">{scoreText(h.weighted_score)}</div></div>
             </div>
             <div className="mt-4 flex flex-wrap gap-3 text-xs">
               <span className="text-emerald-300">{h.passed} {t("scan.pass")}</span>
               <span className="text-red-300">{h.failed} {t("scan.fail")}</span>
               <span className="text-amber-300">{h.errored} {t("scan.error")}</span>
-              <span className="text-slate-400">{h.not_applicable} {t("scan.na")}</span>
+              <span className="text-slate-500">{h.not_applicable} {t("scan.na")}</span>
             </div>
             {h.message && <p className="mt-2 text-xs text-amber-300">{h.message}</p>}
           </div>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <section className="xl:col-span-2 space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-lg font-semibold">{t("scan.results")}</h2>
-            <select className={field} value={hostFilter} onChange={(e) => setHostFilter(e.target.value === "" ? "" : Number(e.target.value))} aria-label="host filter">
-              <option value="">{t("scan.allHosts")}</option>
-              {s.hosts.map((h) => (
-                <option key={h.id} value={h.id}>{h.asset_name}</option>
-              ))}
-            </select>
-            <select className={field} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="status filter">
-              <option value="">{t("scan.allStatuses")}</option>
-              <option value="fail">{t("status.fail")}</option>
-              <option value="pass">{t("status.pass")}</option>
-              <option value="error">{t("scan.errorOpt")}</option>
-              <option value="not_applicable">{t("scan.notApplicable")}</option>
-            </select>
-          </div>
+      <div className="grid gap-6 xl:grid-cols-[1fr_20rem]">
+        <section className="min-w-0 space-y-3">
+          <h2 className="text-lg font-semibold">{t("scan.results")}</h2>
+          <DataTable
+            rows={filtered}
+            columns={columns}
+            rowKey={(r) => r.id}
+            storageKey="scan-results"
+            exportName={`scan-${s.name}`}
+            loading={results.isLoading}
+            initialSort={{ id: "severity", dir: "desc" }}
+            pageSizes={[25, 50, 100, 250]}
+            emptyTitle={t("scan.noResults")}
+            emptyHint={L("Change the status or severity filter.", "Vəziyyət və ya ciddilik süzgəcini dəyişin.")}
+            toolbar={
+              <>
+                <Chips<StatusFilter> label="status" value={status} onChange={setStatus} options={[
+                  { id: "fail", label: t("status.fail"), count: counts.fail },
+                  { id: "error", label: t("scan.errorOpt"), count: counts.error },
+                  { id: "pass", label: t("status.pass"), count: counts.pass },
+                  { id: "not_applicable", label: t("scan.notApplicable"), count: counts.not_applicable },
+                  { id: "all", label: L("All", "Hamısı"), count: counts.all },
+                ]} />
+                {s.hosts.length > 1 && (
+                  <select className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-sm" value={hostFilter} onChange={(e) => setHostFilter(e.target.value === "" ? "" : Number(e.target.value))} aria-label="host filter">
+                    <option value="">{t("scan.allHosts")}</option>
+                    {s.hosts.map((h) => <option key={h.id} value={h.id}>{h.asset_name}</option>)}
+                  </select>
+                )}
+                <select className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-sm" value={severity} onChange={(e) => setSeverity(e.target.value)} aria-label="severity filter">
+                  <option value="">{L("All severities", "Bütün ciddiliklər")}</option>
+                  {["critical", "high", "medium", "low"].map((sev) => <option key={sev} value={sev}>{sev}</option>)}
+                </select>
+                <input type="search" className={searchCls} placeholder={L("Search controls", "Nəzarət axtar")} value={q} onChange={(e) => setQ(e.target.value)} />
+              </>
+            }
+            expanded={(r) => (
+              <div className="space-y-3 text-xs">
+                {explain(`scan.exp.${r.status}`) && <p className="text-slate-300">{explain(`scan.exp.${r.status}`)}</p>}
+                {r.message && <p className="text-amber-200">{r.message}</p>}
+                <ControlInfo benchmarkId={s.benchmark_id} controlId={r.control_id} />
+                {r.status === "fail" && <CopilotPanel benchmarkId={s.benchmark_id} controlId={r.control_id} />}
+                <div>
+                  <div className="text-slate-400">{t("scan.rawOutput")} ({r.duration_ms} ms)</div>
+                  <pre className="mt-1 max-h-64 overflow-auto rounded bg-slate-950 p-2 text-slate-300">{r.raw_output ?? t("scan.noOutput")}</pre>
+                </div>
+              </div>
+            )}
+          />
           <p className="text-xs text-slate-500">{t("scan.clickHint")}</p>
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900 text-slate-400">
-                <tr>
-                  <th className="px-3 py-2">{t("col.host")}</th>
-                  <th className="px-3 py-2">{t("col.control")}</th>
-                  <th className="px-3 py-2">{t("col.severity")}</th>
-                  <th className="px-3 py-2">{t("col.status")}</th>
-                  <th className="px-3 py-2">{t("col.actualExpected")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {(results.data ?? []).map((r) => (
-                  <Fragment key={r.id}>
-                    <tr key={r.id} className="cursor-pointer align-top hover:bg-slate-900/60" onClick={() => setOpenRow(openRow === r.id ? null : r.id)}>
-                      <td className="px-3 py-2 text-xs">{r.asset_name}</td>
-                      <td className="px-3 py-2">
-                        <div>{r.title}</div>
-                        <div className="text-xs text-slate-500">
-                          <span className="font-mono">{r.control_id}</span>
-                          {r.category && <span> · {r.category}</span>}
-                        </div>
-                      </td>
-                      <td className={`px-3 py-2 text-xs ${SEVERITY_STYLE[r.severity] ?? ""}`}>{r.severity}</td>
-                      <td className="px-3 py-2"><StatusPill status={r.status} /></td>
-                      <td className="px-3 py-2 text-xs">
-                        <div className="text-slate-300">{t("scan.found")} <span className="break-all font-mono">{r.actual ?? "-"}</span></div>
-                        <div className="text-slate-500">{t("scan.expected")} <span className="break-all font-mono">{r.expected}</span></div>
-                      </td>
-                    </tr>
-                    {openRow === r.id && (
-                      <tr className="bg-slate-900/40">
-                        <td />
-                        <td colSpan={4} className="px-3 py-3 text-xs">
-                          {explain(`scan.exp.${r.status}`) && <p className="mb-2 text-slate-300">{explain(`scan.exp.${r.status}`)}</p>}
-                          {r.message && <p className="mb-2 text-amber-200">{r.message}</p>}
-                          <div className="mb-3">
-                            <ControlInfo benchmarkId={scanBenchmark} controlId={r.control_id} />
-                          </div>
-                          {r.status === "fail" && (
-                            <div className="mb-3">
-                              <CopilotPanel benchmarkId={scanBenchmark} controlId={r.control_id} />
-                            </div>
-                          )}
-                          <div className="text-slate-400">{t("scan.rawOutput")} ({r.duration_ms} ms)</div>
-                          <pre className="mt-1 max-h-64 overflow-auto rounded bg-slate-950 p-2 text-slate-300">{r.raw_output ?? t("scan.noOutput")}</pre>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {results.data && results.data.length === 0 && <p className="text-sm text-slate-400">{t("scan.noResults")}</p>}
         </section>
 
         <aside className="space-y-3">
           <h2 className="text-lg font-semibold">{t("scan.liveFeed")}</h2>
-          <ol className="max-h-[32rem] space-y-1 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900 p-3 text-xs">
+          <ol className="max-h-[32rem] space-y-1 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-xs">
             {feed.length === 0 && <li className="text-slate-500">{t("scan.waiting")}</li>}
             {[...feed].reverse().map((l) => (
               <li key={l.key} className="flex items-start gap-2">
