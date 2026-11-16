@@ -12,7 +12,6 @@ import { useHostsSocket } from "../hooks/useHostsSocket";
 import AssetModal from "../components/AssetModal";
 import AgentManagement from "../components/AgentManagement";
 import CredentialModal from "../components/CredentialModal";
-import RemoteInstallModal from "../components/RemoteInstallModal";
 import RemoteSession from "../components/RemoteSession";
 import { sessionsApi } from "../sessionsApi";
 import type { SessionOpenResult } from "../sessionTypes";
@@ -60,11 +59,6 @@ export default function Assets() {
 
   const [editing, setEditing] = useState<Asset | null | "new">(null);
   const [credFor, setCredFor] = useState<Asset | null>(null);
-  const [installFor, setInstallFor] = useState<Asset | null>(null);
-  const canEnroll = can("agents.enroll");
-  // Shares the agent list cache with AgentManagement to know which hosts already have an agent.
-  const agentRows = useQuery({ queryKey: ["agents"], queryFn: agentsApi.list, refetchInterval: 10_000, enabled: canEnroll });
-  const enrolledAssets = useMemo(() => new Set((agentRows.data ?? []).filter((g) => g.status !== "revoked" && g.asset_id !== undefined).map((g) => g.asset_id)), [agentRows.data]);
   const [flash, setFlash] = useState<string | null>(null);
   const [live, setLive] = useState<SessionOpenResult | null>(null);
   const [opening, setOpening] = useState<number | null>(null);
@@ -172,11 +166,6 @@ export default function Assets() {
               {opening === a.id ? t("assets.opening") : t("common.connect")}
             </button>
             <button onClick={() => setCredFor(a)} className="inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs hover:bg-slate-800">{t("assets.credential")}</button>
-            {canEnroll && !enrolledAssets.has(a.id) && (
-              <button onClick={() => setInstallFor(a)} disabled={!a.credential_username} className="inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs hover:bg-slate-800 disabled:opacity-40" title={a.credential_username ? undefined : t("assets.setCredFirst")}>
-                {lang === "az" ? "Agenti qur" : "Install agent"}
-              </button>
-            )}
             <button onClick={() => setEditing(a)} className="inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs hover:bg-slate-800">{t("common.edit")}</button>
           </>
         )}
@@ -234,11 +223,6 @@ export default function Assets() {
             <input type="search" className={`${searchCls} !w-64`} placeholder={lang === "az" ? "Ad, ünvan, OS və ya etiket" : "Search name, address, OS or tag"} value={q} onChange={(e) => setQ(e.target.value)} />
             <Chips label="os" value={osFilter} onChange={setOsFilter} options={[{ id: "all", label: lang === "az" ? "Hamısı" : "All" }, { id: "linux", label: "Linux" }, { id: "windows", label: "Windows" }]} />
             <Chips label="status" value={statusFilter} onChange={setStatusFilter} options={[{ id: "all", label: lang === "az" ? "Hər status" : "Any status" }, { id: "online", label: "Online" }, { id: "offline", label: "Offline" }]} />
-            {canOperate && (
-              <button onClick={() => setEditing("new")} className="inline-flex h-8 items-center rounded-md border border-slate-700 px-3 text-xs text-slate-200 hover:bg-slate-800">
-                {t("assets.add")}
-              </button>
-            )}
             {canOperate && picked.size > 0 && (
               <button onClick={scanMany} className="inline-flex h-8 items-center rounded-md border border-slate-700 px-3 text-xs text-slate-200 hover:bg-slate-800">
                 {lang === "az" ? "Yoxla" : "Scan"} ({picked.size})
@@ -262,13 +246,6 @@ export default function Assets() {
         />
       )}
       {credFor && <CredentialModal asset={credFor} onSave={saveCredential} onClose={() => setCredFor(null)} />}
-      {installFor && (
-        <RemoteInstallModal
-          asset={installFor}
-          onClose={() => setInstallFor(null)}
-          onInstalled={() => { refresh(); queryClient.invalidateQueries({ queryKey: ["agents"] }); }}
-        />
-      )}
       {live && (
         <RemoteSession
           session={live}
