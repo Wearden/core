@@ -9,6 +9,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": "http://localhost:8000",
+      "/install-agent.sh": "http://localhost:8000",
+      "/downloads": "http://localhost:8000",
       "/ws": { target: "ws://localhost:8000", ws: true },
       "/guac": { target: "ws://localhost:8080", ws: true, rewrite: (p) => p.replace(/^\/guac/, "") },
     },

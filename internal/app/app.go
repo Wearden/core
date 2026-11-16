@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-type Config struct{ VaultKey, GuacKey, SessionControlKey, RecordingsDir, AnthropicKey, AnthropicModel, AllowedOrigin string }
+type Config struct{ VaultKey, GuacKey, SessionControlKey, RecordingsDir, AnthropicKey, AnthropicModel, AllowedOrigin, DownloadsDir string }
 type Server struct {
 	DB         *sql.DB
 	Store      *store.Store
@@ -169,6 +169,7 @@ func (s *Server) Handler() http.Handler {
 	s.featureRoutes(m)
 	s.settingsRoutes(m)
 	s.agentLogRoutes(m)
+	s.installRoutes(m)
 	s.aiRoutes(m)
 	s.scheduleRoutes(m)
 	s.websocketRoutes(m)

@@ -32,7 +32,7 @@ function useNow(): number {
 
 export default function Assets() {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const queryClient = useQueryClient();
   const { connected } = useHostsSocket();
   const now = useNow();
@@ -109,11 +109,6 @@ export default function Assets() {
             </span>
           </p>
         </div>
-        {canOperate && (
-          <button onClick={() => setEditing("new")} className="rounded-md bg-cyan-600 px-4 py-2 font-medium text-white hover:bg-cyan-500">
-            {t("assets.add")}
-          </button>
-        )}
       </div>
 
       <AgentManagement />
@@ -130,7 +125,7 @@ export default function Assets() {
 
       {!isLoading && assets.length === 0 && (
         <div className="rounded-xl border border-dashed border-slate-700 p-10 text-center text-slate-400">
-          {t("assets.none")} {canOperate ? t("assets.addHint") : t("assets.askOperator")}
+          {t("assets.none")} {lang === "az" ? "Agent qurulduqda və qeydiyyatdan keçdikdə host avtomatik burada görünür." : "A host appears here automatically once an agent is installed and enrolled."}
         </div>
       )}
 
