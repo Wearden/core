@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Wearden/core/internal/security"
@@ -30,6 +31,8 @@ func (s *Server) featureOpenSession(w http.ResponseWriter, r *http.Request) {
 		AssetID int64 `json:"asset_id"`
 		Width   int   `json:"width"`
 		Height  int   `json:"height"`
+		// Fingerprint the operator confirmed for a Windows host's RDP certificate.
+		Certificate string `json:"certificate_fingerprint"`
 	}
 	if !decode(w, r, &in) {
 		return
@@ -93,16 +96,26 @@ func (s *Server) featureOpenSession(w http.ResponseWriter, r *http.Request) {
 			problem(w, 400, "RDP requires password authentication")
 			return
 		}
-		port := integer(asset["rdp_port"])
-		if port < 1 || port > 65535 {
+		addr, ok := rdpAddress(asset)
+		if !ok {
 			problem(w, 400, "RDP is disabled for this asset")
 			return
 		}
+		if err := s.rdpVerify(r, in.AssetID, addr, in.Certificate); err != nil {
+			problem(w, 409, err.Error())
+			return
+		}
 		protocol = "rdp"
-		settings["port"] = strconv.FormatInt(port, 10)
+		settings["port"] = strconv.FormatInt(integer(asset["rdp_port"]), 10)
 		settings["password"] = string(secret)
+		// DOMAIN\user is split, because guacd takes the domain as its own parameter.
+		if domain, user, found := strings.Cut(username, `\`); found && domain != "" && user != "" {
+			settings["domain"] = domain
+			settings["username"] = user
+		}
 		settings["security"] = "nla"
-		settings["ignore-cert"] = "false"
+		// The certificate was just verified against the operator confirmed fingerprint.
+		settings["ignore-cert"] = "true"
 		settings["resize-method"] = "display-update"
 		settings["width"] = strconv.Itoa(in.Width)
 		settings["height"] = strconv.Itoa(in.Height)

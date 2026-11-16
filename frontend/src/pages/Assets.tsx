@@ -116,7 +116,24 @@ export default function Assets() {
     setOpening(asset.id);
     setFlash(null);
     try {
-      setLive(await sessionsApi.open(asset.id, Math.max(640, window.innerWidth - 340), Math.max(480, window.innerHeight - 60)));
+      // Windows hosts usually present a self-signed RDP certificate: the operator confirms its fingerprint once.
+      let fingerprint = "";
+      if (asset.os_type === "windows") {
+        const cert = await sessionsApi.rdpCertificate(asset.id);
+        if (!cert.trusted) {
+          const az = lang === "az";
+          const ok = await confirm({
+            title: cert.changed ? (az ? "RDP sertifikatı dəyişib" : "RDP certificate changed") : az ? "RDP sertifikatını təsdiqləyin" : "Confirm the RDP certificate",
+            message: `${cert.changed ? (az ? "Bu hostun sertifikatı əvvəl təsdiqlənəndən fərqlidir. Yalnız host yenidən qurulubsa və ya sertifikat yenilənibsə davam edin. " : "This host's certificate differs from the one confirmed earlier. Continue only if the host was reinstalled or its certificate renewed. ") : ""}${az ? "Barmaq izini hostdakı ilə müqayisə edin" : "Compare the fingerprint with the one on the host"}: ${cert.fingerprint} (${cert.subject})`,
+            confirmLabel: az ? "Etibar et və qoşul" : "Trust and connect",
+            cancelLabel: t("common.cancel"),
+            danger: cert.changed,
+          });
+          if (!ok) return;
+          fingerprint = cert.fingerprint;
+        }
+      }
+      setLive(await sessionsApi.open(asset.id, Math.max(640, window.innerWidth - 340), Math.max(480, window.innerHeight - 60), fingerprint));
     } catch (err) {
       setFlash(`${t("assets.sessionFail")}: ${err instanceof Error ? err.message : t("assets.unknownErr")}`);
     } finally {
