@@ -1,12 +1,10 @@
 package app
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"sort"
 	"strings"
@@ -27,13 +25,14 @@ var aiTools = []map[string]any{
 
 func (s *Server) aiRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/ai/status", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
-		key, _ := s.setting(r.Context(), "anthropic_api_key")
-		model, _ := s.setting(r.Context(), "anthropic_model")
-		writeJSON(w, 200, map[string]any{"enabled": key != "" && model != ""})
+		p, err := s.aiResolve(r.Context(), "")
+		if err != nil {
+			writeJSON(w, 200, map[string]any{"enabled": false})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"enabled": true, "provider": p.Name, "model": p.Model})
 	}))
 	mux.HandleFunc("POST /api/ai/analyze", s.require("operator", s.aiAnalyze))
-	mux.HandleFunc("POST /api/ai/test", s.require("admin", s.aiTest))
-	mux.HandleFunc("GET /api/ai/models", s.require("admin", s.aiModels))
 	mux.HandleFunc("GET /api/ai/analyses/{scan_id}", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
 		doc, err := s.Store.Get(r.Context(), "ai_analyses", r.PathValue("scan_id"))
 		if errors.Is(err, sql.ErrNoRows) {
@@ -50,8 +49,9 @@ func (s *Server) aiRoutes(mux *http.ServeMux) {
 
 func (s *Server) aiAnalyze(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		ScanID   string `json:"scan_id"`
-		Language string `json:"language"`
+		ScanID     string `json:"scan_id"`
+		Language   string `json:"language"`
+		ProviderID string `json:"provider_id"`
 	}
 	if !decode(w, r, &in) {
 		return
@@ -60,14 +60,9 @@ func (s *Server) aiAnalyze(w http.ResponseWriter, r *http.Request) {
 		problem(w, 400, "Unsupported language")
 		return
 	}
-	key, _ := s.setting(r.Context(), "anthropic_api_key")
-	if key == "" {
-		problem(w, 503, "AI provider key is not configured; an administrator can set it under Settings")
-		return
-	}
-	model, _ := s.setting(r.Context(), "anthropic_model")
-	if model == "" {
-		problem(w, 503, "AI model is not configured; an administrator can set it under Settings")
+	prov, err := s.aiResolve(r.Context(), in.ProviderID)
+	if err != nil {
+		problem(w, 503, "No AI provider is configured; an administrator can add one under Settings")
 		return
 	}
 	scan, err := s.Store.Get(r.Context(), "scans", in.ScanID)
@@ -146,33 +141,12 @@ func (s *Server) aiAnalyze(w http.ResponseWriter, r *http.Request) {
 	system := "You are a security hardening analyst. Use the tools to inspect one scan, then decide what to do about each failing control. Reply with ONLY a JSON object: " +
 		`{"summary": string, "decisions": [{"control_id": string, "action": "remediate"|"review"|"accept", "priority": 1-5, "reason": string}]}. ` +
 		"Choose remediate only when get_control reports auto_remediation true; prefer review for risky controls. Write summary and reasons in " + language + "."
-	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
 	defer cancel()
-	messages := []map[string]any{{"role": "user", "content": "Analyze this scan and decide."}}
-	var final string
-	for turn := 0; turn < aiMaxTurns && final == ""; turn++ {
-		resp, err := aiCall(ctx, key, map[string]any{"model": model, "max_tokens": 2000, "system": system, "tools": aiTools, "messages": messages})
-		if err != nil {
-			problem(w, 502, "AI provider request failed")
-			return
-		}
-		messages = append(messages, map[string]any{"role": "assistant", "content": resp.Content})
-		results := []map[string]any{}
-		var textOut strings.Builder
-		for _, block := range resp.Content {
-			switch block["type"] {
-			case "text":
-				textOut.WriteString(text(block["text"]))
-			case "tool_use":
-				input, _ := block["input"].(map[string]any)
-				results = append(results, map[string]any{"type": "tool_result", "tool_use_id": block["id"], "content": runTool(text(block["name"]), input)})
-			}
-		}
-		if len(results) == 0 {
-			final = textOut.String()
-			break
-		}
-		messages = append(messages, map[string]any{"role": "user", "content": results})
+	final, err := s.aiLoop(ctx, prov, system, "Analyze this scan and decide.", runTool)
+	if err != nil {
+		problem(w, 502, "AI provider request failed")
+		return
 	}
 	start, end := strings.Index(final, "{"), strings.LastIndex(final, "}")
 	var parsed struct {
@@ -207,102 +181,11 @@ func (s *Server) aiAnalyze(w http.ResponseWriter, r *http.Request) {
 		decisions = append(decisions, map[string]any{"control_id": d.ControlID, "title": byControl[d.ControlID].Title, "severity": byControl[d.ControlID].Severity, "action": action, "priority": min(max(d.Priority, 1), 5), "reason": d.Reason, "auto_remediation": supported, "risky": actionRisky(b.OS, d.ControlID, b.Controls[d.ControlID].Risky)})
 	}
 	sort.SliceStable(decisions, func(i, j int) bool { return decisions[i]["priority"].(int) < decisions[j]["priority"].(int) })
-	doc := map[string]any{"scan_id": in.ScanID, "benchmark_id": b.ID, "model": model, "summary": parsed.Summary, "decisions": decisions, "created_by": current(r).Username, "created_at": now()}
+	doc := map[string]any{"scan_id": in.ScanID, "benchmark_id": b.ID, "model": prov.Model, "provider": prov.Name, "summary": parsed.Summary, "decisions": decisions, "created_by": current(r).Username, "created_at": now()}
 	if err := s.Store.Put(r.Context(), "ai_analyses", in.ScanID, doc); err != nil {
 		s.databaseError(w, err)
 		return
 	}
 	s.audit(r, "ai.analyze", in.ScanID, true, "")
 	writeJSON(w, 200, doc)
-}
-
-type aiResponse struct {
-	Content []map[string]any `json:"content"`
-}
-
-func aiCall(ctx context.Context, key string, body map[string]any) (aiResponse, error) {
-	var out aiResponse
-	raw, err := json.Marshal(body)
-	if err != nil {
-		return out, err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.anthropic.com/v1/messages", bytes.NewReader(raw))
-	if err != nil {
-		return out, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	client := &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	resp, err := client.Do(req)
-	if err != nil {
-		return out, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return out, errors.New("provider status " + resp.Status)
-	}
-	return out, json.NewDecoder(io.LimitReader(resp.Body, 2*1024*1024)).Decode(&out)
-}
-
-// aiTest sends one tiny request with the stored key and model and reports success or a generic failure.
-func (s *Server) aiTest(w http.ResponseWriter, r *http.Request) {
-	key, _ := s.setting(r.Context(), "anthropic_api_key")
-	model, _ := s.setting(r.Context(), "anthropic_model")
-	if key == "" || model == "" {
-		problem(w, 409, "Set the API key and the model first")
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)
-	defer cancel()
-	if _, err := aiCall(ctx, key, map[string]any{"model": model, "max_tokens": 8, "messages": []map[string]any{{"role": "user", "content": "ping"}}}); err != nil {
-		writeJSON(w, 200, map[string]any{"ok": false, "message": "The provider rejected the request. Check the key and the model name."})
-		return
-	}
-	writeJSON(w, 200, map[string]any{"ok": true, "model": model, "message": "The provider accepted the key and the model."})
-}
-
-// aiModels lists model identifiers from the provider so the UI can suggest them without a hardcoded list.
-func (s *Server) aiModels(w http.ResponseWriter, r *http.Request) {
-	key, _ := s.setting(r.Context(), "anthropic_api_key")
-	if key == "" {
-		problem(w, 409, "Set the API key first")
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.anthropic.com/v1/models?limit=100", nil)
-	if err != nil {
-		problem(w, 500, "Cannot build request")
-		return
-	}
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	client := &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		if resp != nil {
-			resp.Body.Close()
-		}
-		problem(w, 502, "AI provider request failed")
-		return
-	}
-	defer resp.Body.Close()
-	var payload struct {
-		Data []struct {
-			ID          string `json:"id"`
-			DisplayName string `json:"display_name"`
-		} `json:"data"`
-	}
-	if json.NewDecoder(io.LimitReader(resp.Body, 1024*1024)).Decode(&payload) != nil {
-		problem(w, 502, "AI provider returned an unusable list")
-		return
-	}
-	out := []map[string]string{}
-	for _, m := range payload.Data {
-		if len(m.ID) <= 100 {
-			out = append(out, map[string]string{"id": m.ID, "name": m.DisplayName})
-		}
-	}
-	writeJSON(w, 200, out)
 }

@@ -11,10 +11,10 @@ import HostIcon, { osLabel } from "./HostIcon";
 const field = "max-w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-slate-400";
 
 export default function AgentManagement() {
-  const { user } = useAuth();
+  const { can } = useAuth();
   const { lang, t } = useI18n();
   const az = lang === "az";
-  const isAdmin = user?.role === "admin";
+  const isAdmin = can("agents.enroll");
   const queryClient = useQueryClient();
   const { confirm, toast } = useFeedback();
   const agents = useQuery({ queryKey: ["agents"], queryFn: agentsApi.list, refetchInterval: 10_000 });

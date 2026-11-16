@@ -32,7 +32,7 @@ export default function ScanDetail() {
   const c = useChartColors();
   const queryClient = useQueryClient();
   const { confirm, toast } = useFeedback();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
   const { connected, feed } = useScanSocket(id);
 
   const scan = useQuery({ queryKey: ["scan", id], queryFn: () => scansApi.get(id!), enabled: !!id, refetchInterval: 10_000 });

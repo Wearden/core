@@ -13,6 +13,9 @@ export interface User {
   username: string;
   role: "admin" | "operator" | "viewer" | string;
   must_change_password: boolean;
+  /** Coarse rank of the role: viewer, operator or admin. */
+  level: "viewer" | "operator" | "admin";
+  permissions: string[];
 }
 
 export class ApiError extends Error {

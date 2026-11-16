@@ -97,7 +97,7 @@ func (s *Server) assetRoutes(m *http.ServeMux) {
 	}))
 	m.HandleFunc("POST /api/assets", s.require("operator", s.saveAsset))
 	m.HandleFunc("PUT /api/assets/{id}", s.require("operator", s.saveAsset))
-	m.HandleFunc("DELETE /api/assets/{id}", s.require("admin", func(w http.ResponseWriter, r *http.Request) {
+	m.HandleFunc("DELETE /api/assets/{id}", s.requirePerm("assets.delete", func(w http.ResponseWriter, r *http.Request) {
 		tx, err := s.DB.BeginTx(r.Context(), nil)
 		if err != nil {
 			s.databaseError(w, err)
@@ -129,8 +129,8 @@ func (s *Server) assetRoutes(m *http.ServeMux) {
 		s.audit(r, "asset.deleted", r.PathValue("id"), true, "")
 		w.WriteHeader(204)
 	}))
-	m.HandleFunc("PUT /api/assets/{id}/credential", s.require("admin", s.setCredential))
-	m.HandleFunc("DELETE /api/assets/{id}/credential", s.require("admin", func(w http.ResponseWriter, r *http.Request) {
+	m.HandleFunc("PUT /api/assets/{id}/credential", s.requirePerm("credentials.manage", s.setCredential))
+	m.HandleFunc("DELETE /api/assets/{id}/credential", s.requirePerm("credentials.manage", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := s.DB.ExecContext(r.Context(), "DELETE FROM credentials WHERE asset_id=$1", r.PathValue("id")); err != nil {
 			s.databaseError(w, err)
 			return

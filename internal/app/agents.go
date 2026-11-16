@@ -35,9 +35,9 @@ func (s *Server) agentRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/agent/v1/config", s.agentConfig)
 	m.HandleFunc("GET /api/agent/v1/ruleset", s.agentRuleset)
 	m.HandleFunc("POST /api/agent/v1/reports", s.ingestReport)
-	m.HandleFunc("POST /api/agents/enrollment-tokens", s.require("admin", s.enrollmentToken))
+	m.HandleFunc("POST /api/agents/enrollment-tokens", s.requirePerm("agents.enroll", s.enrollmentToken))
 	m.HandleFunc("GET /api/agents", s.require("viewer", s.listAgents))
-	m.HandleFunc("POST /api/agents/{id}/revoke", s.require("admin", func(w http.ResponseWriter, r *http.Request) {
+	m.HandleFunc("POST /api/agents/{id}/revoke", s.requirePerm("agents.enroll", func(w http.ResponseWriter, r *http.Request) {
 		tx, err := s.DB.BeginTx(r.Context(), nil)
 		if err != nil {
 			s.databaseError(w, err)

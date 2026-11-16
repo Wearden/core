@@ -44,7 +44,7 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
   const L = (en: string, a: string) => (az ? a : en);
   const navigate = useNavigate();
   const c = useChartColors();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
 
   // Closing plays a short exit animation first; the timeout also covers reduced-motion, where animations are off.
   const [closing, setClosing] = useState(false);

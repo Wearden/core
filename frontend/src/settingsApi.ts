@@ -45,7 +45,7 @@ export const aiApi = {
 export interface UserRow {
   id: number;
   username: string;
-  role: "viewer" | "operator" | "admin";
+  role: string;
   active: boolean;
   must_change_password: boolean;
   created_at: string;
@@ -53,13 +53,73 @@ export interface UserRow {
 
 export const usersApi = {
   list: () => request<UserRow[]>("/users"),
-  create: (body: { username: string; password: string; role: UserRow["role"] }) => request<unknown>("/users", { method: "POST", body: JSON.stringify(body) }),
-  update: (id: number, body: { role?: UserRow["role"]; active?: boolean }) => request<void>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  create: (body: { username: string; password: string; role: string }) => request<unknown>("/users", { method: "POST", body: JSON.stringify(body) }),
+  remove: (id: number) => request<void>(`/users/${id}`, { method: "DELETE" }),
+  update: (id: number, body: { role?: string; active?: boolean }) => request<void>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   resetPassword: (id: number, password: string) => request<void>(`/users/${id}/reset-password`, { method: "POST", body: JSON.stringify({ password }) }),
   changeOwnPassword: (current: string, next: string) => request<void>("/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: current, new_password: next }) }),
 };
 
+export type ProviderKind = "anthropic" | "openai";
+
+export interface AiProvider {
+  id: string;
+  name: string;
+  kind: ProviderKind;
+  base_url: string;
+  model: string;
+  has_key: boolean;
+  enabled: boolean;
+  default: boolean;
+  /** Provided by the older key and model settings; edit it under Agents and logs. */
+  readonly: boolean;
+}
+
+export interface AiProviderInput {
+  name: string;
+  kind: ProviderKind;
+  base_url: string;
+  model: string;
+  api_key?: string;
+  clear_key?: boolean;
+  enabled?: boolean;
+}
+
 export const aiAdminApi = {
-  test: () => request<{ ok: boolean; message: string }>("/ai/test", { method: "POST" }),
-  models: () => request<{ id: string; name: string }[]>("/ai/models"),
+  providers: () => request<{ vault_ready: boolean; providers: AiProvider[] }>("/ai/providers"),
+  create: (body: AiProviderInput) => request<AiProvider>("/ai/providers", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: AiProviderInput) => request<AiProvider>(`/ai/providers/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  remove: (id: string) => request<void>(`/ai/providers/${id}`, { method: "DELETE" }),
+  makeDefault: (id: string) => request<void>(`/ai/providers/${id}/default`, { method: "POST" }),
+  test: (id: string) => request<{ ok: boolean; message: string; model?: string; latency_ms?: number }>(`/ai/providers/${id}/test`, { method: "POST" }),
+  models: (id: string) => request<{ id: string; name: string }[]>(`/ai/providers/${id}/models`),
+};
+
+export interface PermissionDef {
+  id: string;
+  group: string;
+  label: string;
+}
+
+export interface RoleRow {
+  name: string;
+  description: string;
+  level: "viewer" | "operator" | "admin";
+  permissions: string[];
+  builtin: boolean;
+  users: number;
+}
+
+export interface RoleInput {
+  name: string;
+  description: string;
+  level: "viewer" | "operator";
+  permissions: string[];
+}
+
+export const rolesApi = {
+  list: () => request<{ roles: RoleRow[]; permissions: PermissionDef[] }>("/roles"),
+  create: (body: RoleInput) => request<unknown>("/roles", { method: "POST", body: JSON.stringify(body) }),
+  update: (body: RoleInput) => request<unknown>(`/roles/${body.name}`, { method: "PUT", body: JSON.stringify(body) }),
+  remove: (name: string) => request<void>(`/roles/${name}`, { method: "DELETE" }),
 };

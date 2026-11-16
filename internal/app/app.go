@@ -36,6 +36,8 @@ type User struct {
 	Username   string `json:"username"`
 	Role       string `json:"role"`
 	MustChange bool   `json:"must_change_password"`
+	Level       string   `json:"level"`
+	Permissions []string `json:"permissions"`
 }
 type contextKey int
 
@@ -84,26 +86,15 @@ func (s *Server) user(ctx context.Context, token string) (User, error) {
 		return u, sql.ErrNoRows
 	}
 	err := s.DB.QueryRowContext(ctx, `SELECT u.id,u.username,u.role,u.must_change_password FROM users u JOIN user_tokens t ON t.user_id=u.id WHERE t.hash=$1 AND t.kind='access' AND t.expires_at>now() AND u.active`, digest(token)).Scan(&u.ID, &u.Username, &u.Role, &u.MustChange)
-	return u, err
+	if err != nil {
+		return u, err
+	}
+	// A role that no longer exists falls back to read-only access.
+	u.Level, u.Permissions, _ = s.roleInfo(ctx, u.Role)
+	return u, nil
 }
 func (s *Server) require(role string, h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := s.user(r.Context(), bearer(r))
-		if err != nil {
-			problem(w, 401, "Not authenticated")
-			return
-		}
-		ranks := map[string]int{"viewer": 1, "operator": 2, "admin": 3}
-		if ranks[u.Role] < ranks[role] {
-			problem(w, 403, "Insufficient role")
-			return
-		}
-		if u.MustChange && r.URL.Path != "/api/auth/me" && r.URL.Path != "/api/auth/change-password" && r.URL.Path != "/api/auth/logout" {
-			problem(w, 403, "Change the initial password first")
-			return
-		}
-		h(w, r.WithContext(context.WithValue(r.Context(), userKey, u)))
-	}
+	return s.gate(func(u User) bool { return levelRank[u.Level] >= levelRank[role] }, "Insufficient role", h)
 }
 func (s *Server) audit(r *http.Request, action, target string, success bool, detail string) {
 	u := current(r)
@@ -172,6 +163,8 @@ func (s *Server) Handler() http.Handler {
 	s.installRoutes(m)
 	s.aiRoutes(m)
 	s.userRoutes(m)
+	s.roleRoutes(m)
+	s.aiProviderRoutes(m)
 	s.scheduleRoutes(m)
 	s.websocketRoutes(m)
 	s.sessionControlRoutes(m)

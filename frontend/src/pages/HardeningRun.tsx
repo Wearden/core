@@ -28,7 +28,7 @@ export default function HardeningRun() {
   const { t } = useI18n();
   const { confirm } = useFeedback();
   const queryClient = useQueryClient();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
   const { connected, log } = useHardeningSocket(id);
   const run = useQuery({ queryKey: ["run", id], queryFn: () => hardeningApi.run(id!), enabled: !!id, refetchInterval: 5_000 });
   const [picked, setPicked] = useState<Set<number>>(new Set());

@@ -39,7 +39,7 @@ function useNow(): number {
 }
 
 export default function Assets() {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
   const { confirm, toast } = useFeedback();
@@ -52,8 +52,8 @@ export default function Assets() {
   const { connected } = useHostsSocket();
   const now = useNow();
 
-  const canOperate = user?.role === "admin" || user?.role === "operator";
-  const isAdmin = user?.role === "admin";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
+  const isAdmin = can("assets.delete");
 
   const { data: assets = [], isLoading, error } = useQuery({ queryKey: ["assets"], queryFn: assetsApi.list, refetchInterval: 10_000 });
 
