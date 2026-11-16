@@ -25,6 +25,9 @@ const ICONS: Record<string, string> = {
   "/sessions": "M4 17l6-6-6-6M12 19h8",
   "/audit": "M12 8v4l3 2M3 12a9 9 0 1 0 3-6.7M3 4v5h5",
   "/settings": "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
+  "/pam/assets": "M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5zM12 15v2",
+  "/pam/scans": "M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM8 10.5h5",
+  "/pam/hardening": "M12 3l8 3v6c0 4.5-3.2 8.2-8 9-4.8-.8-8-4.5-8-9V6zM12 9v4M12 16h.01",
 };
 
 const GROUPS = [
@@ -37,6 +40,15 @@ const GROUPS = [
       { to: "/rollback", key: "nav.rollback", hint: "" },
       { to: "/attack", key: "nav.attack", hint: "" },
       { to: "/benchmarks", key: "nav.benchmarks", hint: "g b" },
+    ],
+  },
+  {
+    // Agentless management over SSH or WinRM, kept apart from the agent pages above.
+    label: "PAM",
+    items: [
+      { to: "/pam/assets", key: "nav.pamAssets", hint: "" },
+      { to: "/pam/scans", key: "nav.pamScans", hint: "" },
+      { to: "/pam/hardening", key: "nav.pamHardening", hint: "" },
     ],
   },
   {

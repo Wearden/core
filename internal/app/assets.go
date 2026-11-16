@@ -25,7 +25,7 @@ type assetInput struct {
 	WinRM      *int     `json:"winrm_port"`
 	WinRMHTTPS *int     `json:"winrm_https_port"`
 	Tags       []string `json:"tags"`
-	// "agent" (installed agent), "ssh" or "winrm" (agentless runs over a PAM connection).
+	// "agent" (installed agent), "ssh" or "winrm" (PAM: managed over that connection without an agent).
 	Connection string `json:"connection"`
 }
 

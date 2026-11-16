@@ -31,7 +31,9 @@ export default function Scans() {
   const navigate = useNavigate();
   const canOperate = user?.level === "admin" || user?.level === "operator";
   const [creating, setCreating] = useState(false);
-  const { data = [], isLoading, error } = useQuery({ queryKey: ["scans"], queryFn: scansApi.list, refetchInterval: 5_000 });
+  const { data: allScans = [], isLoading, error } = useQuery({ queryKey: ["scans"], queryFn: scansApi.list, refetchInterval: 5_000 });
+  // PAM scans are listed on the PAM scans page.
+  const data = useMemo(() => allScans.filter((s) => s.mode !== "pam"), [allScans]);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
 
