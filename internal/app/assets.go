@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -182,6 +183,7 @@ func (s *Server) saveAsset(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in) {
 		return
 	}
+	in.Name, in.Host = strings.TrimSpace(in.Name), strings.TrimSpace(in.Host)
 	if len(in.Name) < 1 || len(in.Name) > 100 || (net.ParseIP(in.Host) == nil && !hostnameRE.MatchString(in.Host)) || (in.OS != "linux" && in.OS != "windows") || len(in.Tags) > 10 {
 		problem(w, 400, "Invalid asset name, host, OS or tags")
 		return
@@ -232,10 +234,40 @@ func (s *Server) saveAsset(w http.ResponseWriter, r *http.Request) {
 		problem(w, 400, "Invalid asset")
 		return
 	}
+	tx, err := s.DB.BeginTx(r.Context(), nil)
+	if err != nil {
+		s.databaseError(w, err)
+		return
+	}
+	defer tx.Rollback()
+	// Names and addresses identify a host, so two assets may not share either one.
+	// The lock serialises concurrent saves so two requests cannot both pass the check.
+	if _, err = tx.ExecContext(r.Context(), "SELECT pg_advisory_xact_lock(73194332)"); err != nil {
+		s.databaseError(w, err)
+		return
+	}
+	var otherName, otherHost string
+	err = tx.QueryRowContext(r.Context(), `SELECT data->>'name', data->>'host' FROM assets WHERE id<>$1
+		AND (lower(btrim(data->>'name'))=lower(btrim($2)) OR lower(btrim(data->>'host'))=lower(btrim($3))) ORDER BY id LIMIT 1`, id, in.Name, in.Host).Scan(&otherName, &otherHost)
+	if err == nil {
+		if strings.EqualFold(strings.TrimSpace(otherName), strings.TrimSpace(in.Name)) {
+			problem(w, 409, "An asset named "+otherName+" already exists; choose another name")
+		} else {
+			problem(w, 409, "Address "+in.Host+" is already used by asset "+otherName)
+		}
+		return
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		s.databaseError(w, err)
+		return
+	}
 	if id == 0 {
-		err = s.DB.QueryRowContext(r.Context(), "INSERT INTO assets(data) VALUES($1) RETURNING id", data).Scan(&id)
+		err = tx.QueryRowContext(r.Context(), "INSERT INTO assets(data) VALUES($1) RETURNING id", data).Scan(&id)
 	} else {
-		_, err = s.DB.ExecContext(r.Context(), "UPDATE assets SET data=$1 WHERE id=$2", data, id)
+		_, err = tx.ExecContext(r.Context(), "UPDATE assets SET data=$1 WHERE id=$2", data, id)
+	}
+	if err == nil {
+		err = tx.Commit()
 	}
 	if err != nil {
 		s.databaseError(w, err)
