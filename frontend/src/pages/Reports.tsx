@@ -12,7 +12,7 @@ import { Chips, EmptyState, PageHeader } from "../components/ui";
 const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
 function heatColor(v: number | null): string {
-  if (v === null) return "bg-slate-900 text-slate-600";
+  if (v === null) return "bg-slate-900 text-slate-500";
   if (v >= 90) return "bg-emerald-800/80 text-emerald-100";
   if (v >= 70) return "bg-amber-800/80 text-amber-100";
   return "bg-red-900/80 text-red-100";

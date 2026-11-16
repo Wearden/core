@@ -10,7 +10,7 @@ import { useFeedback } from "../components/feedback";
 import { getDensity, getThemePref, setDensity, setThemePref, Density, ThemePref } from "../theme";
 import { EmptyState, PageHeader, tableWrap, theadCls } from "../components/ui";
 
-const field = "w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm outline-none placeholder:text-slate-600 focus:border-slate-500";
+const field = "w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm outline-none placeholder:text-slate-500 focus:border-slate-500";
 const btn = "rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-900 disabled:opacity-40";
 const btnPrimary = "rounded-md bg-cyan-600 px-3 py-2 text-sm font-medium hover:bg-cyan-500 disabled:opacity-40";
 

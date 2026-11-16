@@ -14,7 +14,7 @@ interface Technique {
 }
 
 function Cell({ v }: { v: number | null }) {
-  if (v === null) return <span className="text-slate-600">-</span>;
+  if (v === null) return <span className="text-slate-500">-</span>;
   const tone = v >= 90 ? "bg-emerald-400" : v >= 70 ? "bg-amber-400" : "bg-red-400";
   return (
     <span className="inline-flex items-center gap-2 text-xs text-slate-200">

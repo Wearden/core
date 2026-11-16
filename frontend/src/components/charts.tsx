@@ -245,7 +245,7 @@ export function HeatGrid({ categories, rows }: { categories: string[]; rows: { n
                   key={cat}
                   title={v === null ? "no data" : `${v.toFixed(0)}%`}
                   className="rounded-md py-1.5 text-center font-medium"
-                  style={{ background: v === null ? "rgb(var(--slate-800))" : `color-mix(in srgb, rgb(var(--emerald-400)) ${Math.round(v)}%, rgb(var(--red-400)))`, color: v === null ? "rgb(var(--slate-500))" : "#0a0a0a" }}
+                  style={{ background: v === null ? "rgb(var(--slate-800))" : `color-mix(in srgb, rgb(var(--emerald-400)) ${Math.round(v)}%, rgb(var(--red-400)))`, color: v === null ? "rgb(var(--slate-500))" : "rgb(var(--heat-ink))" }}
                 >
                   {v === null ? "-" : Math.round(v)}
                 </div>
