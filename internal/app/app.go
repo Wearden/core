@@ -162,6 +162,7 @@ func (s *Server) Handler() http.Handler {
 	s.settingsRoutes(m)
 	s.agentLogRoutes(m)
 	s.installRoutes(m)
+	s.remoteInstallRoutes(m)
 	s.aiRoutes(m)
 	s.userRoutes(m)
 	s.roleRoutes(m)
