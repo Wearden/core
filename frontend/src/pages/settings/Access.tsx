@@ -10,6 +10,13 @@ import { btn, btnDanger, btnPrimary, btnSmall, Card, Dialog, errText, field, Lab
 
 const LEVEL_RANK = { viewer: 1, operator: 2, admin: 3 } as const;
 
+/** Plain wording for a role's base level, shown next to the role name in dropdowns. */
+function levelLabel(level: RoleRow["level"], az: boolean): string {
+  if (level === "admin") return az ? "tam giriş" : "full access";
+  if (level === "operator") return az ? "oxuma və yazma" : "read and write";
+  return az ? "yalnız oxuma" : "read only";
+}
+
 /** A strong random password that satisfies common policies; shown once so it can be handed over. */
 function generatePassword(): string {
   const sets = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnopqrstuvwxyz", "23456789", "!@#$%^&*-_=+"];
@@ -85,7 +92,7 @@ function UserDialog({ roles, onClose }: { roles: RoleRow[]; onClose: () => void 
         </Labeled>
         <Labeled label={az ? "Rol" : "Role"}>
           <select className={`${field} h-9`} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-            {options.map((r) => <option key={r.name} value={r.name}>{r.name} ({r.level})</option>)}
+            {options.map((r) => <option key={r.name} value={r.name}>{r.name} ({levelLabel(r.level, az)})</option>)}
           </select>
         </Labeled>
         {create.error && <p className="text-xs text-red-300">{errText(create.error)}</p>}
@@ -151,7 +158,7 @@ export function Users() {
     { id: "role", header: az ? "Rol" : "Role", sort: (a, b) => a.role.localeCompare(b.role), csv: (u) => u.role, cell: (u) => (
       <select className="h-8 rounded-md border border-slate-800 bg-slate-950 px-2 text-xs" disabled={!manageable(u)} value={u.role} onChange={(e) => update.mutate({ id: u.id, role: e.target.value })}>
         {!roleRows.some((r) => r.name === u.role) && <option value={u.role}>{u.role}</option>}
-        {roleRows.map((r) => <option key={r.name} value={r.name} disabled={!canGrant(r)}>{r.name}</option>)}
+        {roleRows.map((r) => <option key={r.name} value={r.name} disabled={!canGrant(r)}>{r.name} ({levelLabel(r.level, az)})</option>)}
       </select>
     ) },
     { id: "state", header: az ? "Vəziyyət" : "State", sort: (a, b) => Number(a.active) - Number(b.active), csv: (u) => (u.active ? "active" : "disabled"), cell: (u) => (
