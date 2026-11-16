@@ -205,6 +205,17 @@ function AgentSettings({ rows, vaultReady }: { rows: SettingRow[]; vaultReady: b
   );
 }
 
+// Role options with a short privilege description; the submitted value stays the bare role name.
+function RoleOptions({ az }: { az: boolean }) {
+  return (
+    <>
+      <option value="viewer">{az ? "viewer (yalnız oxuma)" : "viewer (read only)"}</option>
+      <option value="operator">{az ? "operator (oxuma və yazma)" : "operator (read and write)"}</option>
+      <option value="admin">{az ? "admin (tam giriş)" : "admin (full access)"}</option>
+    </>
+  );
+}
+
 function Users() {
   const { user } = useAuth();
   const { lang } = useI18n();
@@ -229,7 +240,7 @@ function Users() {
           <input className={field} placeholder={az ? "İstifadəçi adı" : "Username"} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
           <input className={field} type="password" autoComplete="new-password" placeholder={az ? "Müvəqqəti parol (12+)" : "Temporary password (12+)"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           <select className={field} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRow["role"] })}>
-            <option value="viewer">viewer</option><option value="operator">operator</option><option value="admin">admin</option>
+            <RoleOptions az={az} />
           </select>
           <button className={btnPrimary} disabled={!form.username || form.password.length < 12 || create.isPending}>{az ? "Əlavə et" : "Add"}</button>
         </form>
@@ -246,7 +257,7 @@ function Users() {
                     <td className="px-4 py-2.5"><span className="text-slate-100">{u.username}</span>{u.id === user?.id && <span className="ml-2 text-xs text-slate-500">({az ? "siz" : "you"})</span>}</td>
                     <td className="px-4 py-2.5">
                       <select className="rounded-md border border-slate-800 bg-slate-950 px-2 py-1 text-xs" disabled={u.id === user?.id} value={u.role} onChange={(e) => update.mutate({ id: u.id, role: e.target.value as UserRow["role"] })}>
-                        <option value="viewer">viewer</option><option value="operator">operator</option><option value="admin">admin</option>
+                        <RoleOptions az={az} />
                       </select>
                     </td>
                     <td className="px-4 py-2.5 text-xs text-slate-300">
