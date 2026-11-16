@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { agentsApi } from "../agentsApi";
@@ -45,8 +46,15 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
   const c = useChartColors();
   const canOperate = user?.role === "admin" || user?.role === "operator";
 
+  // Closing plays a short exit animation first; the timeout also covers reduced-motion, where animations are off.
+  const [closing, setClosing] = useState(false);
+  const close = useCallback(() => {
+    setClosing(true);
+    window.setTimeout(onClose, 180);
+  }, [onClose]);
+
   useEffect(() => {
-    const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const key = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", key);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -54,7 +62,7 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
       window.removeEventListener("keydown", key);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, [close]);
 
   const assets = useQuery({ queryKey: ["assets"], queryFn: assetsApi.list });
   const asset = assets.data?.find((a) => a.id === assetId);
@@ -102,12 +110,13 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
   ];
   const total = latest ? latest.passed + latest.failed + latest.errored : 0;
 
-  return (
-    <div className="fixed inset-0 z-40 bg-slate-950" role="dialog" aria-modal="true" aria-label="Host details">
+  // Rendered on document.body: inside the page the parent's space-y margin pushed the fixed panel 24px down.
+  return createPortal(
+    <div className={`fixed inset-0 z-40 bg-slate-950 ${closing ? "wd-panel-out" : "wd-panel-in"}`} role="dialog" aria-modal="true" aria-label="Host details">
       <aside className="flex h-full w-full flex-col bg-slate-950">
         <header className="border-b border-slate-800 px-6 pt-4">
          <div className="mx-auto w-full max-w-[1400px] space-y-4">
-          <button onClick={onClose} className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-800 px-3 text-sm text-slate-300 hover:bg-slate-900 hover:text-slate-100">
+          <button onClick={close} className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-800 px-3 text-sm text-slate-300 hover:bg-slate-900 hover:text-slate-100">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 6l-6 6 6 6" /></svg>
             {L("Back to assets", "Assetlərə qayıt")}
           </button>
@@ -241,6 +250,7 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
          </div>
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }
