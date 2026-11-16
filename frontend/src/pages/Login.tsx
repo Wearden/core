@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth";
-import { ApiError } from "../api";
+import { api, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import Logo from "../components/Logo";
 import CursorGrid from "../components/CursorGrid";
@@ -28,31 +29,63 @@ function Brand({ size = 28 }: { size?: number }) {
 
 const iconProps = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
 
+type Mode = "signin" | "register" | "requested";
+
 export default function Login() {
   const { login } = useAuth();
   const { t, lang, setLang } = useI18n();
   const az = lang === "az";
   const light = useIsLight();
+  const setup = useQuery({ queryKey: ["setup"], queryFn: api.setup, retry: false });
+  const firstRun = setup.data ? !setup.data.admin_exists : false;
+  const canRegister = !!setup.data && (firstRun || setup.data.registration_open);
+  const [wanted, setWanted] = useState<Mode>("signin");
+  const mode: Mode = firstRun ? "register" : wanted === "register" && !canRegister ? "signin" : wanted;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [again, setAgain] = useState("");
   const [show, setShow] = useState(false);
   const [caps, setCaps] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const fail = (err: unknown) => {
+    if (err instanceof ApiError && err.status === 429) setError(t("login.tooMany"));
+    else if (err instanceof ApiError && err.status === 401) setError(t("login.wrong"));
+    else if (err instanceof ApiError && [400, 403, 409].includes(err.status)) setError(err.message);
+    else setError(t("login.unreachable"));
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (mode === "register") {
+      if (password.length < 12) return setError(az ? "Parol ən azı 12 simvol olmalıdır." : "The password must be at least 12 characters.");
+      if (password !== again) return setError(az ? "Parollar uyğun gəlmir." : "The passwords do not match.");
+    }
     setPending(true);
     try {
-      await login(username, password);
+      if (mode === "register") {
+        const res = await api.register(username, password);
+        if (res.status === "admin") await login(username, password);
+        else {
+          setPassword("");
+          setAgain("");
+          setWanted("requested");
+        }
+      } else {
+        await login(username, password);
+      }
     } catch (err) {
-      if (err instanceof ApiError && err.status === 429) setError(t("login.tooMany"));
-      else if (err instanceof ApiError && err.status === 401) setError(t("login.wrong"));
-      else setError(t("login.unreachable"));
+      fail(err);
     } finally {
       setPending(false);
     }
+  };
+
+  const switchMode = (m: Mode) => {
+    setError(null);
+    setWanted(m);
   };
 
   const inputWrap = "flex h-11 items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-950 px-3 text-slate-500 focus-within:border-slate-400 focus-within:text-slate-300 focus-within:ring-2 focus-within:ring-slate-500/30";
@@ -65,10 +98,25 @@ export default function Login() {
           <div className="space-y-8">
             <Brand />
             <div className="space-y-1.5">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-50">{az ? "Hesabınıza daxil olun" : "Sign in to your account"}</h1>
-              <p className="text-sm text-slate-400">{t("login.tagline")}</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
+                {mode === "requested" ? (az ? "Sorğu göndərildi" : "Request sent") : firstRun ? (az ? "Administrator hesabı yaradın" : "Create the administrator account") : mode === "register" ? (az ? "Hesab sorğusu" : "Request an account") : az ? "Hesabınıza daxil olun" : "Sign in to your account"}
+              </h1>
+              <p className="text-sm text-slate-400">
+                {mode === "requested"
+                  ? az ? "Administrator hesabınızı təsdiq edənə qədər daxil ola bilməzsiniz." : "You can sign in once the administrator approves your account."
+                  : firstRun
+                    ? az ? "Siz buradakı ilk istifadəçisiniz. Bu hesab yeganə administrator olacaq." : "You are the first person here. This account becomes the one and only administrator."
+                    : mode === "register"
+                      ? az ? "Hesab yaradılır və administratorun təsdiqini gözləyir." : "Your account is created and waits for the administrator to approve it."
+                      : t("login.tagline")}
+              </p>
             </div>
 
+            {mode === "requested" ? (
+              <button type="button" onClick={() => switchMode("signin")} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-700 text-sm font-medium text-slate-200 hover:bg-slate-800">
+                {az ? "Girişə qayıt" : "Back to sign in"}
+              </button>
+            ) : (
             <form onSubmit={onSubmit} className="space-y-4" noValidate={false}>
               <label className="block space-y-1.5">
                 <span className="text-xs font-medium text-slate-300">{t("login.username")}</span>
@@ -89,7 +137,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyUp={(e) => setCaps(e.getModifierState("CapsLock"))}
                     onBlur={() => setCaps(false)}
-                    autoComplete="current-password"
+                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
                     required
                     placeholder="••••••••••••"
                   />
@@ -102,7 +150,18 @@ export default function Login() {
                   </button>
                 </span>
                 {caps && <span className="block text-xs text-amber-400">{az ? "Caps Lock açıqdır." : "Caps Lock is on."}</span>}
+                {mode === "register" && <span className="block text-xs text-slate-500">{az ? "Ən azı 12 simvol." : "At least 12 characters."}</span>}
               </label>
+
+              {mode === "register" && (
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-slate-300">{az ? "Parolu təkrarla" : "Repeat password"}</span>
+                  <span className={inputWrap}>
+                    <svg {...iconProps}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                    <input className={input} type={show ? "text" : "password"} value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" required placeholder="••••••••••••" />
+                  </span>
+                </label>
+              )}
 
               {error && (
                 <p role="alert" className="rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
@@ -110,17 +169,24 @@ export default function Login() {
                 </p>
               )}
 
-              <button type="submit" disabled={pending || !username || !password} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-100 text-sm font-medium text-slate-950 shadow-sm transition-colors hover:bg-white disabled:opacity-50">
-                {pending ? t("login.signingIn") : t("login.signIn")}
+              <button type="submit" disabled={pending || !username || !password || (mode === "register" && !again)} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-100 text-sm font-medium text-slate-950 shadow-sm transition-colors hover:bg-white disabled:opacity-50">
+                {pending ? t("login.signingIn") : mode === "register" ? (firstRun ? (az ? "Administrator yarat" : "Create administrator") : az ? "Sorğu göndər" : "Send request") : t("login.signIn")}
                 {!pending && (
                   <svg {...iconProps}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 )}
               </button>
             </form>
+            )}
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-3 text-xs text-slate-500">
-            <span>{az ? "Giriş problemi? Administratorla əlaqə saxlayın." : "Need access? Contact your administrator."}</span>
+            {mode === "signin" && canRegister ? (
+              <button type="button" onClick={() => switchMode("register")} className="text-left text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline">{az ? "Hesabınız yoxdur? Sorğu göndərin" : "No account? Request one"}</button>
+            ) : mode === "register" && !firstRun ? (
+              <button type="button" onClick={() => switchMode("signin")} className="text-left text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline">{az ? "Hesabınız var? Daxil olun" : "Have an account? Sign in"}</button>
+            ) : (
+              <span>{firstRun ? (az ? "İlk quraşdırma" : "First time setup") : az ? "Giriş problemi? Administratorla əlaqə saxlayın." : "Need access? Contact your administrator."}</span>
+            )}
             <span className="flex overflow-hidden rounded-md border border-slate-800" role="group" aria-label="language">
               {(["en", "az"] as const).map((l) => (
                 <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l} className={`px-2 py-1 uppercase ${lang === l ? "bg-slate-100 text-slate-950" : "text-slate-400 hover:bg-slate-800"}`}>{l}</button>

@@ -18,7 +18,7 @@ var usernameRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$`)
 // access than they hold themselves, and the last active administrator is protected.
 func (s *Server) userRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/users", s.requirePerm("users.manage", func(w http.ResponseWriter, r *http.Request) {
-		rows, err := s.DB.QueryContext(r.Context(), "SELECT id,username,role,active,must_change_password,created_at FROM users ORDER BY id")
+		rows, err := s.DB.QueryContext(r.Context(), "SELECT id,username,role,active,must_change_password,created_at,pending FROM users ORDER BY id")
 		if err != nil {
 			s.databaseError(w, err)
 			return
@@ -28,13 +28,13 @@ func (s *Server) userRoutes(mux *http.ServeMux) {
 		for rows.Next() {
 			var id int64
 			var name, role string
-			var active, must bool
+			var active, must, pending bool
 			var created time.Time
-			if err := rows.Scan(&id, &name, &role, &active, &must, &created); err != nil {
+			if err := rows.Scan(&id, &name, &role, &active, &must, &created, &pending); err != nil {
 				s.databaseError(w, err)
 				return
 			}
-			out = append(out, map[string]any{"id": id, "username": name, "role": role, "active": active, "must_change_password": must, "created_at": created})
+			out = append(out, map[string]any{"id": id, "username": name, "role": role, "active": active, "must_change_password": must, "created_at": created, "pending": pending})
 		}
 		writeJSON(w, 200, out)
 	}))
@@ -45,6 +45,10 @@ func (s *Server) userRoutes(mux *http.ServeMux) {
 		}
 		if !usernameRE.MatchString(in.Username) {
 			problem(w, 400, "Invalid username")
+			return
+		}
+		if in.Role == "admin" {
+			problem(w, 409, "There is only one administrator account")
 			return
 		}
 		if _, _, ok := s.roleInfo(r.Context(), in.Role); !ok {
@@ -61,7 +65,7 @@ func (s *Server) userRoutes(mux *http.ServeMux) {
 			return
 		}
 		var id int64
-		err = s.DB.QueryRowContext(r.Context(), "INSERT INTO users(username,password_hash,role) VALUES($1,$2,$3) ON CONFLICT(username) DO NOTHING RETURNING id", in.Username, hash, in.Role).Scan(&id)
+		err = s.DB.QueryRowContext(r.Context(), "INSERT INTO users(username,password_hash,role) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING id", in.Username, hash, in.Role).Scan(&id)
 		if err == sql.ErrNoRows {
 			problem(w, 409, "Username already exists")
 			return
@@ -92,6 +96,10 @@ func (s *Server) userRoutes(mux *http.ServeMux) {
 		}
 		actor := current(r)
 		if in.Role != nil {
+			if *in.Role == "admin" {
+				problem(w, 409, "There is only one administrator account")
+				return
+			}
 			if _, _, ok := s.roleInfo(r.Context(), *in.Role); !ok {
 				problem(w, 400, "Unknown role")
 				return
@@ -124,7 +132,7 @@ func (s *Server) userRoutes(mux *http.ServeMux) {
 			_, err = tx.ExecContext(r.Context(), "UPDATE users SET role=$1 WHERE id=$2", *in.Role, id)
 		}
 		if err == nil && in.Active != nil {
-			_, err = tx.ExecContext(r.Context(), "UPDATE users SET active=$1 WHERE id=$2", *in.Active, id)
+			_, err = tx.ExecContext(r.Context(), "UPDATE users SET active=$1, pending=pending AND NOT $1 WHERE id=$2", *in.Active, id)
 			if err == nil && !*in.Active {
 				_, err = tx.ExecContext(r.Context(), "DELETE FROM user_tokens WHERE user_id=$1", id)
 			}

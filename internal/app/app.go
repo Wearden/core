@@ -164,6 +164,7 @@ func (s *Server) Handler() http.Handler {
 	s.aiRoutes(m)
 	s.userRoutes(m)
 	s.roleRoutes(m)
+	s.registrationRoutes(m)
 	s.aiProviderRoutes(m)
 	s.scheduleRoutes(m)
 	s.websocketRoutes(m)

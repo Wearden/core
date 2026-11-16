@@ -65,13 +65,6 @@ func run() error {
 		cfg.RecordingsDir = "/data/recordings"
 	}
 	server := app.New(db, catalog, cfg)
-	username := os.Getenv("ADMIN_USERNAME")
-	if username == "" {
-		username = "admin"
-	}
-	if err := server.Bootstrap(startup, username, os.Getenv("ADMIN_PASSWORD")); err != nil {
-		return errors.New("administrator bootstrap failed: " + err.Error())
-	}
 	address := os.Getenv("LISTEN_ADDR")
 	if address == "" {
 		address = "127.0.0.1:8000"

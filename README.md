@@ -31,7 +31,7 @@ The v0.0.0 requirement is a local bootstrap placeholder until proto is tagged an
 ## Isolated local deployment
 
 1. Make a local `.env` using `.env.example` as a template, then replace every placeholder. Real `.env` files must never be committed.
-2. Set independent random POSTGRES_PASSWORD and ADMIN_PASSWORD (at least 12 bytes). Configure WEARDEN_VAULT_KEY as base64 of 32 random bytes if optional credentials will be stored. It is not the prototype Fernet key.
+2. Set an independent random POSTGRES_PASSWORD (at least 12 bytes). There is no administrator account in the environment: open the web page after the first start and register; the first account becomes the one and only administrator, and later registrations wait for its approval. Configure WEARDEN_VAULT_KEY as base64 of 32 random bytes if optional credentials will be stored. It is not the prototype Fernet key.
 3. Leave ANTHROPIC_API_KEY/MODEL empty to use static explanations. A nonempty model is an operator-selected model identifier, not a guarantee that an old prototype model is available.
 4. Keep `RULESET_PATH=../ruleset`, or point it to the sibling checkout. Compose mounts it read-only inside core.
 5. Run `docker compose up --build -d` from core when Docker is available. This has not been executed in this session. The local gateway binds only `127.0.0.1:8080`.
