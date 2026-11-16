@@ -16,7 +16,6 @@ import (
 // Agentic report analysis. The model may call two read-only tools over one scan
 // and returns advisory decisions; nothing is applied. Only aggregated control
 // facts leave the server: no host names, evidence values or credentials.
-const aiDefaultModel = ""
 const aiMaxTurns = 6
 
 var aiTools = []map[string]any{
@@ -29,7 +28,8 @@ var aiTools = []map[string]any{
 func (s *Server) aiRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/ai/status", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
 		key, _ := s.setting(r.Context(), "anthropic_api_key")
-		writeJSON(w, 200, map[string]any{"enabled": key != ""})
+		model, _ := s.setting(r.Context(), "anthropic_model")
+		writeJSON(w, 200, map[string]any{"enabled": key != "" && model != ""})
 	}))
 	mux.HandleFunc("POST /api/ai/analyze", s.require("operator", s.aiAnalyze))
 	mux.HandleFunc("GET /api/ai/analyses/{scan_id}", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +65,8 @@ func (s *Server) aiAnalyze(w http.ResponseWriter, r *http.Request) {
 	}
 	model, _ := s.setting(r.Context(), "anthropic_model")
 	if model == "" {
-		model = aiDefaultModel
+		problem(w, 503, "AI model is not configured; an administrator can set it under Settings")
+		return
 	}
 	scan, err := s.Store.Get(r.Context(), "scans", in.ScanID)
 	if err != nil {
