@@ -193,9 +193,9 @@ export default function Login() {
           <div className="mt-8 flex items-center justify-between gap-3 text-xs text-slate-500">
             <span>{firstRun ? (az ? "İlk quraşdırma" : "First time setup") : az ? "Giriş problemi? Administratorla əlaqə saxlayın." : "Need access? Contact your administrator."}</span>
             <span className="flex overflow-hidden rounded-md border border-slate-800" role="group" aria-label="language">
-              {(["en", "az"] as const).map((l) => (
-                <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l} className={`px-2 py-1 uppercase ${lang === l ? "bg-slate-100 text-slate-950" : "text-slate-400 hover:bg-slate-800"}`}>{l}</button>
-              ))}
+                {(["en", "az"] as const).map((l) => (
+                  <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l} className={`px-2 py-1 uppercase ${lang === l ? "bg-slate-100 text-slate-950" : "text-slate-400 hover:bg-slate-800"}`}>{l}</button>
+                ))}
             </span>
           </div>
         </div>

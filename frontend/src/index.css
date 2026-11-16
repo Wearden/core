@@ -163,7 +163,9 @@ code, pre, .font-mono { font-family: ui-monospace, "Cascadia Code", "SF Mono", M
 button, a, select, summary { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 ::selection { background: rgb(var(--slate-700)); color: rgb(var(--slate-50)); }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* Motion follows the Animations preference: on (default), system (honor the OS reduce motion setting) or off. */
+@media (prefers-reduced-motion: reduce) { :root[data-motion="system"] * { animation: none !important; transition: none !important; } }
+:root[data-motion="off"] * { animation: none !important; transition: none !important; }
 
 /* One control height scale: 36px form controls, 32px table toolbar controls (h-8 on those). */
 select, input:not([type]), input:is([type="text"], [type="search"], [type="email"], [type="password"], [type="number"], [type="url"], [type="date"]) { height: 2.25rem; }

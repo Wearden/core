@@ -1,4 +1,4 @@
-// CursorGrid, from the React Bits component registry (CursorGrid-JS-CSS), unmodified except for this note.
+// CursorGrid, from the React Bits component registry (CursorGrid-JS-CSS), with one change: the reduce-motion check also honors the Wearden Animations preference.
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -287,7 +287,8 @@ const CursorGrid = ({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const motionPref = document.documentElement.dataset.motion;
+    const reduce = motionPref === 'off' || (motionPref === 'system' && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false));
     const view = { width: 1, height: 1, ratio: 1, cellSize: 0 };
     const grid = { cols: 0, rows: 0, offX: 0, offY: 0 };
     const pointer = { x: 0, y: 0, inside: false };

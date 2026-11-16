@@ -6,7 +6,7 @@ import { assetsApi } from "../assetsApi";
 import { scansApi } from "../scansApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
-import { applyAppearance, getThemePref, setThemePref, ThemePref } from "../theme";
+import { applyAppearance, getMotion, getThemePref, Motion, setMotion, setThemePref, ThemePref } from "../theme";
 import Logo from "../components/Logo";
 import CommandPalette, { PaletteItem } from "../components/CommandPalette";
 
@@ -194,6 +194,7 @@ export default function Shell() {
       return !v;
     });
   const [theme, setTheme] = useState<ThemePref>(getThemePref);
+  const [motion, setMotionPref] = useState<Motion>(getMotion);
   const menuRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
   useOutside(menuRef, () => setMenu(false), menu);
@@ -332,6 +333,12 @@ export default function Shell() {
                         <button key={v} onClick={() => chooseTheme(v)} aria-pressed={theme === v} className={`flex-1 px-2 py-1 text-xs ${theme === v ? "bg-slate-100 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>
                           {v === "dark" ? (az ? "Qara" : "Black") : v === "light" ? (az ? "Ağ" : "White") : az ? "Sistem" : "System"}
                         </button>
+                      ))}
+                    </div>
+                    <div className="mb-1.5 mt-3 text-[11px] uppercase tracking-wide text-slate-500">{az ? "Animasiyalar" : "Animations"}</div>
+                    <div className="flex overflow-hidden rounded-md border border-slate-700" role="group" aria-label="animations">
+                      {(["on", "system", "off"] as const).map((v) => (
+                        <button key={v} onClick={() => { setMotionPref(v); setMotion(v); }} aria-pressed={motion === v} className={`flex-1 px-2 py-1 text-xs ${motion === v ? "bg-slate-100 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>{v === "on" ? (az ? "Açıq" : "On") : v === "system" ? (az ? "Sistem" : "System") : az ? "Bağlı" : "Off"}</button>
                       ))}
                     </div>
                     <div className="mb-1.5 mt-3 text-[11px] uppercase tracking-wide text-slate-500">{az ? "Dil" : "Language"}</div>
