@@ -5,43 +5,18 @@
       "benchmark_id": "ubuntu-22.04-native",
       "ruleset_version": "native-linux-2204-1",
       "total_controls": 100,
-      "compiled_write_ids": 37,
+      "compiled_write_ids": 59,
       "remaining_by_kind": {
-        "apt_authentication": 1,
         "apt_https": 1,
         "audit_rules": 10,
         "auditd_enabled": 1,
-        "filesystem_metadata": 3,
-        "mount_options": 3,
         "package_installed": 8,
-        "pam_history": 1,
-        "service_disabled": 12,
         "sshd_config": 14,
-        "sudo_logfile": 1,
-        "sysctl": 1,
         "ufw_runtime": 5,
         "uid_zero": 1,
         "unsupported": 1
       },
       "remaining": [
-        {
-          "id": "LNX-FS-006",
-          "kind": "mount_options",
-          "target": "/var/tmp",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-FS-009",
-          "kind": "mount_options",
-          "target": "/tmp",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-FS-010",
-          "kind": "mount_options",
-          "target": "/dev/shm",
-          "severity": "medium"
-        },
         {
           "id": "LNX-PKG-001",
           "kind": "package_installed",
@@ -65,90 +40,6 @@
           "kind": "apt_https",
           "target": "reviewed-apt-sources",
           "severity": "high"
-        },
-        {
-          "id": "LNX-PKG-005",
-          "kind": "apt_authentication",
-          "target": "reviewed-apt-authentication",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-SVC-001",
-          "kind": "service_disabled",
-          "target": "avahi-daemon.service",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-SVC-002",
-          "kind": "service_disabled",
-          "target": "cups.service",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-SVC-003",
-          "kind": "service_disabled",
-          "target": "isc-dhcp-server.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-004",
-          "kind": "service_disabled",
-          "target": "slapd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-005",
-          "kind": "service_disabled",
-          "target": "nfs-server.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-006",
-          "kind": "service_disabled",
-          "target": "rpcbind.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-007",
-          "kind": "service_disabled",
-          "target": "rsync.service",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-SVC-008",
-          "kind": "service_disabled",
-          "target": "named.service,bind9.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-009",
-          "kind": "service_disabled",
-          "target": "vsftpd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-010",
-          "kind": "service_disabled",
-          "target": "snmpd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-011",
-          "kind": "service_disabled",
-          "target": "xinetd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-012",
-          "kind": "service_disabled",
-          "target": "telnet.socket",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-NET-001",
-          "kind": "sysctl",
-          "target": "net.ipv4.ip_forward",
-          "severity": "medium"
         },
         {
           "id": "LNX-FW-001",
@@ -271,12 +162,6 @@
           "severity": "low"
         },
         {
-          "id": "LNX-LOG-006",
-          "kind": "sudo_logfile",
-          "target": "/etc/sudoers",
-          "severity": "medium"
-        },
-        {
           "id": "LNX-SSH-002",
           "kind": "sshd_config",
           "target": "loglevel",
@@ -367,12 +252,6 @@
           "severity": "medium"
         },
         {
-          "id": "LNX-PAM-007",
-          "kind": "pam_history",
-          "target": "/etc/pam.d/common-password",
-          "severity": "medium"
-        },
-        {
           "id": "LNX-USR-005",
           "kind": "uid_zero",
           "target": "/etc/passwd",
@@ -383,24 +262,6 @@
           "kind": "unsupported",
           "target": "native-review-required",
           "severity": "high"
-        },
-        {
-          "id": "LNX-USR-007",
-          "kind": "filesystem_metadata",
-          "target": "world-writable-files",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-USR-008",
-          "kind": "filesystem_metadata",
-          "target": "unsticky-directories",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-USR-009",
-          "kind": "filesystem_metadata",
-          "target": "orphaned-owners",
-          "severity": "medium"
         }
       ]
     },
@@ -408,41 +269,16 @@
       "benchmark_id": "ubuntu-24.04-native",
       "ruleset_version": "native-linux-3",
       "total_controls": 88,
-      "compiled_write_ids": 37,
+      "compiled_write_ids": 59,
       "remaining_by_kind": {
-        "apt_authentication": 1,
         "apt_https": 1,
-        "filesystem_metadata": 3,
-        "mount_options": 3,
         "package_installed": 7,
-        "pam_history": 1,
-        "service_disabled": 12,
         "sshd_config": 14,
-        "sudo_logfile": 1,
-        "sysctl": 1,
         "ufw_runtime": 5,
         "uid_zero": 1,
         "unsupported": 1
       },
       "remaining": [
-        {
-          "id": "LNX-FS-006",
-          "kind": "mount_options",
-          "target": "/var/tmp",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-FS-009",
-          "kind": "mount_options",
-          "target": "/tmp",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-FS-010",
-          "kind": "mount_options",
-          "target": "/dev/shm",
-          "severity": "medium"
-        },
         {
           "id": "LNX-PKG-001",
           "kind": "package_installed",
@@ -466,90 +302,6 @@
           "kind": "apt_https",
           "target": "reviewed-apt-sources",
           "severity": "high"
-        },
-        {
-          "id": "LNX-PKG-005",
-          "kind": "apt_authentication",
-          "target": "reviewed-apt-authentication",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-SVC-001",
-          "kind": "service_disabled",
-          "target": "avahi-daemon.service",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-SVC-002",
-          "kind": "service_disabled",
-          "target": "cups.service",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-SVC-003",
-          "kind": "service_disabled",
-          "target": "isc-dhcp-server.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-004",
-          "kind": "service_disabled",
-          "target": "slapd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-005",
-          "kind": "service_disabled",
-          "target": "nfs-server.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-006",
-          "kind": "service_disabled",
-          "target": "rpcbind.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-007",
-          "kind": "service_disabled",
-          "target": "rsync.service",
-          "severity": "low"
-        },
-        {
-          "id": "LNX-SVC-008",
-          "kind": "service_disabled",
-          "target": "named.service,bind9.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-009",
-          "kind": "service_disabled",
-          "target": "vsftpd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-010",
-          "kind": "service_disabled",
-          "target": "snmpd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-011",
-          "kind": "service_disabled",
-          "target": "xinetd.service",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-SVC-012",
-          "kind": "service_disabled",
-          "target": "telnet.socket",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-NET-001",
-          "kind": "sysctl",
-          "target": "net.ipv4.ip_forward",
-          "severity": "medium"
         },
         {
           "id": "LNX-FW-001",
@@ -600,12 +352,6 @@
           "severity": "low"
         },
         {
-          "id": "LNX-LOG-006",
-          "kind": "sudo_logfile",
-          "target": "/etc/sudoers",
-          "severity": "medium"
-        },
-        {
           "id": "LNX-SSH-002",
           "kind": "sshd_config",
           "target": "loglevel",
@@ -696,12 +442,6 @@
           "severity": "medium"
         },
         {
-          "id": "LNX-PAM-007",
-          "kind": "pam_history",
-          "target": "/etc/pam.d/common-password",
-          "severity": "medium"
-        },
-        {
           "id": "LNX-USR-005",
           "kind": "uid_zero",
           "target": "/etc/passwd",
@@ -712,24 +452,6 @@
           "kind": "unsupported",
           "target": "native-review-required",
           "severity": "high"
-        },
-        {
-          "id": "LNX-USR-007",
-          "kind": "filesystem_metadata",
-          "target": "world-writable-files",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-USR-008",
-          "kind": "filesystem_metadata",
-          "target": "unsticky-directories",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-USR-009",
-          "kind": "filesystem_metadata",
-          "target": "orphaned-owners",
-          "severity": "medium"
         }
       ]
     },
@@ -737,30 +459,9 @@
       "benchmark_id": "ubuntu-24.04-native-filesystem",
       "ruleset_version": "1",
       "total_controls": 10,
-      "compiled_write_ids": 7,
-      "remaining_by_kind": {
-        "mount_options": 3
-      },
-      "remaining": [
-        {
-          "id": "LNX-FS-006",
-          "kind": "mount_options",
-          "target": "/var/tmp",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-FS-009",
-          "kind": "mount_options",
-          "target": "/tmp",
-          "severity": "medium"
-        },
-        {
-          "id": "LNX-FS-010",
-          "kind": "mount_options",
-          "target": "/dev/shm",
-          "severity": "medium"
-        }
-      ]
+      "compiled_write_ids": 10,
+      "remaining_by_kind": {},
+      "remaining": []
     },
     {
       "benchmark_id": "server-2022-native-registry",
