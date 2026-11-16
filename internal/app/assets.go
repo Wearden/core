@@ -25,6 +25,8 @@ type assetInput struct {
 	WinRM      *int     `json:"winrm_port"`
 	WinRMHTTPS *int     `json:"winrm_https_port"`
 	Tags       []string `json:"tags"`
+	// "agent" (installed agent), "ssh" or "winrm" (agentless runs over a PAM connection).
+	Connection string `json:"connection"`
 }
 
 const agentHealthySQL = `COALESCE(NOT g.revoked AND g.last_seen > now()-interval '3 minutes'
@@ -199,7 +201,15 @@ func (s *Server) saveAsset(w http.ResponseWriter, r *http.Request) {
 	if in.Tags == nil {
 		in.Tags = []string{}
 	}
+	if in.Connection != "" && !validConnection(in.OS, in.Connection) {
+		problem(w, 400, "Connection must be agent or ssh, or winrm for Windows")
+		return
+	}
 	a := map[string]any{"name": in.Name, "host": in.Host, "os_type": in.OS, "os_version": in.OSVersion, "ssh_port": in.SSH, "rdp_port": in.RDP, "winrm_port": in.WinRM, "winrm_https_port": in.WinRMHTTPS, "tags": in.Tags, "status": "unknown", "latency_ms": nil, "last_seen": nil, "last_checked": nil, "os_detected": nil, "privilege": nil, "credential_username": nil}
+	a["connection"] = in.Connection
+	if in.Connection == "" {
+		a["connection"] = "agent"
+	}
 	id := int64(0)
 	code := 201
 	if r.PathValue("id") != "" {
@@ -211,6 +221,9 @@ func (s *Server) saveAsset(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, key := range []string{"status", "latency_ms", "last_seen", "last_checked", "os_detected", "privilege"} {
 			a[key] = old[key]
+		}
+		if in.Connection == "" {
+			a["connection"] = assetConnection(old)
 		}
 		code = 200
 	}
