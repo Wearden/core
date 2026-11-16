@@ -128,7 +128,23 @@ func (s *Server) featureOpenSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) featureSessionAllowed(r *http.Request, doc map[string]any) bool {
-	return current(r).Role == "admin" || integer(doc["operator_id"]) == current(r).ID
+	return current(r).Level == "admin" || integer(doc["operator_id"]) == current(r).ID
+}
+
+type rowQuerier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+// sessionOperatorActive resolves the role to its level, so a custom role with the
+// operator level can hold a session just like the built in operator and admin roles.
+func (s *Server) sessionOperatorActive(ctx context.Context, q rowQuerier, userID int64) bool {
+	var role string
+	var eligible bool
+	if q.QueryRowContext(ctx, "SELECT role,active AND NOT must_change_password FROM users WHERE id=$1", userID).Scan(&role, &eligible) != nil || !eligible {
+		return false
+	}
+	level, _, _ := s.roleInfo(ctx, role)
+	return levelRank[level] >= levelRank["operator"]
 }
 
 // OpenRoot confines the read to the configured shared volume, including symlink resolution.
@@ -305,9 +321,7 @@ func featureSessionLive(doc map[string]any) bool {
 }
 
 func (s *Server) featureSessionUserActive(ctx context.Context, doc map[string]any) bool {
-	var active bool
-	err := s.DB.QueryRowContext(ctx, "SELECT active AND NOT must_change_password AND role IN ('operator','admin') FROM users WHERE id=$1", integer(doc["operator_id"])).Scan(&active)
-	return err == nil && active
+	return s.sessionOperatorActive(ctx, s.DB, integer(doc["operator_id"]))
 }
 
 func (s *Server) featureSessionAuthorize(w http.ResponseWriter, r *http.Request) {
@@ -342,10 +356,9 @@ func (s *Server) featureSessionAuthorize(w http.ResponseWriter, r *http.Request)
 		problem(w, 500, "Invalid stored session")
 		return
 	}
-	var userActive bool
-	userErr := tx.QueryRowContext(r.Context(), "SELECT active AND NOT must_change_password AND role IN ('operator','admin') FROM users WHERE id=$1", integer(doc["operator_id"])).Scan(&userActive)
+	userActive := s.sessionOperatorActive(r.Context(), tx, integer(doc["operator_id"]))
 	expires, err := time.Parse(time.RFC3339Nano, text(doc["token_expires_at"]))
-	if err != nil || !time.Now().Before(expires) || doc["consumed_at"] != nil || !featureSessionLive(doc) || userErr != nil || !userActive {
+	if err != nil || !time.Now().Before(expires) || doc["consumed_at"] != nil || !featureSessionLive(doc) || !userActive {
 		problem(w, 403, "Session token expired, consumed or revoked")
 		return
 	}
