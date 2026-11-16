@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -201,7 +202,11 @@ func (s *Server) serveStream(conn *websocket.Conn, collection, role, id string) 
 	initial := true
 	cursor := 0
 	lastStatus := ""
+	// Events are sent only when something changed, so a finished scan or run stays
+	// quiet instead of repeating its last state every poll.
+	lastProgress := ""
 	hostVersions := map[int64]string{}
+	changeVersions := map[int64]string{}
 	for {
 		poll, release := context.WithTimeout(ctx, 5*time.Second)
 		currentUser, currentPassword, authErr := s.streamUser(poll, auth.Token, role)
@@ -263,17 +268,46 @@ func (s *Server) serveStream(conn *websocket.Conn, collection, role, id string) 
 							cursor++
 						}
 					}
-					if err == nil {
+					progress := fmt.Sprint(doc["status"], "|", doc["done_checks"], "|", doc["total_checks"])
+					if err == nil && progress != lastProgress {
 						err = streamSend(conn, map[string]any{"type": "scan", "status": doc["status"], "done": doc["done_checks"], "total": doc["total_checks"]})
+						if err == nil {
+							lastProgress = progress
+						}
 					}
 				} else if err == nil {
+					// One line per change of a single control, then progress, then the run state.
+					for _, change := range featureMaps(doc["changes"]) {
+						cid := integer(change["id"])
+						state := text(change["status"])
+						rollback := text(change["rollback_status"])
+						version := state + "|" + rollback
+						previous, seen := changeVersions[cid]
+						changeVersions[cid] = version
+						if initial || (seen && previous == version) || state == "pending" {
+							continue
+						}
+						if !seen || strings.SplitN(previous, "|", 2)[0] != state {
+							err = streamSend(conn, map[string]any{"type": "item", "asset_name": change["asset_name"], "control_id": change["control_id"], "status": state, "message": change["message"]})
+						}
+						if err == nil && rollback != "" && (!seen || !strings.HasSuffix(previous, "|"+rollback)) {
+							err = streamSend(conn, map[string]any{"type": "rollback", "asset_name": change["asset_name"], "control_id": change["control_id"], "status": rollback})
+						}
+						if err != nil {
+							break
+						}
+					}
+					progress := fmt.Sprint(doc["done_changes"], "|", doc["total_changes"])
+					if err == nil && progress != lastProgress {
+						err = streamSend(conn, map[string]any{"type": "change", "done": doc["done_changes"], "total": doc["total_changes"]})
+						if err == nil {
+							lastProgress = progress
+						}
+					}
 					status := text(doc["status"])
-					if status != lastStatus {
+					if err == nil && status != lastStatus {
 						err = streamSend(conn, map[string]any{"type": "run", "status": status})
 						lastStatus = status
-					}
-					if err == nil {
-						err = streamSend(conn, map[string]any{"type": "change", "done": doc["done_changes"], "total": doc["total_changes"]})
 					}
 				}
 			}
