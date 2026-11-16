@@ -32,6 +32,11 @@ export interface RemoteInstallResult {
   host_key_changed?: boolean;
 }
 
+export interface AgentlessStatus {
+  running: boolean;
+  last: { state: "running" | "completed" | "failed"; kind: "setup" | "run"; detail: string; output: string; started_at: string; finished_at: string | null } | null;
+}
+
 export const agentsApi = {
   list: () => request<Agent[]>("/agents"),
   enroll: (body: { os: Agent["os"]; benchmark_id: string; ttl_minutes: number }) =>
@@ -40,5 +45,8 @@ export const agentsApi = {
   installInfo: () => request<{ linux_available: boolean; windows_available: boolean; remote_install_ready: boolean }>("/agents/install-info"),
   installRemote: (assetId: number, body: { benchmark_id: string; allow_remediation: boolean; host_key: string; replace_host_key: boolean }) =>
     request<RemoteInstallResult>(`/assets/${assetId}/install-agent`, { method: "POST", body: JSON.stringify(body) }),
+  setupAgentless: (assetId: number, body: { benchmark_id: string; allow_remediation: boolean; host_key: string; replace_host_key: boolean }) =>
+    request<RemoteInstallResult | { status: "started" }>(`/assets/${assetId}/agentless/setup`, { method: "POST", body: JSON.stringify(body) }),
+  agentlessStatus: (assetId: number) => request<AgentlessStatus>(`/assets/${assetId}/agentless`),
   revoke: (id: string) => request<void>(`/agents/${encodeURIComponent(id)}/revoke`, { method: "POST" }),
 };

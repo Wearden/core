@@ -76,6 +76,7 @@ func (s *Server) downloadAvailable(name string) bool {
 	info, err := os.Stat(filepath.Join(s.Config.DownloadsDir, name))
 	return err == nil && info.Mode().IsRegular()
 }
+
 var originHost = regexp.MustCompile(`^[A-Za-z0-9.-]+(:\d{1,5})?$`)
 
 // publicURL prefers the configured origin; otherwise it uses the request host

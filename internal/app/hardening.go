@@ -77,7 +77,7 @@ func (s *Server) validateHardening(ctx context.Context, in hardeningInput) ([]ma
 		seenAssets[id] = true
 		var agentID, native, osName string
 		if s.DB.QueryRowContext(ctx, "SELECT id,benchmark_id,os FROM agents WHERE asset_id=$1 AND NOT revoked", id).Scan(&agentID, &native, &osName) != nil || osName != b.OS || (native != in.Benchmark && originalBenchmark(native) != in.Benchmark) {
-			return nil, errors.New("selected asset is not enrolled for this benchmark")
+			return nil, errors.New("selected asset has no agent for this benchmark yet; install the agent or run agentless setup for it first")
 		}
 		nb := s.Catalog[native]
 		if nb == nil {

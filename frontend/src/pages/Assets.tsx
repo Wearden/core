@@ -116,7 +116,24 @@ export default function Assets() {
     setOpening(asset.id);
     setFlash(null);
     try {
-      setLive(await sessionsApi.open(asset.id, Math.max(640, window.innerWidth - 340), Math.max(480, window.innerHeight - 60)));
+      // Windows hosts usually present a self-signed RDP certificate: the operator confirms its fingerprint once.
+      let fingerprint = "";
+      if (asset.os_type === "windows") {
+        const cert = await sessionsApi.rdpCertificate(asset.id);
+        if (!cert.trusted) {
+          const az = lang === "az";
+          const ok = await confirm({
+            title: cert.changed ? (az ? "RDP sertifikatı dəyişib" : "RDP certificate changed") : az ? "RDP sertifikatını təsdiqləyin" : "Confirm the RDP certificate",
+            message: `${cert.changed ? (az ? "Bu hostun sertifikatı əvvəl təsdiqlənəndən fərqlidir. Yalnız host yenidən qurulubsa və ya sertifikat yenilənibsə davam edin. " : "This host's certificate differs from the one confirmed earlier. Continue only if the host was reinstalled or its certificate renewed. ") : ""}${az ? "Barmaq izini hostdakı ilə müqayisə edin" : "Compare the fingerprint with the one on the host"}: ${cert.fingerprint} (${cert.subject})`,
+            confirmLabel: az ? "Etibar et və qoşul" : "Trust and connect",
+            cancelLabel: t("common.cancel"),
+            danger: cert.changed,
+          });
+          if (!ok) return;
+          fingerprint = cert.fingerprint;
+        }
+      }
+      setLive(await sessionsApi.open(asset.id, Math.max(640, window.innerWidth - 340), Math.max(480, window.innerHeight - 60), fingerprint));
     } catch (err) {
       setFlash(`${t("assets.sessionFail")}: ${err instanceof Error ? err.message : t("assets.unknownErr")}`);
     } finally {
@@ -159,7 +176,14 @@ export default function Assets() {
         </div>
       </div>
     ) },
-    { id: "host", header: "Host", sort: (x, y) => x.host.localeCompare(y.host), csv: (a) => a.host, cell: (a) => <span className="font-mono text-xs">{a.host}</span> },
+    { id: "host", header: "Host", sort: (x, y) => x.host.localeCompare(y.host), csv: (a) => a.host, cell: (a) => (
+      <div>
+        <span className="font-mono text-xs">{a.host}</span>
+        <div className="text-xs text-slate-500">
+          {a.connection === "ssh" ? (lang === "az" ? "agentsiz, SSH" : "agentless, SSH") : a.connection === "winrm" ? (lang === "az" ? "agentsiz, WinRM" : "agentless, WinRM") : lang === "az" ? "agent" : "agent"}
+        </div>
+      </div>
+    ) },
     { id: "os", header: t("col.os"), sort: (x, y) => (x.os_detected ?? "").localeCompare(y.os_detected ?? ""), csv: (a) => a.os_detected ?? a.os_version ?? a.os_type, cell: (a) => (
       <div><div>{a.os_detected ?? a.os_version ?? (a.os_type === "linux" ? "Linux" : "Windows")}</div>{a.privilege && <div className="text-xs text-slate-500">{t("assets.privilege")}: {a.privilege}</div>}</div>
     ) },
@@ -174,7 +198,7 @@ export default function Assets() {
             <button onClick={() => setCredFor(a)} className="inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs hover:bg-slate-800">{t("assets.credential")}</button>
             {canEnroll && !enrolledAssets.has(a.id) && (
               <button onClick={() => setInstallFor(a)} disabled={!a.credential_username} className="inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs hover:bg-slate-800 disabled:opacity-40" title={a.credential_username ? undefined : t("assets.setCredFirst")}>
-                {lang === "az" ? "Agenti qur" : "Install agent"}
+                {a.connection === "ssh" || a.connection === "winrm" ? (lang === "az" ? "Agentsiz qurulum" : "Agentless setup") : lang === "az" ? "Agenti qur" : "Install agent"}
               </button>
             )}
             <button onClick={() => setEditing(a)} className="inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs hover:bg-slate-800">{t("common.edit")}</button>

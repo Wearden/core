@@ -415,6 +415,7 @@ func (s *Server) expireScanJobs(ctx context.Context) error {
 }
 
 func (s *Server) RunWorker(ctx context.Context) {
+	go s.RunAgentless(ctx)
 	var lastLogPrune time.Time
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
