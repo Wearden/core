@@ -7,6 +7,7 @@ import (
 	"errors"
 	"github.com/Wearden/core/internal/benchmarks"
 	"github.com/Wearden/core/internal/store"
+	"github.com/Wearden/core/internal/webui"
 	"io"
 	"log/slog"
 	"net"
@@ -169,6 +170,9 @@ func (s *Server) Handler() http.Handler {
 	s.scheduleRoutes(m)
 	s.websocketRoutes(m)
 	s.sessionControlRoutes(m)
+	if ui := webui.Handler(); ui != nil {
+		m.Handle("GET /", ui)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Cache-Control", "no-store")

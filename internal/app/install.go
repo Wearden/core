@@ -66,7 +66,7 @@ systemctl enable --now wearden-agent
 echo "Wearden agent installed. It enrolls itself with $CORE_URL and appears under Assets."
 `
 
-var downloadName = regexp.MustCompile(`^(wearden-agent-linux-amd64|SHA256SUMS)$`)
+var downloadName = regexp.MustCompile(`^(wearden-agent-linux-amd64|wearden-agent-windows-amd64\.exe|SHA256SUMS)$`)
 var originHost = regexp.MustCompile(`^[A-Za-z0-9.-]+(:\d{1,5})?$`)
 
 // publicURL prefers the configured origin; otherwise it uses the request host

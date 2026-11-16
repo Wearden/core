@@ -46,3 +46,10 @@ frontend/node_modules/
 *.exe
 *.out
 
+
+# Built React bundle embedded into the core binary (filled by the release build, see scripts/build-release.sh)
+internal/webui/site/*
+!internal/webui/site/.gitkeep
+
+# Local release build output
+release/

@@ -1,0 +1,35 @@
+# Publishes the core release: a self-contained binary for Linux and for Windows, the installers and checksums.
+# Run it by pushing a version tag, for example: git tag v1.0.0 && git push origin v1.0.0
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: core
+      - uses: actions/checkout@v4
+        with:
+          repository: Wearden/proto
+          path: proto
+      - uses: actions/checkout@v4
+        with:
+          repository: Wearden/ruleset
+          path: ruleset
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build release assets
+        run: sh core/scripts/build-release.sh "${GITHUB_REF_NAME}"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${GITHUB_REF_NAME}" release/* --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --generate-notes
