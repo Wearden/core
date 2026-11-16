@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { assetsApi } from "../assetsApi";
+import { agentsApi } from "../agentsApi";
+import { benchmarksApi } from "../benchmarksApi";
+import { scansApi } from "../scansApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { useFeedback } from "../components/feedback";
@@ -39,7 +42,8 @@ export default function Assets() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
-  const { confirm } = useFeedback();
+  const { confirm, toast } = useFeedback();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const openHost = Number(params.get("host")) || null;
   const drawerTab = (params.get("tab") as DrawerTab) || "overview";
@@ -69,6 +73,31 @@ export default function Assets() {
       (statusFilter === "all" || (statusFilter === "online" ? a.status === "online" || a.status === "degraded" : a.status !== "online" && a.status !== "degraded")) &&
       (!needle || `${a.name} ${a.host} ${a.os_detected ?? ""} ${a.tags.join(" ")}`.toLowerCase().includes(needle)));
   }, [assets, q, osFilter, statusFilter]);
+  // One scan per benchmark: selected hosts are grouped by the original benchmark of their agent.
+  const scanMany = async () => {
+    const ids = Array.from(picked).map(Number);
+    try {
+      const agents = await agentsApi.list();
+      const groups = new Map<string, number[]>();
+      for (const id of ids) {
+        const ag = agents.find((x) => x.asset_id === id && x.status !== "revoked");
+        if (!ag) continue;
+        const bid = ag.benchmark_id.replace(/-native(-registry)?$/, "-cis");
+        groups.set(bid, [...(groups.get(bid) ?? []), id]);
+      }
+      if (groups.size === 0) { toast(lang === "az" ? "Seçilmiş hostlarda aktiv agent yoxdur." : "None of the selected hosts has an active agent.", "error"); return; }
+      let last: string | null = null;
+      for (const [bid, assetIds] of groups) {
+        const profiles = await benchmarksApi.profiles(bid);
+        last = (await scansApi.create({ name: `Bulk scan ${assetIds.length} hosts`, benchmark_id: bid, profile_id: profiles[0].id, asset_ids: assetIds })).id;
+      }
+      setPicked(new Set());
+      toast(lang === "az" ? "Yoxlama növbəyə qoyuldu." : "Scan queued.", "success");
+      if (groups.size === 1 && last) navigate(`/scans/${last}`);
+    } catch (e) {
+      toast((e as Error).message, "error");
+    }
+  };
   const removeMany = async () => {
     const ids = Array.from(picked).map(Number);
     if (!(await confirm({ title: lang === "az" ? `${ids.length} host silinsin?` : `Delete ${ids.length} selected hosts?`, confirmLabel: t("common.delete"), cancelLabel: t("common.cancel"), danger: true }))) return;
@@ -184,7 +213,7 @@ export default function Assets() {
         exportName="wearden-hosts"
         loading={isLoading}
         onRowClick={(a) => openDrawer(a.id)}
-        selection={isAdmin ? { selected: picked, onChange: setPicked } : undefined}
+        selection={canOperate ? { selected: picked, onChange: setPicked } : undefined}
         initialSort={{ id: "name", dir: "asc" }}
         emptyTitle={assets.length === 0 ? t("assets.none") : lang === "az" ? "Uyğun host yoxdur" : "No matching hosts"}
         emptyHint={assets.length === 0 ? (lang === "az" ? "Agent qurulduqda və qeydiyyatdan keçdikdə host avtomatik burada görünür." : "A host appears here automatically once an agent is installed and enrolled.") : undefined}
@@ -193,6 +222,11 @@ export default function Assets() {
             <input type="search" className={`${searchCls} !w-64`} placeholder={lang === "az" ? "Ad, ünvan, OS və ya etiket" : "Search name, address, OS or tag"} value={q} onChange={(e) => setQ(e.target.value)} />
             <Chips label="os" value={osFilter} onChange={setOsFilter} options={[{ id: "all", label: lang === "az" ? "Hamısı" : "All" }, { id: "linux", label: "Linux" }, { id: "windows", label: "Windows" }]} />
             <Chips label="status" value={statusFilter} onChange={setStatusFilter} options={[{ id: "all", label: lang === "az" ? "Hər status" : "Any status" }, { id: "online", label: "Online" }, { id: "offline", label: "Offline" }]} />
+            {canOperate && picked.size > 0 && (
+              <button onClick={scanMany} className="inline-flex h-8 items-center rounded-md border border-slate-700 px-3 text-xs text-slate-200 hover:bg-slate-800">
+                {lang === "az" ? "Yoxla" : "Scan"} ({picked.size})
+              </button>
+            )}
             {isAdmin && picked.size > 0 && (
               <button onClick={removeMany} className="inline-flex h-8 items-center rounded-md border border-red-900 px-3 text-xs text-red-400 hover:bg-red-950/50">
                 {t("common.delete")} ({picked.size})
