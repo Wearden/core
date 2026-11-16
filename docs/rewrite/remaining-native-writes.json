@@ -3,9 +3,9 @@
   "benchmarks": [
     {
       "benchmark_id": "ubuntu-22.04-native",
-      "ruleset_version": "native-linux-2204-1",
-      "total_controls": 100,
-      "compiled_write_ids": 60,
+      "ruleset_version": "native-linux-2204-2",
+      "total_controls": 112,
+      "compiled_write_ids": 72,
       "remaining_by_kind": {
         "apt_https": 1,
         "audit_rules": 10,
@@ -260,9 +260,9 @@
     },
     {
       "benchmark_id": "ubuntu-24.04-native",
-      "ruleset_version": "native-linux-3",
-      "total_controls": 88,
-      "compiled_write_ids": 59,
+      "ruleset_version": "native-linux-4",
+      "total_controls": 100,
+      "compiled_write_ids": 71,
       "remaining_by_kind": {
         "apt_https": 1,
         "package_installed": 7,
