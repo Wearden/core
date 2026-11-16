@@ -103,9 +103,14 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
   const total = latest ? latest.passed + latest.failed + latest.errored : 0;
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/60" role="dialog" aria-modal="true" aria-label="Host details" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <aside className="flex h-full w-full max-w-[980px] flex-col border-l border-slate-800 bg-slate-950 shadow-2xl">
-        <header className="space-y-4 border-b border-slate-800 px-6 pt-5">
+    <div className="fixed inset-0 z-40 bg-slate-950" role="dialog" aria-modal="true" aria-label="Host details">
+      <aside className="flex h-full w-full flex-col bg-slate-950">
+        <header className="border-b border-slate-800 px-6 pt-4">
+         <div className="mx-auto w-full max-w-[1400px] space-y-4">
+          <button onClick={onClose} className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-800 px-3 text-sm text-slate-300 hover:bg-slate-900 hover:text-slate-100">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 6l-6 6 6 6" /></svg>
+            {L("Back to assets", "Assetlərə qayıt")}
+          </button>
           <div className="flex items-start gap-4">
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-2.5"><HostIcon os={asset?.os_type ?? agent?.os ?? "linux"} size={40} /></div>
             <div className="min-w-0 flex-1">
@@ -123,9 +128,6 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
                   {startScan.isPending ? "..." : L("Run scan", "Yoxlama başlat")}
                 </button>
               )}
-              <button onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-100">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
-              </button>
             </div>
           </div>
           {startScan.error && <p className="text-xs text-red-300">{(startScan.error as Error).message}</p>}
@@ -134,9 +136,11 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
               <button key={tb.id} role="tab" aria-selected={tab === tb.id} onClick={() => onTab(tb.id)} className={`border-b-2 px-4 py-2.5 text-sm ${tab === tb.id ? "border-slate-100 font-medium text-slate-50" : "border-transparent text-slate-500 hover:text-slate-200"}`}>{tb.label}</button>
             ))}
           </nav>
+         </div>
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
+         <div className="mx-auto w-full max-w-[1400px]">
           {tab === "overview" && (
             <div className="space-y-6">
               {!latest ? <EmptyState title={L("No scan results for this host yet", "Bu host üçün hələ yoxlama nəticəsi yoxdur")} hint={L("Run a scan to see compliance, findings and trends here.", "Uyğunluğu, nəticələri və trendi görmək üçün yoxlama başladın.")} /> : (
@@ -234,6 +238,7 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
           )}
 
           {tab === "logs" && (agent ? <AgentLogs agentId={agent.id} tall /> : <EmptyState title={L("This host has no agent", "Bu hostda agent yoxdur")} hint={L("Logs come from the agent running on the workstation.", "Loglar workstation-da işləyən agentdən gəlir.")} />)}
+         </div>
         </div>
       </aside>
     </div>
