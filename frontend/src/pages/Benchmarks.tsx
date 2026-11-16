@@ -194,7 +194,7 @@ export default function Benchmarks() {
           <span key={p.id} className="flex items-center gap-1">
             <button
               onClick={() => applyProfile(p)}
-              className="rounded border border-slate-700 px-3 py-1 text-sm hover:bg-slate-800"
+              className="inline-flex h-8 items-center rounded border border-slate-700 px-3 text-sm hover:bg-slate-800"
               title={p.description}
             >
               {p.name} ({p.control_ids.length})
@@ -202,7 +202,7 @@ export default function Benchmarks() {
             {!p.builtin && canOperate && (
               <button
                 onClick={async () => (await confirm({ title: t("bm.delProfile").replace("{name}", p.name), confirmLabel: t("common.delete"), cancelLabel: t("common.cancel"), danger: true })) && removeProfile.mutate(p.id)}
-                className="text-xs text-red-400 hover:underline"
+                className="inline-flex h-8 w-6 items-center justify-center text-xs text-red-400 hover:underline"
                 aria-label={`${t("common.delete")} ${p.name}`}
               >
                 ×
