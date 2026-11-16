@@ -170,13 +170,14 @@ export default function DataTable<T>({
     setSort((s) => (s?.id === c.id ? (s.dir === "asc" ? { id: c.id, dir: "desc" } : null) : { id: c.id, dir: "asc" }));
   };
 
-  const exportCsv = () => {
+  const exportCsv = (onlySelected = false) => {
     const cols = visible.filter((c) => c.csv);
-    const lines = [cols.map((c) => csvCell(c.header)).join(","), ...sorted.map((r) => cols.map((c) => csvCell(c.csv!(r))).join(","))];
+    const source = onlySelected && selection ? sorted.filter((r) => selection.selected.has(rowKey(r))) : sorted;
+    const lines = [cols.map((c) => csvCell(c.header)).join(","), ...source.map((r) => cols.map((c) => csvCell(c.csv!(r))).join(","))];
     const url = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${exportName ?? "export"}.csv`;
+    a.download = `${exportName ?? "export"}${onlySelected ? "-selected" : ""}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -238,7 +239,8 @@ export default function DataTable<T>({
               </div>
             )}
           </div>
-          {exportName && <button onClick={exportCsv} disabled={sorted.length === 0} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Export CSV</button>}
+          {exportName && selection && selection.selected.size > 0 && <button onClick={() => exportCsv(true)} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Export selected ({selection.selected.size})</button>}
+          {exportName && <button onClick={() => exportCsv()} disabled={sorted.length === 0} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Export CSV</button>}
         </div>
       </div>
 
