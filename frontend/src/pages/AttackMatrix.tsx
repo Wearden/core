@@ -61,10 +61,10 @@ export default function AttackMatrix() {
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={top.map((t) => ({ name: `${t.id} ${t.name}`.slice(0, 40), before: t.before ?? 0, after: t.after ?? 0 }))} layout="vertical" margin={{ left: 30 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis type="number" domain={[0, 100]} stroke="#94a3b8" fontSize={12} />
-                    <YAxis type="category" dataKey="name" stroke="#94a3b8" fontSize={11} width={260} />
-                    <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b" }} itemStyle={{ color: "#e2e8f0" }} labelStyle={{ color: "#f8fafc" }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                    <XAxis type="number" domain={[0, 100]} stroke="#737373" fontSize={12} />
+                    <YAxis type="category" dataKey="name" stroke="#737373" fontSize={11} width={260} />
+                    <Tooltip contentStyle={{ background: "#171717", border: "1px solid #262626" }} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
                     <Legend />
                     <Bar dataKey="before" name={t("atk.beforePct")} fill="#f87171" />
                     <Bar dataKey="after" name={t("atk.afterPct")} fill="#34d399" />

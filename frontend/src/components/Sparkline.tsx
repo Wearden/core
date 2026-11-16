@@ -26,7 +26,7 @@ export default function Sparkline({ assetId }: { assetId: number }) {
 
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="uptime history">
-      <polyline fill="none" stroke="#22d3ee" strokeWidth={1.5} points={points} />
+      <polyline fill="none" className="stroke-slate-300" strokeWidth={1.5} points={points} />
     </svg>
   );
 }
