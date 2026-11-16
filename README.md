@@ -4,25 +4,41 @@
 
 Go central API and durable PostgreSQL backend. The React dashboard and optional Guacamole bridge are reused from the prototype. Original prototype files are untouched. This rewrite is still in progress; consult `docs/rewrite/progress.md` for incomplete features. No tests or live OS scans are run after the user's explicit no-test instruction.
 
-## One line install
+## Releases and one line install
 
-On a Linux x86_64 server with Docker (add `--install-docker` to let the installer set Docker up):
+Every release (a `v*` tag, built by GitHub Actions) publishes, on the Releases page of each repository:
+
+| Repository | Assets |
+| --- | --- |
+| core | `wearden-core-linux-amd64.tar.gz`, `wearden-core-windows-amd64.zip` (each one binary with the dashboard inside, plus the ruleset), `install-core.sh`, `install-core.ps1`, `SHA256SUMS` |
+| agent-linux | `wearden-agent-linux-amd64`, `SHA256SUMS` |
+| agent-windows | `wearden-agent-windows-amd64.exe`, `SHA256SUMS` |
+
+Install core on a Linux x86_64 server (systemd; PostgreSQL is set up automatically on Debian and Ubuntu, or pass `--database-url`):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Wearden/core/main/scripts/install.sh | sudo sh -s -- --domain wearden.example.com
+curl -fsSL https://github.com/Wearden/core/releases/latest/download/install-core.sh | sudo sh -s -- --url https://wearden.example.com
 ```
 
-The installer downloads the source, writes `/opt/wearden/core/.env` with freshly generated secrets, builds the images and the Linux agent, and starts everything. With `--domain` it serves HTTPS on ports 80 and 443 with an automatic certificate; without it the web page stays on `127.0.0.1:8080` (use `--bind 0.0.0.0 --port 8080` for a lab LAN). Open the address it prints and register: the first account becomes the one and only administrator.
+Install core on Windows (elevated PowerShell; bring an existing PostgreSQL with `-DatabaseUrl`):
 
-Run the same command again to upgrade; the `.env`, the database and the agent downloads are kept. Pin a release with `--ref <tag>` in production, or download the script first and read it. Remove with `--uninstall` (data volumes are kept) or `--uninstall --purge --yes` (deletes the data too).
+```powershell
+$f = "$env:TEMP\install-core.ps1"; irm https://github.com/Wearden/core/releases/latest/download/install-core.ps1 -OutFile $f; & $f -DatabaseUrl 'postgresql://user:pass@host:5432/wearden?sslmode=require'
+```
 
-Workstations then install the agent with one command shown in Assets, Agents, Enroll a new agent:
+Both installers check every download against the release `SHA256SUMS`, write the environment file with freshly generated secrets, install core as a service (systemd unit, or a scheduled task running as SYSTEM), and download the Linux and Windows agents so your workstations can install them from this core. Open the address they print and register: the first account becomes the one and only administrator, later registrations wait for its approval. Core listens on `127.0.0.1:8000` by default; put a TLS reverse proxy (Caddy or nginx) in front and pass its https address as `--url` / `-Url`. Agents refuse plain http for a core on another machine.
+
+Run the same command again to upgrade; the environment file, the database and the data are kept. Pin a version with `--version <tag>` / `-Version <tag>` in production, or download the script first and read it. Remove with `--uninstall` / `-Uninstall` (data is kept) or `--uninstall --purge --yes` / `-Uninstall -Purge -Yes` (deletes the data too).
+
+Workstations install the agent with the one command shown in Assets, Agents, Enroll a new agent:
 
 ```sh
 curl -fsSL https://wearden.example.com/install-agent.sh | sudo sh -s -- --token <enrollment token>
 ```
 
-Agents refuse plain http for a core that is not on the same machine, so use `--domain` for real hosts. The installer has not been run end to end yet; see `docs/rewrite/progress.md`.
+To build the release assets yourself, run `sh core/scripts/build-release.sh v1.0.0` from the folder that holds `core`, `proto` and `ruleset` (needs Go, Node, tar and zip).
+
+Docker alternative that builds from source: `scripts/install.sh` (see below, optional automatic HTTPS with `--domain`). None of the installers has been run end to end yet; see `docs/rewrite/progress.md`.
 
 ## Implemented source
 
