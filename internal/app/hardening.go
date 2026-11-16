@@ -261,8 +261,10 @@ func (s *Server) cancelHardening(w http.ResponseWriter, r *http.Request) {
 		problem(w, 500, "Invalid stored run")
 		return
 	}
-	if text(doc["status"]) == "completed" || text(doc["status"]) == "rolled_back" {
-		problem(w, 409, "Run is already complete")
+	// Legacy parity: only queued or running runs can be cancelled; failed, cancelled
+	// and rollback states must not be overwritten.
+	if state := text(doc["status"]); state != "queued" && state != "running" {
+		problem(w, 409, "Run is already "+state)
 		return
 	}
 	doc["status"] = "cancelled"
