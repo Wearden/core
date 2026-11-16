@@ -256,6 +256,7 @@ export default function Benchmarks() {
         columns={columns}
         rowKey={(c) => c.id}
         storageKey="benchmark-controls"
+        filterState={{ value: { severity, category, search }, onChange: (v) => { const f = v as { severity: string; category: string; search: string }; setSeverity(f.severity ?? ""); setCategory(f.category ?? ""); setSearch(f.search ?? ""); } }}
         exportName="wearden-controls"
         loading={controls.isLoading}
         pageSizes={[25, 50, 100, 250]}
