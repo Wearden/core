@@ -6,6 +6,7 @@ import StatusPill from "../components/StatusPill";
 import DataTable, { Column } from "../components/DataTable";
 import { Chips, PageHeader, searchCls } from "../components/ui";
 import { useI18n } from "../i18n";
+import { download } from "../analyticsApi";
 
 type Filter = "all" | "active" | "completed" | "failed";
 
@@ -72,6 +73,18 @@ export default function Rollback({ pam = false }: { pam?: boolean }) {
       },
     },
     { id: "by", header: t("rb.startedBy"), sort: (a, b) => (a.created_by ?? "").localeCompare(b.created_by ?? ""), csv: (r) => r.created_by ?? "", cell: (r) => <span className="text-xs text-slate-300">{r.created_by ?? "-"}</span> },
+    {
+      id: "report", header: t("nav.reports"),
+      cell: (r) => (
+        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          {(["pdf", "csv"] as const).map((ext) => (
+            <button key={ext} onClick={() => download(`/reports/rollbacks/${r.id}.${ext}`, `rollback-${r.id}.${ext}`).catch(() => undefined)} className="rounded border border-slate-700 px-2 py-0.5 text-xs text-slate-200 hover:bg-slate-800">
+              {ext.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      ),
+    },
     {
       id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? a.created_at).localeCompare(b.started_at ?? b.created_at), csv: (r) => r.started_at ?? r.created_at,
       cell: (r) => <span className="whitespace-nowrap text-xs text-slate-400">{new Date(r.started_at ?? r.created_at).toLocaleString()}</span>,
