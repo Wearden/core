@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import type { Asset, AssetInput, OsType } from "../types";
+import type { Asset, AssetInput, Connection, OsType } from "../types";
 import { useI18n } from "../i18n";
 
 interface Props {
@@ -17,7 +17,9 @@ function toPort(value: string, fallback: number | null): number | null {
 }
 
 export default function AssetModal({ initial, onSave, onClose }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const az = lang === "az";
+  const [connection, setConnection] = useState<Connection>(initial?.connection ?? "agent");
   const [name, setName] = useState(initial?.name ?? "");
   const [host, setHost] = useState(initial?.host ?? "");
   const [osType, setOsType] = useState<OsType>(initial?.os_type ?? "linux");
@@ -45,6 +47,7 @@ export default function AssetModal({ initial, onSave, onClose }: Props) {
         winrm_port: toPort(winrm, 5985),
         winrm_https_port: toPort(winrmHttps, 5986),
         tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+        connection: osType === "linux" && connection === "winrm" ? "ssh" : connection,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("asset.saveFail"));
@@ -79,6 +82,20 @@ export default function AssetModal({ initial, onSave, onClose }: Props) {
             <input className={field} value={osVersion} onChange={(e) => setOsVersion(e.target.value)} placeholder="Ubuntu 24.04" />
           </label>
         </div>
+
+        <label className="block text-sm">
+          <span className="text-slate-300">{az ? "Skan və möhkəmləndirmə üsulu" : "Scan and hardening method"}</span>
+          <select className={field} value={osType === "linux" && connection === "winrm" ? "ssh" : connection} onChange={(e) => setConnection(e.target.value as Connection)}>
+            <option value="agent">{az ? "Quraşdırılmış agent" : "Installed agent"}</option>
+            <option value="ssh">{az ? "Agentsiz: SSH" : "Agentless: SSH"}</option>
+            {osType === "windows" && <option value="winrm">{az ? "Agentsiz: WinRM" : "Agentless: WinRM"}</option>}
+          </select>
+          <span className="mt-1 block text-xs text-slate-500">
+            {connection === "agent"
+              ? az ? "Agent hostda daim işləyir və core-a özü qoşulur." : "The agent runs on the host all the time and connects to core by itself."
+              : az ? "Core saxlanılan etimad məlumatı ilə daxil olur və agenti yalnız iş zamanı işə salır. Hostun core-a şəbəkə yolu lazım deyil. RDP yalnız interaktiv sessiya üçündür." : "Core signs in with the stored credential and runs the agent only while there is work. The host needs no network route to core. RDP stays for interactive sessions only."}
+          </span>
+        </label>
 
         <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <legend className="mb-2 text-sm text-slate-300">{t("asset.ports")}</legend>

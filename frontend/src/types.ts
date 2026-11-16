@@ -18,7 +18,11 @@ export interface Asset {
   last_seen: string | null;
   last_checked: string | null;
   credential_username: string | null;
+  /** "agent" (installed agent) or an agentless connection: "ssh", "winrm". Older assets omit it. */
+  connection?: Connection;
 }
+
+export type Connection = "agent" | "ssh" | "winrm";
 
 export interface AssetInput {
   name: string;
@@ -30,6 +34,7 @@ export interface AssetInput {
   winrm_port: number | null;
   winrm_https_port: number | null;
   tags: string[];
+  connection: Connection;
 }
 
 export interface CredentialInput {
