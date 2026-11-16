@@ -59,7 +59,7 @@ export default function Benchmarks() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { confirm } = useFeedback();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
 
   const benches = useQuery({ queryKey: ["benchmarks"], queryFn: benchmarksApi.list });
   const [bid, setBid] = useState<string | null>(null);

@@ -37,7 +37,7 @@ export default function Dashboard() {
   const { t, lang } = useI18n();
   const L = (en: string, az: string) => (lang === "az" ? az : en);
   const c = useChartColors();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
 
   const health = useQuery({ queryKey: ["health"], queryFn: api.health, refetchInterval: 10_000 });
   const db = useQuery({ queryKey: ["ready"], queryFn: api.ready, refetchInterval: 10_000 });

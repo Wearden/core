@@ -29,7 +29,7 @@ export default function Scans() {
   const { t, lang } = useI18n();
   const L = (en: string, az: string) => (lang === "az" ? az : en);
   const navigate = useNavigate();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
   const [creating, setCreating] = useState(false);
   const { data = [], isLoading, error } = useQuery({ queryKey: ["scans"], queryFn: scansApi.list, refetchInterval: 5_000 });
   const [filter, setFilter] = useState<Filter>("all");

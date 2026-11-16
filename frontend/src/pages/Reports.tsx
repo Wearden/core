@@ -21,7 +21,7 @@ function heatColor(v: number | null): string {
 export default function Reports() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
   const benches = useQuery({ queryKey: ["benchmarks"], queryFn: benchmarksApi.list });
   const scans = useQuery({ queryKey: ["scans"], queryFn: scansApi.list });
   const runs = useQuery({ queryKey: ["runs"], queryFn: hardeningApi.runs });

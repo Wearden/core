@@ -297,7 +297,7 @@ export default function Hardening() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
   const L = (en: string, az: string) => (lang === "az" ? az : en);
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
   const [creating, setCreating] = useState(false);
   const runs = useQuery({ queryKey: ["runs"], queryFn: hardeningApi.runs, refetchInterval: 5_000 });
   type RunFilter = "all" | "active" | "completed" | "failed" | "rolled_back";

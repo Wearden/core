@@ -7,6 +7,8 @@ interface AuthState {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   reloadUser: () => Promise<void>;
+  /** True when the signed-in role holds the named permission. */
+  can: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -43,8 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const can = (permission: string) => !!user?.permissions?.includes(permission);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, reloadUser }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, logout, reloadUser, can }}>{children}</AuthContext.Provider>
   );
 }
 

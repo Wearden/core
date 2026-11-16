@@ -47,7 +47,7 @@ func (s *Server) setting(ctx context.Context, key string) (value, source string)
 }
 
 func (s *Server) settingsRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/settings", s.require("admin", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/settings", s.requirePerm("settings.manage", func(w http.ResponseWriter, r *http.Request) {
 		out := []map[string]any{}
 		for _, key := range featureSortedKeys(settingDefs) {
 			def := settingDefs[key]
@@ -60,7 +60,7 @@ func (s *Server) settingsRoutes(mux *http.ServeMux) {
 		}
 		writeJSON(w, 200, map[string]any{"vault_ready": s.Config.VaultKey != "", "settings": out})
 	}))
-	mux.HandleFunc("PUT /api/settings/{key}", s.require("admin", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("PUT /api/settings/{key}", s.requirePerm("settings.manage", func(w http.ResponseWriter, r *http.Request) {
 		key := r.PathValue("key")
 		def, ok := settingDefs[key]
 		if !ok {
@@ -95,7 +95,7 @@ func (s *Server) settingsRoutes(mux *http.ServeMux) {
 		s.audit(r, "settings.set", key, true, "") // the value is never logged
 		writeJSON(w, 200, map[string]any{"key": key, "configured": true})
 	}))
-	mux.HandleFunc("DELETE /api/settings/{key}", s.require("admin", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("DELETE /api/settings/{key}", s.requirePerm("settings.manage", func(w http.ResponseWriter, r *http.Request) {
 		key := r.PathValue("key")
 		if _, ok := settingDefs[key]; !ok {
 			problem(w, 404, "Unknown setting")

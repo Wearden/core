@@ -16,7 +16,7 @@ export default function AiAnalysisPanel({ scanId, benchmarkId }: { scanId: strin
   const { t, lang } = useI18n();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const canOperate = user?.role === "admin" || user?.role === "operator";
+  const canOperate = user?.level === "admin" || user?.level === "operator";
   const [planning, setPlanning] = useState(false);
   const status = useQuery({ queryKey: ["ai-status"], queryFn: aiApi.status });
   const stored = useQuery({ queryKey: ["ai-analysis", scanId], queryFn: () => aiApi.stored(scanId), retry: false });

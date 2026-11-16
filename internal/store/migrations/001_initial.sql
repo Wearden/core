@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS wearden_migrations (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS users (
  id bigserial PRIMARY KEY, username text NOT NULL UNIQUE, password_hash text NOT NULL,
- role text NOT NULL CHECK(role IN ('viewer','operator','admin')), active boolean NOT NULL DEFAULT true,
+ role text NOT NULL, active boolean NOT NULL DEFAULT true,
  must_change_password boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS user_tokens (
@@ -80,3 +80,7 @@ CREATE TABLE IF NOT EXISTS agent_logs (
 );
 CREATE INDEX IF NOT EXISTS agent_logs_agent ON agent_logs(agent_id,id DESC);
 CREATE INDEX IF NOT EXISTS agent_logs_received ON agent_logs(received_at);
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_format;
+ALTER TABLE users ADD CONSTRAINT users_role_format CHECK(role ~ '^[a-z0-9][a-z0-9_-]{1,31}$');
