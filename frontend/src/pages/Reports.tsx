@@ -26,7 +26,15 @@ export default function Reports() {
   const scans = useQuery({ queryKey: ["scans"], queryFn: scansApi.list });
   const runs = useQuery({ queryKey: ["runs"], queryFn: hardeningApi.runs });
   const [bid, setBid] = useState("");
-  const [tab, setTab] = useState<"export" | "heat" | "changes">("export");
+  const [tab, setTab] = useState<"export" | "hardening" | "rollback" | "heat" | "changes">("export");
+  const rollbacks = useQuery({ queryKey: ["rollbacks"], queryFn: hardeningApi.rollbacks });
+  const [reportRun, setReportRun] = useState("");
+  const [reportRollback, setReportRollback] = useState("");
+  const runList = useMemo(() => [...(runs.data ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at)), [runs.data]);
+  const rollbackList = useMemo(() => [...(rollbacks.data ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at)), [rollbacks.data]);
+  const activeRun = reportRun || runList[0]?.id || "";
+  const activeRollback = reportRollback || rollbackList[0]?.id || "";
+  const tag = (mode?: string) => (mode === "pam" ? "[PAM] " : "");
   // Default to a benchmark that actually has scan data instead of the first one alphabetically.
   const withData = (scans.data ?? []).find((s) => s.status === "completed")?.benchmark_id;
   const benchmarkId = bid || withData || benches.data?.[0]?.id || "";
@@ -62,6 +70,8 @@ export default function Reports() {
         onChange={setTab}
         options={[
           { id: "export", label: lang === "az" ? "Yoxlama hesabatları" : "Scan reports" },
+          { id: "hardening", label: lang === "az" ? "Möhkəmləndirmə hesabatları" : "Hardening reports" },
+          { id: "rollback", label: lang === "az" ? "Geri qaytarma hesabatları" : "Rollback reports" },
           { id: "heat", label: lang === "az" ? "Uyğunluq xəritəsi" : "Compliance heatmap" },
           { id: "changes", label: lang === "az" ? "Əvvəl və sonra" : "Before and after" },
         ]}
@@ -171,12 +181,42 @@ export default function Reports() {
         )}
       </section>}
 
+      {tab === "hardening" && <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <h2 className="font-semibold">{lang === "az" ? "Möhkəmləndirmə hesabatını ixrac et" : "Export a hardening report"}</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <select className={field} value={activeRun} onChange={(e) => setReportRun(e.target.value)} aria-label="hardening run">
+            {runList.length === 0 && <option value="">{lang === "az" ? "Möhkəmləndirmə işi yoxdur" : "No hardening runs"}</option>}
+            {runList.map((r) => <option key={r.id} value={r.id}>{tag(r.mode)}{r.name} · {r.status} · {new Date(r.created_at).toLocaleString()}</option>)}
+          </select>
+          {(["pdf", "csv", "json"] as const).map((ext) => (
+            <button key={ext} disabled={!activeRun} onClick={() => exportFile(`/reports/hardening/${activeRun}.${ext}`, `hardening-${activeRun}.${ext}`)} className={ext === "pdf" ? "rounded-md bg-cyan-600 px-3 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-40" : "rounded-md border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-40"}>{ext.toUpperCase()}</button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-500">{lang === "az" ? "Hər dəyişiklik: əvvəlki və sonrakı dəyər, nəticə, mesaj və tətbiq çıxışı; geri qaytarılıbsa, onun nəticəsi də." : "Every change: before and after values, outcome, message and the applied output; if it was rolled back, the rollback result too."}</p>
+        {message && <p role="alert" className="text-sm text-red-300">{message}</p>}
+      </section>}
+
+      {tab === "rollback" && <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <h2 className="font-semibold">{lang === "az" ? "Geri qaytarma hesabatını ixrac et" : "Export a rollback report"}</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <select className={field} value={activeRollback} onChange={(e) => setReportRollback(e.target.value)} aria-label="rollback">
+            {rollbackList.length === 0 && <option value="">{lang === "az" ? "Geri qaytarma yoxdur" : "No rollbacks"}</option>}
+            {rollbackList.map((r) => <option key={r.id} value={r.id}>{tag(r.mode)}{r.name} · {r.status} · {r.reverted}/{r.total}</option>)}
+          </select>
+          {(["pdf", "csv", "json"] as const).map((ext) => (
+            <button key={ext} disabled={!activeRollback} onClick={() => exportFile(`/reports/rollbacks/${activeRollback}.${ext}`, `rollback-${activeRollback}.${ext}`)} className={ext === "pdf" ? "rounded-md bg-cyan-600 px-3 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-40" : "rounded-md border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-40"}>{ext.toUpperCase()}</button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-500">{lang === "az" ? "Geri qaytarma prosesi və geri alınan hər dəyişiklik: əvvəlki dəyər, bərpa olunan dəyər, nəticə və çıxış." : "The rollback process and every change it undid: the value before hardening, the restored value, the outcome and the output."}</p>
+        {message && <p role="alert" className="text-sm text-red-300">{message}</p>}
+      </section>}
+
       {tab === "export" && <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
         <h2 className="font-semibold">{t("rep.scanReport")}</h2>
         <div className="flex flex-wrap items-center gap-3">
           <select className={field} value={activeScan} onChange={(e) => setScanId(e.target.value)} aria-label="scan">
             {completedScans.length === 0 && <option value="">{t("rep.noCompleted")}</option>}
-            {completedScans.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {completedScans.map((s) => <option key={s.id} value={s.id}>{tag(s.mode)}{s.name}</option>)}
           </select>
           <button disabled={!activeScan} onClick={() => exportFile(`/reports/scans/${activeScan}.pdf`, `scan-${activeScan}.pdf`)} className="rounded-md bg-cyan-600 px-3 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-40">PDF</button>
           <button disabled={!activeScan} onClick={() => exportFile(`/reports/scans/${activeScan}.csv`, `scan-${activeScan}.csv`)} className="rounded-md border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-40">CSV</button>
