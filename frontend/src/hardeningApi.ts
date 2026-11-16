@@ -20,6 +20,8 @@ export interface Plan {
 
 export interface RunSummary {
   id: string;
+  /** "pam" for runs applied over SSH or WinRM without an agent. */
+  mode?: string;
   name: string;
   benchmark_id: string;
   scan_id: string | null;

@@ -5,6 +5,8 @@ export type ScanStatus = "queued" | "running" | "cancel_requested" | "completed"
 
 export interface ScanSummary {
   id: string;
+  /** "pam" for scans run over SSH or WinRM without an agent. */
+  mode?: string;
   name: string;
   benchmark_id: string;
   profile_name: string;

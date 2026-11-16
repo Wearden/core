@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { isPam } from "../types";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { agentsApi } from "../agentsApi";
@@ -72,7 +73,7 @@ export function NewHardening({
     setBusy(false);
   }, [selectionKey]);
 
-  const eligible = useMemo(() => (assets.data ?? []).filter((a) => bench && a.os_type === bench.os), [assets.data, bench]);
+  const eligible = useMemo(() => (assets.data ?? []).filter((a) => !isPam(a) && bench && a.os_type === bench.os), [assets.data, bench]);
   const profile = useQuery({
     queryKey: ["controls", activeBid],
     queryFn: () => benchmarksApi.controls(activeBid),
@@ -180,7 +181,7 @@ export function NewHardening({
             <span className="text-slate-300">{t("hard.fromScan")}</span>
             <select className={`${field} mt-1 w-full`} value={scanId} onChange={(e) => setScanId(e.target.value)}>
               <option value="">{t("hard.noScan")}</option>
-              {(scans.data ?? []).filter((s) => s.benchmark_id === activeBid).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {(scans.data ?? []).filter((s) => s.mode !== "pam" && s.benchmark_id === activeBid).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </label>
         </div>
@@ -303,7 +304,8 @@ export default function Hardening() {
   type RunFilter = "all" | "active" | "completed" | "failed" | "rolled_back";
   const [filter, setFilter] = useState<RunFilter>("all");
   const [search, setSearch] = useState("");
-  const all = runs.data ?? [];
+  // PAM runs are listed on the PAM hardening page.
+  const all = (runs.data ?? []).filter((r) => r.mode !== "pam");
   const isActive = (r: RunSummary) => ["queued", "running"].includes(r.status);
   const shown = useMemo(
     () =>

@@ -18,11 +18,14 @@ export interface Asset {
   last_seen: string | null;
   last_checked: string | null;
   credential_username: string | null;
-  /** "agent" (installed agent) or an agentless connection: "ssh", "winrm". Older assets omit it. */
+  /** "agent" (installed agent) or a PAM connection: "ssh", "winrm". Older assets omit it. */
   connection?: Connection;
 }
 
 export type Connection = "agent" | "ssh" | "winrm";
+
+/** PAM assets are managed over SSH or WinRM by core, without an agent. */
+export const isPam = (a: { connection?: Connection }) => a.connection === "ssh" || a.connection === "winrm";
 
 export interface AssetInput {
   name: string;

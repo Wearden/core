@@ -42,6 +42,19 @@ func (s *Server) rollbackHardening(w http.ResponseWriter, r *http.Request) {
 		problem(w, 500, "Invalid stored run")
 		return
 	}
+	// PAM runs are rolled back by core over the asset's connection, not by an agent.
+	if text(doc["mode"]) == "pam" {
+		for i, id := range in.IDs {
+			for _, other := range in.IDs[:i] {
+				if other == id {
+					problem(w, 400, "Duplicate change ID")
+					return
+				}
+			}
+		}
+		s.pamRollback(w, r, tx, doc, in.IDs, in.Name)
+		return
+	}
 	var active int
 	if err = tx.QueryRowContext(r.Context(), "SELECT count(*) FROM action_jobs WHERE run_id=$1 AND state='queued'", r.PathValue("id")).Scan(&active); err != nil {
 		s.databaseError(w, err)

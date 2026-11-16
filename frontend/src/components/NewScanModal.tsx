@@ -1,4 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
+import { isPam } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import { assetsApi } from "../assetsApi";
 import { benchmarksApi } from "../benchmarksApi";
@@ -34,7 +35,7 @@ export default function NewScanModal({ onCreated, onClose }: Props) {
 
   // Only hosts of the benchmark's OS can be scanned with it.
   const eligible = useMemo(
-    () => (assets.data ?? []).filter((a) => bench && a.os_type === bench.os),
+    () => (assets.data ?? []).filter((a) => !isPam(a) && bench && a.os_type === bench.os),
     [assets.data, bench],
   );
 

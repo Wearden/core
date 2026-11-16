@@ -6,6 +6,8 @@ interface Props {
   initial: Asset | null;
   onSave: (body: AssetInput) => Promise<void>;
   onClose: () => void;
+  /** "agent" hosts run an installed agent; "pam" hosts are managed over SSH or WinRM. */
+  kind?: "agent" | "pam";
 }
 
 const field = "mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-cyan-500";
@@ -16,13 +18,15 @@ function toPort(value: string, fallback: number | null): number | null {
   return Number.isInteger(n) && n > 0 && n < 65536 ? n : fallback;
 }
 
-export default function AssetModal({ initial, onSave, onClose }: Props) {
+export default function AssetModal({ initial, onSave, onClose, kind = "agent" }: Props) {
   const { t, lang } = useI18n();
   const az = lang === "az";
-  const [connection, setConnection] = useState<Connection>(initial?.connection ?? "agent");
+  const [connection, setConnection] = useState<Connection>(initial?.connection ?? (kind === "pam" ? "ssh" : "agent"));
+  const [osType, setOsType] = useState<OsType>(initial?.os_type ?? "linux");
+  // WinRM is Windows only; anything else on a PAM host means SSH.
+  const pamConnection: Connection = connection === "winrm" && osType === "windows" ? "winrm" : "ssh";
   const [name, setName] = useState(initial?.name ?? "");
   const [host, setHost] = useState(initial?.host ?? "");
-  const [osType, setOsType] = useState<OsType>(initial?.os_type ?? "linux");
   const [osVersion, setOsVersion] = useState(initial?.os_version ?? "");
   const [ssh, setSsh] = useState(String(initial?.ssh_port ?? 22));
   const [rdp, setRdp] = useState(String(initial?.rdp_port ?? 3389));
@@ -47,7 +51,7 @@ export default function AssetModal({ initial, onSave, onClose }: Props) {
         winrm_port: toPort(winrm, 5985),
         winrm_https_port: toPort(winrmHttps, 5986),
         tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-        connection: osType === "linux" && connection === "winrm" ? "ssh" : connection,
+        connection: kind === "pam" ? pamConnection : "agent",
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("asset.saveFail"));
@@ -83,19 +87,20 @@ export default function AssetModal({ initial, onSave, onClose }: Props) {
           </label>
         </div>
 
-        <label className="block text-sm">
-          <span className="text-slate-300">{az ? "Skan və möhkəmləndirmə üsulu" : "Scan and hardening method"}</span>
-          <select className={field} value={osType === "linux" && connection === "winrm" ? "ssh" : connection} onChange={(e) => setConnection(e.target.value as Connection)}>
-            <option value="agent">{az ? "Quraşdırılmış agent" : "Installed agent"}</option>
-            <option value="ssh">{az ? "Agentsiz: SSH" : "Agentless: SSH"}</option>
-            {osType === "windows" && <option value="winrm">{az ? "Agentsiz: WinRM" : "Agentless: WinRM"}</option>}
-          </select>
-          <span className="mt-1 block text-xs text-slate-500">
-            {connection === "agent"
-              ? az ? "Agent hostda daim işləyir və core-a özü qoşulur." : "The agent runs on the host all the time and connects to core by itself."
-              : az ? "Core saxlanılan etimad məlumatı ilə daxil olur və agenti yalnız iş zamanı işə salır. Hostun core-a şəbəkə yolu lazım deyil. RDP yalnız interaktiv sessiya üçündür." : "Core signs in with the stored credential and runs the agent only while there is work. The host needs no network route to core. RDP stays for interactive sessions only."}
-          </span>
-        </label>
+        {kind === "pam" && (
+          <label className="block text-sm">
+            <span className="text-slate-300">{az ? "PAM bağlantısı" : "PAM connection"}</span>
+            <select className={field} value={pamConnection} onChange={(e) => setConnection(e.target.value as Connection)}>
+              <option value="ssh">SSH</option>
+              {osType === "windows" && <option value="winrm">WinRM</option>}
+            </select>
+            <span className="mt-1 block text-xs text-slate-500">
+              {az
+                ? "Core saxlanılan etimad məlumatı ilə bu bağlantı üzərindən daxil olur və benchmark-ın yoxlama, möhkəmləndirmə və geri qaytarma əmrlərini icra edir. Agent qurulmur. RDP yalnız interaktiv sessiya üçündür."
+                : "Core signs in over this connection with the stored credential and runs the benchmark's check, hardening and rollback commands. No agent is installed. RDP is for interactive sessions only."}
+            </span>
+          </label>
+        )}
 
         <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <legend className="mb-2 text-sm text-slate-300">{t("asset.ports")}</legend>
