@@ -35,6 +35,23 @@ function loadPrefs(key: string | undefined, columns: Column<never>[], fallbackSi
   }
 }
 
+interface View {
+  name: string;
+  hidden: string[];
+  pageSize: number;
+  sort: { id: string; dir: "asc" | "desc" } | null;
+}
+
+function loadViews(key: string | undefined): View[] {
+  if (!key) return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(`wearden.views.${key}`) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((v) => v && typeof v.name === "string" && Array.isArray(v.hidden) && typeof v.pageSize === "number") : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Spreadsheet programs run text that starts with these characters as formulas, so exports neutralize them. */
 function csvCell(value: string | number | null | undefined): string {
   let s = value === null || value === undefined ? "" : String(value);
@@ -87,6 +104,32 @@ export default function DataTable<T>({
   const [open, setOpen] = useState<Set<string | number>>(new Set());
   const toggle = (k: string | number) => setOpen((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
   const menuRef = useRef<HTMLDivElement>(null);
+  const [views, setViews] = useState<View[]>(() => loadViews(storageKey));
+  const [viewMenu, setViewMenu] = useState(false);
+  const [viewName, setViewName] = useState("");
+  const viewRef = useRef<HTMLDivElement>(null);
+  const persistViews = (next: View[]) => {
+    setViews(next);
+    try { localStorage.setItem(`wearden.views.${storageKey}`, JSON.stringify(next)); } catch { /* convenience only */ }
+  };
+  const saveView = () => {
+    const name = viewName.trim().slice(0, 40);
+    if (!name) return;
+    persistViews([...views.filter((v) => v.name !== name), { name, hidden: prefs.hidden, pageSize: prefs.pageSize, sort }]);
+    setViewName("");
+  };
+  const applyView = (v: View) => {
+    setPrefs({ hidden: v.hidden.filter((h) => columns.some((c) => c.id === h && !c.locked)), pageSize: v.pageSize });
+    setSort(v.sort && columns.some((c) => c.id === v.sort!.id) ? v.sort : null);
+    setPage(0);
+    setViewMenu(false);
+  };
+  useEffect(() => {
+    if (!viewMenu) return;
+    const down = (e: MouseEvent) => viewRef.current && !viewRef.current.contains(e.target as Node) && setViewMenu(false);
+    document.addEventListener("mousedown", down);
+    return () => document.removeEventListener("mousedown", down);
+  }, [viewMenu]);
 
   useEffect(() => {
     if (!storageKey) return;
@@ -157,6 +200,26 @@ export default function DataTable<T>({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">{toolbar}</div>
         <div className="flex items-center gap-2 text-xs">
+          {storageKey && (
+            <div className="relative" ref={viewRef}>
+              <button onClick={() => setViewMenu(!viewMenu)} aria-expanded={viewMenu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Views{views.length ? ` (${views.length})` : ""}</button>
+              {viewMenu && (
+                <div className="absolute right-0 z-20 mt-1 w-60 rounded-lg border border-slate-700 bg-slate-900 p-2 shadow-xl">
+                  {views.length === 0 && <p className="px-2 py-1.5 text-xs text-slate-500">No saved views yet. Arrange sort, columns and page size, then save them under a name.</p>}
+                  {views.map((v) => (
+                    <div key={v.name} className="flex items-center justify-between gap-1 rounded px-2 py-1 hover:bg-slate-800">
+                      <button onClick={() => applyView(v)} className="flex-1 truncate text-left text-sm text-slate-200" title={v.name}>{v.name}</button>
+                      <button onClick={() => persistViews(views.filter((x) => x.name !== v.name))} aria-label={`Delete view ${v.name}`} className="text-xs text-red-400 hover:underline">x</button>
+                    </div>
+                  ))}
+                  <div className="mt-1 flex gap-1 border-t border-slate-800 pt-2">
+                    <input value={viewName} onChange={(e) => setViewName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveView()} placeholder="View name" aria-label="View name" className="h-8 min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-2 text-sm" />
+                    <button onClick={saveView} disabled={!viewName.trim()} className="inline-flex h-8 items-center rounded-md border border-slate-700 px-2 text-slate-200 hover:bg-slate-800 disabled:opacity-40">Save</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="relative" ref={menuRef}>
             <button onClick={() => setMenu(!menu)} aria-expanded={menu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Columns</button>
             {menu && (
