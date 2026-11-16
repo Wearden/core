@@ -3,7 +3,10 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { I18nProvider } from "./i18n";
+import { applyStoredTheme } from "./layout/Shell";
 import "./index.css";
+
+applyStoredTheme();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },

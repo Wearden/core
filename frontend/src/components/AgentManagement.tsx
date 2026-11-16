@@ -1,12 +1,13 @@
-import { Fragment, FormEvent, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { agentsApi, EnrollmentToken } from "../agentsApi";
 import { benchmarksApi } from "../benchmarksApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import AgentLogs from "./AgentLogs";
+import HostIcon, { osLabel } from "./HostIcon";
 
-const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm";
+const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-slate-400";
 
 export default function AgentManagement() {
   const { user } = useAuth();
@@ -28,6 +29,8 @@ export default function AgentManagement() {
     mutationFn: agentsApi.revoke,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["agents"] }),
   });
+  // Online workstations first, then alphabetical, so the list stays predictable.
+  const sorted = [...(agents.data ?? [])].sort((a, b) => Number(b.status === "online") - Number(a.status === "online") || a.hostname.localeCompare(b.hostname));
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setToken(null);
@@ -35,9 +38,49 @@ export default function AgentManagement() {
   };
 
   return (
-    <section className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-5">
+    <section className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
       <h2 className="font-semibold">{az ? "Agentlər" : "Agents"}</h2>
       <p className="text-sm text-slate-400">{az ? "Skan və möhkəmləndirmə qeydiyyatdan keçmiş agentlərdə icra olunur. SSH/RDP sessiyaları ayrıca etimad məlumatı tələb edir." : "Scans and hardening run on enrolled agents. SSH/RDP sessions require separate credentials."}</p>
+      {[agents.error, benchmarks.error, enroll.error, revoke.error].filter(Boolean).map((error, i) => <p key={i} role="alert" className="text-sm text-red-400">{(error as Error).message}</p>)}
+      {agents.isLoading && <p className="text-sm text-slate-400">{t("common.loading")}</p>}
+      {!agents.isLoading && !agents.error && agents.data?.length === 0 && <p className="text-sm text-slate-400">{az ? "Qeydiyyatdan keçmiş agent yoxdur." : "No enrolled agents."}</p>}
+      {!!sorted.length && (
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {sorted.map((agent) => (
+            <li key={agent.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg border border-slate-800 bg-slate-900 p-2"><HostIcon os={agent.os} size={32} title={osLabel(agent.os)} /></div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-medium text-slate-50">{agent.hostname}</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 px-2 py-0.5 text-[11px] text-slate-300">
+                      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${agent.status === "online" ? "bg-emerald-400" : agent.status === "revoked" ? "bg-red-400" : "bg-slate-500"}`} />
+                      {agent.status}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-400">{osLabel(agent.os)} · {agent.benchmark_id}</div>
+                  <div className="text-xs text-slate-500">{az ? "Son əlaqə" : "Last seen"}: {agent.last_seen ? new Date(agent.last_seen).toLocaleString() : "-"}</div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+                <button className="rounded-md border border-slate-800 px-2.5 py-1 text-slate-300 hover:bg-slate-900" onClick={() => setLogsFor(logsFor === agent.id ? null : agent.id)}>
+                  {logsFor === agent.id ? (az ? "Logları gizlət" : "Hide logs") : (az ? "Loglar" : "Logs")}
+                </button>
+                {isAdmin && (
+                  <button disabled={agent.status === "revoked" || revoke.isPending} className="rounded-md border border-slate-800 px-2.5 py-1 text-red-300 hover:bg-slate-900 disabled:opacity-40" onClick={() => window.confirm(az ? `${agent.hostname} agentinin girişini ləğv etmək?` : `Revoke access for ${agent.hostname}?`) && revoke.mutate(agent.id)}>
+                    {az ? "Girişi ləğv et" : "Revoke"}
+                  </button>
+                )}
+              </div>
+              {logsFor === agent.id && <div className="mt-3"><AgentLogs agentId={agent.id} /></div>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {isAdmin && (
+        <details className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+          <summary className="text-sm font-medium text-slate-200">{az ? "Yeni agent qeydiyyatdan keçir" : "Enroll a new agent"}</summary>
+          <div className="mt-4 space-y-4">
       {isAdmin && (
         <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-sm">OS
@@ -66,20 +109,8 @@ export default function AgentManagement() {
           <button className="text-cyan-300 hover:underline" onClick={() => setToken(null)}>{az ? "Gizlət" : "Hide"}</button>
         </div>
       )}
-      {[agents.error, benchmarks.error, enroll.error, revoke.error].filter(Boolean).map((error, i) => <p key={i} role="alert" className="text-sm text-red-400">{(error as Error).message}</p>)}
-      {agents.isLoading && <p className="text-sm text-slate-400">{t("common.loading")}</p>}
-      {!agents.isLoading && !agents.error && agents.data?.length === 0 && <p className="text-sm text-slate-400">{az ? "Qeydiyyatdan keçmiş agent yoxdur." : "No enrolled agents."}</p>}
-      {!!agents.data?.length && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-slate-400"><tr><th className="p-2">Host</th><th className="p-2">OS</th><th className="p-2">Benchmark</th><th className="p-2">{t("col.status")}</th><th className="p-2">{az ? "Son əlaqə" : "Last seen"}</th><th className="p-2">Logs</th>{isAdmin && <th className="p-2">{t("col.actions")}</th>}</tr></thead>
-            <tbody>{agents.data?.map((agent) => <Fragment key={agent.id}><tr className="border-t border-slate-800">
-              <td className="p-2">{agent.hostname}</td><td className="p-2">{agent.os}</td><td className="p-2">{agent.benchmark_id}</td><td className="p-2">{agent.status}</td><td className="p-2">{agent.last_seen ?? "-"}</td>
-              <td className="p-2"><button className="text-cyan-300 hover:underline" onClick={() => setLogsFor(logsFor === agent.id ? null : agent.id)}>{logsFor === agent.id ? (az ? "Gizlət" : "Hide") : (az ? "Göstər" : "Show")}</button></td>
-              {isAdmin && <td className="p-2"><button disabled={agent.status === "revoked" || revoke.isPending} className="rounded border border-red-900 px-2 py-1 text-red-400 disabled:opacity-40" onClick={() => window.confirm(az ? `${agent.hostname} agentinin girişini ləğv etmək?` : `Revoke access for ${agent.hostname}?`) && revoke.mutate(agent.id)}>{az ? "Girişi ləğv et" : "Revoke"}</button></td>}
-            </tr>{logsFor === agent.id && <tr><td colSpan={isAdmin ? 7 : 6} className="p-2"><AgentLogs agentId={agent.id} /></td></tr>}</Fragment>)}</tbody>
-          </table>
-        </div>
+          </div>
+        </details>
       )}
     </section>
   );

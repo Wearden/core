@@ -24,7 +24,7 @@ function Kpi({ label, value, tone = "text-cyan-300", hint }: { label: string; va
 }
 
 function scoreColor(score: number | null): string {
-  if (score === null) return "#475569";
+  if (score === null) return "#525252";
   if (score >= 90) return "#34d399";
   if (score >= 70) return "#fbbf24";
   return "#f87171";
@@ -49,7 +49,7 @@ export default function Dashboard() {
         { name: t("status.online"), value: d.hosts_online, fill: "#34d399" },
         { name: t("status.degraded"), value: d.hosts_degraded, fill: "#fbbf24" },
         { name: t("status.offline"), value: d.hosts_offline, fill: "#f87171" },
-        { name: t("dash.unknown"), value: d.hosts_unknown, fill: "#64748b" },
+        { name: t("dash.unknown"), value: d.hosts_unknown, fill: "#525252" },
       ].filter((s) => s.value > 0)
     : [];
 
@@ -82,10 +82,10 @@ export default function Dashboard() {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={d.scores_by_host.map((h) => ({ name: h.asset_name, score: h.score ?? 0, raw: h.score }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                      <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={12} />
-                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b" }} itemStyle={{ color: "#e2e8f0" }} labelStyle={{ color: "#f8fafc" }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                      <XAxis dataKey="name" stroke="#737373" fontSize={12} />
+                      <YAxis domain={[0, 100]} stroke="#737373" fontSize={12} />
+                      <Tooltip contentStyle={{ background: "#171717", border: "1px solid #262626" }} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
                       <Bar dataKey="score" name={t("dash.complianceBar")}>
                         {d.scores_by_host.map((h) => <Cell key={h.asset_id} fill={scoreColor(h.score)} />)}
                       </Bar>
@@ -106,7 +106,7 @@ export default function Dashboard() {
                       <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
                         {statusData.map((s) => <Cell key={s.name} fill={s.fill} />)}
                       </Pie>
-                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b" }} itemStyle={{ color: "#e2e8f0" }} labelStyle={{ color: "#f8fafc" }} />
+                      <Tooltip contentStyle={{ background: "#171717", border: "1px solid #262626" }} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

@@ -7,19 +7,19 @@ import {
 import { analyticsApi } from "../analyticsApi";
 import { useI18n } from "../i18n";
 
-const PIE_COLORS = ["#34d399", "#f87171", "#fbbf24", "#64748b"];
-const tooltipStyle = { background: "#0f172a", border: "1px solid #1e293b" };
+const PIE_COLORS = ["#34d399", "#f87171", "#fbbf24", "#525252"];
+const tooltipStyle = { background: "#171717", border: "1px solid #262626" };
 
 function Gauge({ label, value }: { label: string; value: number | null }) {
   const v = value ?? 0;
-  const color = value === null ? "#475569" : v >= 90 ? "#34d399" : v >= 70 ? "#fbbf24" : "#f87171";
+  const color = value === null ? "#525252" : v >= 90 ? "#34d399" : v >= 70 ? "#fbbf24" : "#f87171";
   return (
     <div className="flex flex-col items-center">
       <div className="relative h-40 w-40">
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ name: label, value: v, fill: color }]} startAngle={90} endAngle={-270}>
             <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-            <RadialBar dataKey="value" cornerRadius={8} background={{ fill: "#1e293b" }} />
+            <RadialBar dataKey="value" cornerRadius={8} background={{ fill: "#262626" }} />
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold">
@@ -84,7 +84,7 @@ export default function HostAnalytics() {
                     <Pie data={d.donut} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
                       {d.donut.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
                     </Pie>
-                    <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e2e8f0" }} labelStyle={{ color: "#f8fafc" }} />
+                    <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -99,10 +99,10 @@ export default function HostAnalytics() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={d.severities}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="severity" stroke="#94a3b8" fontSize={12} />
-                    <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
-                    <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e2e8f0" }} labelStyle={{ color: "#f8fafc" }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                    <XAxis dataKey="severity" stroke="#737373" fontSize={12} />
+                    <YAxis stroke="#737373" fontSize={12} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
                     <Legend />
                     <Bar dataKey="pass" name={t("ha.pass")} fill="#34d399" />
                     <Bar dataKey="fail" name={t("ha.fail")} fill="#f87171" />
@@ -117,10 +117,10 @@ export default function HostAnalytics() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={d.categories} layout="vertical" margin={{ left: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis type="number" stroke="#94a3b8" fontSize={12} allowDecimals={false} />
-                  <YAxis type="category" dataKey="category" stroke="#94a3b8" fontSize={11} width={200} />
-                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e2e8f0" }} labelStyle={{ color: "#f8fafc" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                  <XAxis type="number" stroke="#737373" fontSize={12} allowDecimals={false} />
+                  <YAxis type="category" dataKey="category" stroke="#737373" fontSize={11} width={200} />
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
                   <Legend />
                   <Bar dataKey="pass" name={t("ha.pass")} stackId="a" fill="#34d399" />
                   <Bar dataKey="fail" name={t("ha.fail")} stackId="a" fill="#f87171" />
@@ -137,13 +137,13 @@ export default function HostAnalytics() {
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={d.trend.map((p) => ({ ...p, when: new Date(p.at).toLocaleDateString() }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="when" stroke="#94a3b8" fontSize={12} />
-                    <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={12} />
-                    <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e2e8f0" }} labelStyle={{ color: "#f8fafc" }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                    <XAxis dataKey="when" stroke="#737373" fontSize={12} />
+                    <YAxis domain={[0, 100]} stroke="#737373" fontSize={12} />
+                    <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "#e5e5e5" }} labelStyle={{ color: "#fafafa" }} />
                     <Legend />
-                    <Line type="monotone" dataKey="score" name={t("dash.complianceBar")} stroke="#22d3ee" strokeWidth={2} />
-                    <Line type="monotone" dataKey="weighted_score" name={t("ha.weightedPct")} stroke="#a78bfa" strokeWidth={2} />
+                    <Line type="monotone" dataKey="score" name={t("dash.complianceBar")} stroke="#e5e5e5" strokeWidth={2} />
+                    <Line type="monotone" dataKey="weighted_score" name={t("ha.weightedPct")} stroke="#a3a3a3" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

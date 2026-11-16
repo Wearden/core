@@ -12,6 +12,7 @@ import { sessionsApi } from "../sessionsApi";
 import type { SessionOpenResult } from "../sessionTypes";
 import Sparkline from "../components/Sparkline";
 import StatusDot from "../components/StatusDot";
+import HostIcon from "../components/HostIcon";
 import type { Asset, AssetInput, CredentialInput, TestResult } from "../types";
 
 function secondsAgo(iso: string | null, now: number, ago: string, never: string): string {
@@ -134,9 +135,9 @@ export default function Assets() {
       )}
 
       {assets.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
+        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900 text-slate-400">
+            <thead className="bg-slate-900/70 text-xs uppercase tracking-wide text-slate-400">
               <tr>
                 <th className="px-4 py-3">{t("col.status")}</th>
                 <th className="px-4 py-3">{t("col.name")}</th>
@@ -158,8 +159,13 @@ export default function Assets() {
                       <div className="mt-1 text-xs text-slate-500">{secondsAgo(a.last_checked, now, t("assets.ago"), t("assets.never"))}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium">{a.name}</div>
-                      {a.tags.length > 0 && <div className="text-xs text-slate-500">{a.tags.join(" · ")}</div>}
+                      <div className="flex items-center gap-3">
+                        <HostIcon os={a.os_type} size={28} />
+                        <div>
+                          <div className="font-medium text-slate-50">{a.name}</div>
+                          {a.tags.length > 0 && <div className="text-xs text-slate-500">{a.tags.join(" · ")}</div>}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{a.host}</td>
                     <td className="px-4 py-3">
