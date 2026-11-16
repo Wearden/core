@@ -21,7 +21,9 @@ func (s *Server) featureRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/analytics/diff", s.require("viewer", s.featureDiff))
 	mux.HandleFunc("GET /api/attack/coverage", s.require("viewer", s.featureAttack))
 	mux.HandleFunc("GET /api/copilot/status", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]any{"enabled": s.Config.AnthropicKey != "" && s.Config.AnthropicModel != ""})
+		key, _ := s.setting(r.Context(), "anthropic_api_key")
+		model, _ := s.setting(r.Context(), "anthropic_model")
+		writeJSON(w, 200, map[string]any{"enabled": key != "" && model != ""})
 	}))
 	mux.HandleFunc("POST /api/copilot/explain", s.require("viewer", s.featureExplain))
 	mux.HandleFunc("GET /api/reports/scans/{file}", s.require("viewer", s.featureScanExport))
@@ -143,21 +145,23 @@ func (s *Server) featureExplain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result := map[string]any{"control_id": c.ID, "source": "static", "text": fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s", c.Title, c.Description, c.Rationale, c.Impact)}
-	if s.Config.AnthropicKey != "" && s.Config.AnthropicModel != "" {
+	aiKey, _ := s.setting(r.Context(), "anthropic_api_key")
+	aiModel, _ := s.setting(r.Context(), "anthropic_model")
+	if aiKey != "" && aiModel != "" {
 		language := "English"
 		if in.Language == "az" {
 			language = "Azerbaijani"
 		}
 		// Explicit allowlist: no host identifiers, evidence, credentials or commands leave the server.
 		prompt, _ := json.Marshal(map[string]any{"title": c.Title, "cis_ref": c.CISRef, "severity": c.Severity, "description": c.Description, "rationale": c.Rationale, "impact": c.Impact, "mitre_attack": c.MitreAttack})
-		body, err := json.Marshal(map[string]any{"model": s.Config.AnthropicModel, "max_tokens": 700, "system": "Explain this security control in " + language + ". Give a concise explanation, business impact and safe next step. Use only the supplied catalog facts.", "messages": []map[string]string{{"role": "user", "content": string(prompt)}}})
+		body, err := json.Marshal(map[string]any{"model": aiModel, "max_tokens": 700, "system": "Explain this security control in " + language + ". Give a concise explanation, business impact and safe next step. Use only the supplied catalog facts.", "messages": []map[string]string{{"role": "user", "content": string(prompt)}}})
 		if err == nil {
 			ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 			defer cancel()
 			req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.anthropic.com/v1/messages", bytes.NewReader(body))
 			if err == nil {
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("x-api-key", s.Config.AnthropicKey)
+				req.Header.Set("x-api-key", aiKey)
 				req.Header.Set("anthropic-version", "2023-06-01")
 				client := &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
 				resp, err := client.Do(req)
