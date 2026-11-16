@@ -29,7 +29,9 @@ jobs:
           node-version: "20"
       - name: Build release assets
         run: sh core/scripts/build-release.sh "${GITHUB_REF_NAME}"
-      - name: Publish
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${GITHUB_REF_NAME}" release/* --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --generate-notes
+      - name: Store the release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release/*
+          if-no-files-found: error
