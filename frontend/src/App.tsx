@@ -15,6 +15,9 @@ import ScanDetail from "./pages/ScanDetail";
 import Hardening from "./pages/Hardening";
 import HardeningRun from "./pages/HardeningRun";
 import Rollback from "./pages/Rollback";
+import PamAssets from "./pages/PamAssets";
+import PamScans from "./pages/PamScans";
+import PamHardening from "./pages/PamHardening";
 import Reports from "./pages/Reports";
 import AttackMatrix from "./pages/AttackMatrix";
 import { useI18n } from "./i18n";
@@ -80,6 +83,9 @@ export default function App() {
             <Route path="/hardening" element={<Hardening />} />
             <Route path="/hardening/:id" element={<HardeningRun />} />
             <Route path="/rollback" element={<Rollback />} />
+            <Route path="/pam/assets" element={<PamAssets />} />
+            <Route path="/pam/scans" element={<PamScans />} />
+            <Route path="/pam/hardening" element={<PamHardening />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/attack" element={<AttackMatrix />} />
             <Route path="/hosts/:id" element={<HostRedirect />} />
