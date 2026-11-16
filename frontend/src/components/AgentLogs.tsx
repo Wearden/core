@@ -10,7 +10,7 @@ const LEVEL_STYLE: Record<string, string> = {
 };
 
 /** Operational log lines the agent shipped to core (status text only, no scan evidence). */
-export default function AgentLogs({ agentId }: { agentId: string }) {
+export default function AgentLogs({ agentId, tall = false }: { agentId: string; tall?: boolean }) {
   const { lang } = useI18n();
   const az = lang === "az";
   const [level, setLevel] = useState("");
@@ -32,7 +32,7 @@ export default function AgentLogs({ agentId }: { agentId: string }) {
       </div>
       {logs.error && <p className="text-xs text-red-300">{(logs.error as Error).message}</p>}
       {logs.data?.length === 0 && <p className="text-xs text-slate-500">{az ? "Hələ log yoxdur." : "No log entries yet."}</p>}
-      <ul className="max-h-72 space-y-1 overflow-y-auto font-mono text-xs">
+      <ul className={`${tall ? "max-h-[60vh]" : "max-h-72"} space-y-1 overflow-y-auto font-mono text-xs`}>
         {logs.data?.map((l) => (
           <li key={l.id} className={LEVEL_STYLE[l.level]}>
             <span className="text-slate-500">{new Date(l.logged_at).toLocaleString()}</span> [{l.level}] {l.message}

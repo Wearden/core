@@ -171,6 +171,7 @@ func (s *Server) Handler() http.Handler {
 	s.agentLogRoutes(m)
 	s.installRoutes(m)
 	s.aiRoutes(m)
+	s.userRoutes(m)
 	s.scheduleRoutes(m)
 	s.websocketRoutes(m)
 	s.sessionControlRoutes(m)

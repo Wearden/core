@@ -1,10 +1,10 @@
 import { FormEvent, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { agentsApi, EnrollmentToken } from "../agentsApi";
 import { benchmarksApi } from "../benchmarksApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
-import AgentLogs from "./AgentLogs";
 import HostIcon, { osLabel } from "./HostIcon";
 
 const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-slate-400";
@@ -20,7 +20,8 @@ export default function AgentManagement() {
   const [os, setOs] = useState<"linux" | "windows">("linux");
   const [benchmarkId, setBenchmarkId] = useState("");
   const [ttl, setTtl] = useState(15);
-  const [logsFor, setLogsFor] = useState<string | null>(null);
+  const [, setParams] = useSearchParams();
+  const openDrawer = (id: number | undefined, tab: "overview" | "logs") => id !== undefined && setParams({ host: String(id), tab });
   const [remediation, setRemediation] = useState(false);
   const install = useQuery({ queryKey: ["install-info"], queryFn: agentsApi.installInfo });
   const [token, setToken] = useState<EnrollmentToken | null>(null);
@@ -49,7 +50,7 @@ export default function AgentManagement() {
       {!!sorted.length && (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {sorted.map((agent) => (
-            <li key={agent.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+            <li key={agent.id} className="cursor-pointer rounded-xl border border-slate-800 bg-slate-950 p-4 transition-colors hover:border-slate-600" onClick={(e) => { if (!(e.target as HTMLElement).closest("button")) openDrawer(agent.asset_id, "overview"); }}>
               <div className="flex items-start gap-3">
                 <div className="rounded-lg border border-slate-800 bg-slate-900 p-2"><HostIcon os={agent.os} size={32} title={osLabel(agent.os)} /></div>
                 <div className="min-w-0 flex-1">
@@ -65,16 +66,16 @@ export default function AgentManagement() {
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between gap-2 text-xs">
-                <button className="rounded-md border border-slate-800 px-2.5 py-1 text-slate-300 hover:bg-slate-900" onClick={() => setLogsFor(logsFor === agent.id ? null : agent.id)}>
-                  {logsFor === agent.id ? (az ? "Logları gizlət" : "Hide logs") : (az ? "Loglar" : "Logs")}
-                </button>
+                <div className="flex gap-2">
+                  <button className="rounded-md border border-slate-800 px-2.5 py-1 text-slate-300 hover:bg-slate-900" onClick={() => openDrawer(agent.asset_id, "overview")}>{az ? "Detallar" : "Details"}</button>
+                  <button className="rounded-md border border-slate-800 px-2.5 py-1 text-slate-300 hover:bg-slate-900" onClick={() => openDrawer(agent.asset_id, "logs")}>{az ? "Loglar" : "Logs"}</button>
+                </div>
                 {isAdmin && (
                   <button disabled={agent.status === "revoked" || revoke.isPending} className="rounded-md border border-slate-800 px-2.5 py-1 text-red-300 hover:bg-slate-900 disabled:opacity-40" onClick={() => window.confirm(az ? `${agent.hostname} agentinin girişini ləğv etmək?` : `Revoke access for ${agent.hostname}?`) && revoke.mutate(agent.id)}>
                     {az ? "Girişi ləğv et" : "Revoke"}
                   </button>
                 )}
               </div>
-              {logsFor === agent.id && <div className="mt-3"><AgentLogs agentId={agent.id} /></div>}
             </li>
           ))}
         </ul>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { assetsApi } from "../assetsApi";
 import { useAuth } from "../auth";
@@ -13,6 +14,7 @@ import type { SessionOpenResult } from "../sessionTypes";
 import Sparkline from "../components/Sparkline";
 import StatusDot from "../components/StatusDot";
 import HostIcon from "../components/HostIcon";
+import AssetDrawer, { DrawerTab } from "../components/AssetDrawer";
 import type { Asset, AssetInput, CredentialInput, TestResult } from "../types";
 
 function secondsAgo(iso: string | null, now: number, ago: string, never: string): string {
@@ -34,6 +36,11 @@ export default function Assets() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
+  const [params, setParams] = useSearchParams();
+  const openHost = Number(params.get("host")) || null;
+  const drawerTab = (params.get("tab") as DrawerTab) || "overview";
+  const openDrawer = (id: number, tab: DrawerTab = "overview") => setParams({ host: String(id), tab });
+  const closeDrawer = () => setParams({});
   const { connected } = useHostsSocket();
   const now = useNow();
 
@@ -146,7 +153,7 @@ export default function Assets() {
               {assets.map((a) => {
                 const result = testResults[a.id];
                 return (
-                  <tr key={a.id} className="align-top hover:bg-slate-900/60">
+                  <tr key={a.id} className="cursor-pointer align-top hover:bg-slate-900/60" onClick={(e) => { if (!(e.target as HTMLElement).closest("button, a, input, select")) openDrawer(a.id); }}>
                     <td className="px-4 py-3">
                       <StatusDot status={a.status} />
                       <div className="mt-1 text-xs text-slate-500">{secondsAgo(a.last_checked, now, t("assets.ago"), t("assets.never"))}</div>
@@ -211,6 +218,7 @@ export default function Assets() {
         </div>
       )}
 
+      {openHost !== null && <AssetDrawer assetId={openHost} tab={drawerTab} onTab={(tb) => openDrawer(openHost, tb)} onClose={closeDrawer} />}
       {editing && (
         <AssetModal
           initial={editing === "new" ? null : editing}
