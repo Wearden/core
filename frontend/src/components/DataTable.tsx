@@ -58,6 +58,7 @@ export default function DataTable<T>({
   mobileCard,
   rowClassName,
   expanded,
+  selection,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -76,6 +77,8 @@ export default function DataTable<T>({
   rowClassName?: (row: T) => string;
   /** Detail shown under a row; clicking the row toggles it. */
   expanded?: (row: T) => ReactNode;
+  /** Adds a checkbox column. Selection is owned by the page so bulk actions can use it. */
+  selection?: { selected: Set<string | number>; onChange: (next: Set<string | number>) => void };
 }) {
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs(storageKey, columns as Column<never>[], pageSizes[1] ?? pageSizes[0]));
   const [sort, setSort] = useState(initialSort ?? null);
@@ -130,6 +133,22 @@ export default function DataTable<T>({
     URL.revokeObjectURL(url);
   };
 
+  const pageKeys = slice.map(rowKey);
+  const allOnPage = pageKeys.length > 0 && pageKeys.every((k) => selection?.selected.has(k));
+  const setPageSelected = (on: boolean) => {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    pageKeys.forEach((k) => (on ? next.add(k) : next.delete(k)));
+    selection.onChange(next);
+  };
+  const toggleOne = (k: string | number) => {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    next.has(k) ? next.delete(k) : next.add(k);
+    selection.onChange(next);
+  };
+  const colSpan = visible.length + (selection ? 1 : 0);
+
   const from = sorted.length === 0 ? 0 : current * prefs.pageSize + 1;
   const to = Math.min(sorted.length, (current + 1) * prefs.pageSize);
 
@@ -162,6 +181,11 @@ export default function DataTable<T>({
             <table className="w-full text-left text-sm">
               <thead className={theadCls}>
                 <tr>
+                  {selection && (
+                    <th scope="col" className="w-10 px-4 py-2.5">
+                      <input type="checkbox" aria-label="Select page" checked={allOnPage} onChange={(e) => setPageSelected(e.target.checked)} />
+                    </th>
+                  )}
                   {visible.map((c) => {
                     const active = sort?.id === c.id;
                     return (
@@ -191,11 +215,12 @@ export default function DataTable<T>({
                         aria-expanded={expanded ? isOpen : undefined}
                         className={`hover:bg-slate-900/60 ${click ? "cursor-pointer" : ""} ${rowClassName?.(r) ?? ""}`}
                       >
+                        {selection && <td className="w-10 px-4 py-2.5 align-top"><input type="checkbox" aria-label="Select row" checked={selection.selected.has(key)} onChange={() => toggleOne(key)} /></td>}
                         {visible.map((c) => <td key={c.id} className={`px-4 py-2.5 align-top ${c.className ?? ""}`}>{c.cell(r)}</td>)}
                       </tr>
                       {expanded && isOpen && (
                         <tr className="bg-slate-900/40">
-                          <td colSpan={visible.length} className="px-4 py-4">{expanded(r)}</td>
+                          <td colSpan={colSpan} className="px-4 py-4">{expanded(r)}</td>
                         </tr>
                       )}
                     </Fragment>
@@ -205,7 +230,13 @@ export default function DataTable<T>({
             </table>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-            <span>{from}-{to} / {sorted.length}</span>
+            <span>
+              {from}-{to} / {sorted.length}
+              {selection && selection.selected.size > 0 && <span className="ml-2 text-slate-300">{selection.selected.size} selected</span>}
+              {selection && sorted.length > pageKeys.length && (
+                <button onClick={() => selection.onChange(new Set(sorted.map(rowKey)))} className="ml-2 underline hover:text-slate-200">Select all {sorted.length}</button>
+              )}
+            </span>
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5">
                 Rows

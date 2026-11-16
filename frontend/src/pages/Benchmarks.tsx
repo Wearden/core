@@ -6,6 +6,7 @@ import { useI18n } from "../i18n";
 import { useFeedback } from "../components/feedback";
 import { Chips } from "../components/ui";
 import { NewHardening } from "./Hardening";
+import DataTable, { Column } from "../components/DataTable";
 
 /** Short label that tells Windows 10, Windows 11 and Ubuntu 24.04 apart. Falls back to the OS name. */
 function benchLabel(name: string, os: string): string {
@@ -14,6 +15,8 @@ function benchLabel(name: string, os: string): string {
   return os === "linux" ? "Linux" : "Windows";
 }
 
+const SEV_RANK: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
+
 const SEVERITY_STYLE: Record<string, string> = {
   low: "bg-slate-700 text-slate-200",
   medium: "bg-amber-900/60 text-amber-200",
@@ -21,90 +24,32 @@ const SEVERITY_STYLE: Record<string, string> = {
   critical: "bg-red-900/80 text-red-200",
 };
 
-function ControlRow({
-  bid,
-  control,
-  checked,
-  onToggle,
-  onHarden,
-}: {
-  bid: string;
-  control: ControlSummary;
-  checked: boolean;
-  onToggle: () => void;
-  /** Starts a hardening run with only this control. Not given to viewers, who cannot harden. */
-  onHarden?: () => void;
-}) {
+function ControlDetail({ bid, control }: { bid: string; control: ControlSummary }) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
-  const detail = useQuery({
-    queryKey: ["control", bid, control.id],
-    queryFn: () => benchmarksApi.control(bid, control.id),
-    enabled: open,
-  });
-
+  const detail = useQuery({ queryKey: ["control", bid, control.id], queryFn: () => benchmarksApi.control(bid, control.id) });
   return (
     <>
-      <tr className="align-top hover:bg-slate-900/60">
-        <td className="px-3 py-2">
-          <input type="checkbox" checked={checked} onChange={onToggle} aria-label={`${t("bm.select")} ${control.id}`} />
-        </td>
-        <td className="px-3 py-2 font-mono text-xs text-slate-400">{control.cis_ref}</td>
-        <td className="px-3 py-2">
-          <button onClick={() => setOpen((o) => !o)} className="text-left font-medium hover:text-cyan-300">
-            {control.title}
-          </button>
-          <div className="font-mono text-xs text-slate-500">{control.id}</div>
-        </td>
-        <td className="px-3 py-2 text-xs text-slate-400">{control.category}</td>
-        <td className="px-3 py-2">
-          <span className={`rounded px-2 py-0.5 text-xs uppercase ${SEVERITY_STYLE[control.severity]}`}>{control.severity}</span>
-        </td>
-        <td className="px-3 py-2 text-xs">
-          {control.risky && <span className="mr-1 rounded bg-red-950 px-2 py-0.5 text-red-300">{t("hard.risky")}</span>}
-          {control.reboot_required && <span className="rounded bg-slate-800 px-2 py-0.5 text-slate-300">{t("bm.reboot")}</span>}
-        </td>
-        <td className="px-3 py-2 text-xs text-slate-400">{control.mitre_attack.join(" ")}</td>
-        <td className="px-3 py-2 text-right">
-          {onHarden && (
-            <button
-              onClick={onHarden}
-              title={t("bm.hardenOneTip")}
-              className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800"
-            >
-              {t("bm.hardenOne")}
-            </button>
-          )}
-        </td>
-      </tr>
-      {open && (
-        <tr className="bg-slate-900/40">
-          <td />
-          <td colSpan={7} className="px-3 py-4">
-            {detail.isLoading && <p className="text-slate-400">{t("common.loading")}</p>}
-            {detail.data && (
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="space-y-2 text-sm">
-                  <p><span className="text-slate-400">{t("bm.whatItDoes")}</span> {detail.data.description}</p>
-                  <p><span className="text-slate-400">{t("bm.whyMatters")}</span> {detail.data.rationale}</p>
-                  <p><span className="text-slate-400">{t("bm.impact")}</span> {detail.data.impact}</p>
-                </div>
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <div className="text-slate-400">{t("bm.check")} ({detail.data.audit.type}, {t("bm.expects")} {detail.data.audit.match} "{detail.data.audit.expected}")</div>
-                    <pre className="mt-1 overflow-x-auto rounded bg-slate-950 p-2 text-slate-300">{detail.data.audit.command}</pre>
-                  </div>
-                  <div>
-                    <div className="text-slate-400">{t("bm.fix")}</div>
-                    <pre className="mt-1 overflow-x-auto rounded bg-slate-950 p-2 text-slate-300">{detail.data.remediation.command}</pre>
-                    <div className="mt-1 text-slate-500">{t("bm.backupBefore")} {detail.data.remediation.backup.map((b) => b.type).join(", ")}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </td>
-        </tr>
-      )}
+    {detail.isLoading && <p className="text-slate-400">{t("common.loading")}</p>}
+    {detail.data && (
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-2 text-sm">
+          <p><span className="text-slate-400">{t("bm.whatItDoes")}</span> {detail.data.description}</p>
+          <p><span className="text-slate-400">{t("bm.whyMatters")}</span> {detail.data.rationale}</p>
+          <p><span className="text-slate-400">{t("bm.impact")}</span> {detail.data.impact}</p>
+        </div>
+        <div className="space-y-3 text-xs">
+          <div>
+            <div className="text-slate-400">{t("bm.check")} ({detail.data.audit.type}, {t("bm.expects")} {detail.data.audit.match} "{detail.data.audit.expected}")</div>
+            <pre className="mt-1 overflow-x-auto rounded bg-slate-950 p-2 text-slate-300">{detail.data.audit.command}</pre>
+          </div>
+          <div>
+            <div className="text-slate-400">{t("bm.fix")}</div>
+            <pre className="mt-1 overflow-x-auto rounded bg-slate-950 p-2 text-slate-300">{detail.data.remediation.command}</pre>
+            <div className="mt-1 text-slate-500">{t("bm.backupBefore")} {detail.data.remediation.backup.map((b) => b.type).join(", ")}</div>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }
@@ -141,7 +86,7 @@ export default function Benchmarks() {
   const [severity, setSeverity] = useState("");
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string | number>>(new Set());
   const [profileName, setProfileName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   // Control ids to harden; null while the hardening window is closed.
@@ -159,17 +104,28 @@ export default function Benchmarks() {
       (!search || `${c.title} ${c.id} ${c.cis_ref}`.toLowerCase().includes(search.toLowerCase())),
   );
 
-  const applyProfile = (p: Profile) => setSelected(new Set(p.control_ids));
-  const toggle = (id: string) =>
-    setSelected((s) => {
-      const next = new Set(s);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const applyProfile = (p: Profile) => setSelected(new Set<string | number>(p.control_ids));
+  const columns: Column<ControlSummary>[] = [
+    { id: "cis", header: t("bm.cis"), sort: (x, y) => x.cis_ref.localeCompare(y.cis_ref, undefined, { numeric: true }), csv: (c) => c.cis_ref, cell: (c) => <span className="font-mono text-xs text-slate-400">{c.cis_ref}</span> },
+    { id: "control", header: t("col.control"), locked: true, sort: (x, y) => x.title.localeCompare(y.title), csv: (c) => c.title, cell: (c) => (
+      <div><div className="font-medium">{c.title}</div><div className="font-mono text-xs text-slate-500">{c.id}</div></div>
+    ) },
+    { id: "category", header: t("bm.category"), sort: (x, y) => x.category.localeCompare(y.category), csv: (c) => c.category, cell: (c) => <span className="text-xs text-slate-400">{c.category}</span> },
+    { id: "severity", header: t("col.severity"), sort: (x, y) => SEV_RANK[x.severity] - SEV_RANK[y.severity], csv: (c) => c.severity, cell: (c) => <span className={`rounded px-2 py-0.5 text-xs uppercase ${SEVERITY_STYLE[c.severity]}`}>{c.severity}</span> },
+    { id: "flags", header: t("bm.flags"), csv: (c) => [c.risky ? "risky" : "", c.reboot_required ? "reboot" : ""].filter(Boolean).join(" "), cell: (c) => (
+      <span className="text-xs">
+        {c.risky && <span className="mr-1 rounded bg-red-950 px-2 py-0.5 text-red-300">{t("hard.risky")}</span>}
+        {c.reboot_required && <span className="rounded bg-slate-800 px-2 py-0.5 text-slate-300">{t("bm.reboot")}</span>}
+      </span>
+    ) },
+    { id: "attack", header: "ATT&CK", defaultHidden: true, csv: (c) => c.mitre_attack.join(" "), cell: (c) => <span className="text-xs text-slate-400">{c.mitre_attack.join(" ")}</span> },
+    ...(canOperate ? [{ id: "act", header: "", locked: true, cell: (c: ControlSummary) => (
+      <button onClick={() => setHardening([c.id])} title={t("bm.hardenOneTip")} className="inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs text-slate-200 hover:bg-slate-800">{t("bm.hardenOne")}</button>
+    ) }] : []),
+  ];
 
   const saveProfile = useMutation({
-    mutationFn: () => benchmarksApi.createProfile(activeId!, profileName.trim(), Array.from(selected)),
+    mutationFn: () => benchmarksApi.createProfile(activeId!, profileName.trim(), Array.from(selected).map(String)),
     onSuccess: (p) => {
       setMessage(t("bm.saved").replace("{name}", p.name).replace("{n}", String(p.control_ids.length)));
       setProfileName("");
@@ -285,7 +241,7 @@ export default function Benchmarks() {
         <span className="text-slate-500">{t("bm.hint")}</span>
         {canOperate && (
           <button
-            onClick={() => setHardening(Array.from(selected))}
+            onClick={() => setHardening(Array.from(selected).map(String))}
             disabled={selected.size === 0}
             title={t("bm.hardenSelTip")}
             className="ml-auto rounded-md bg-cyan-600 px-3 py-1.5 font-medium hover:bg-cyan-500 disabled:opacity-40"
@@ -295,37 +251,18 @@ export default function Benchmarks() {
         )}
       </div>
 
-      {controls.isLoading && <p className="text-slate-400">{t("common.loading")}</p>}
-      {visible.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900 text-slate-400">
-              <tr>
-                <th className="px-3 py-3" />
-                <th className="px-3 py-3">{t("bm.cis")}</th>
-                <th className="px-3 py-3">{t("col.control")}</th>
-                <th className="px-3 py-3">{t("bm.category")}</th>
-                <th className="px-3 py-3">{t("col.severity")}</th>
-                <th className="px-3 py-3">{t("bm.flags")}</th>
-                <th className="px-3 py-3">ATT&amp;CK</th>
-                <th className="px-3 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {visible.map((c) => (
-                <ControlRow
-                  key={c.id}
-                  bid={activeId!}
-                  control={c}
-                  checked={selected.has(c.id)}
-                  onToggle={() => toggle(c.id)}
-                  onHarden={canOperate ? () => setHardening([c.id]) : undefined}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        rows={visible}
+        columns={columns}
+        rowKey={(c) => c.id}
+        storageKey="benchmark-controls"
+        exportName="wearden-controls"
+        loading={controls.isLoading}
+        pageSizes={[25, 50, 100, 250]}
+        selection={{ selected, onChange: setSelected }}
+        expanded={(c) => <ControlDetail bid={activeId!} control={c} />}
+        emptyTitle={t("bm.hint")}
+      />
       {hardening && activeId && (
         <NewHardening onClose={() => setHardening(null)} initialBenchmarkId={activeId} initialControlIds={hardening} />
       )}
