@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { assetsApi } from "../assetsApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { useFeedback } from "../components/feedback";
 import { useHostsSocket } from "../hooks/useHostsSocket";
 import AssetModal from "../components/AssetModal";
 import AgentManagement from "../components/AgentManagement";
@@ -36,6 +37,7 @@ export default function Assets() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
+  const { confirm } = useFeedback();
   const [params, setParams] = useSearchParams();
   const openHost = Number(params.get("host")) || null;
   const drawerTab = (params.get("tab") as DrawerTab) || "overview";
@@ -195,7 +197,7 @@ export default function Assets() {
                         )}
                         {isAdmin && (
                           <button
-                            onClick={() => window.confirm(t("assets.confirmDelete").replace("{name}", a.name)) && remove.mutate(a.id)}
+                            onClick={async () => (await confirm({ title: t("assets.confirmDelete").replace("{name}", a.name), confirmLabel: t("common.delete"), cancelLabel: t("common.cancel"), danger: true })) && remove.mutate(a.id)}
                             className="rounded border border-red-900 px-2 py-1 text-xs text-red-400 hover:bg-red-950/50"
                           >
                             {t("common.delete")}

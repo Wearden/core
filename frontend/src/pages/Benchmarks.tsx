@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { benchmarksApi, ControlSummary, Profile } from "../benchmarksApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { useFeedback } from "../components/feedback";
 import { Chips } from "../components/ui";
 import { NewHardening } from "./Hardening";
 
@@ -112,6 +113,7 @@ export default function Benchmarks() {
   const { user } = useAuth();
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const { confirm } = useFeedback();
   const canOperate = user?.role === "admin" || user?.role === "operator";
 
   const benches = useQuery({ queryKey: ["benchmarks"], queryFn: benchmarksApi.list });
@@ -243,7 +245,7 @@ export default function Benchmarks() {
             </button>
             {!p.builtin && canOperate && (
               <button
-                onClick={() => window.confirm(t("bm.delProfile").replace("{name}", p.name)) && removeProfile.mutate(p.id)}
+                onClick={async () => (await confirm({ title: t("bm.delProfile").replace("{name}", p.name), confirmLabel: t("common.delete"), cancelLabel: t("common.cancel"), danger: true })) && removeProfile.mutate(p.id)}
                 className="text-xs text-red-400 hover:underline"
                 aria-label={`${t("common.delete")} ${p.name}`}
               >

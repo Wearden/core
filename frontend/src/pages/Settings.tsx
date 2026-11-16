@@ -6,6 +6,7 @@ import { agentsApi } from "../agentsApi";
 import { aiAdminApi, SettingRow, settingsApi, UserRow, usersApi } from "../settingsApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { useFeedback } from "../components/feedback";
 import { getDensity, getThemePref, setDensity, setThemePref, Density, ThemePref } from "../theme";
 import { EmptyState, PageHeader, tableWrap, theadCls } from "../components/ui";
 
@@ -36,9 +37,11 @@ function SettingField({ row, vaultReady, label, hint, type = "text", listId, ext
   const { lang } = useI18n();
   const az = lang === "az";
   const qc = useQueryClient();
+  const { toast } = useFeedback();
   const [value, setValue] = useState("");
   const done = () => {
     setValue("");
+    toast(az ? "Yadda saxlanıldı." : "Saved.", "success");
     return qc.invalidateQueries({ queryKey: ["settings"] });
   };
   const save = useMutation({ mutationFn: () => settingsApi.set(row!.key, value.trim()), onSuccess: done });
@@ -207,13 +210,17 @@ function Users() {
   const { lang } = useI18n();
   const az = lang === "az";
   const qc = useQueryClient();
+  const { toast } = useFeedback();
   const list = useQuery({ queryKey: ["users"], queryFn: usersApi.list });
-  const refresh = () => qc.invalidateQueries({ queryKey: ["users"] });
+  const refresh = () => {
+    toast(az ? "İstifadəçi yeniləndi." : "User updated.", "success");
+    return qc.invalidateQueries({ queryKey: ["users"] });
+  };
   const update = useMutation({ mutationFn: (v: { id: number; role?: UserRow["role"]; active?: boolean }) => usersApi.update(v.id, { role: v.role, active: v.active }), onSuccess: refresh });
   const [form, setForm] = useState({ username: "", password: "", role: "viewer" as UserRow["role"] });
   const create = useMutation({ mutationFn: () => usersApi.create(form), onSuccess: () => { setForm({ username: "", password: "", role: "viewer" }); refresh(); } });
   const [reset, setReset] = useState<{ id: number; name: string; password: string } | null>(null);
-  const doReset = useMutation({ mutationFn: () => usersApi.resetPassword(reset!.id, reset!.password), onSuccess: () => setReset(null) });
+  const doReset = useMutation({ mutationFn: () => usersApi.resetPassword(reset!.id, reset!.password), onSuccess: () => { setReset(null); toast(az ? "Parol sıfırlandı." : "Password reset.", "success"); } });
   const err = (update.error ?? create.error ?? doReset.error) as Error | null;
   return (
     <>

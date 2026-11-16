@@ -7,6 +7,9 @@ import { useI18n } from "../i18n";
 import { applyAppearance, getThemePref, setThemePref, ThemePref } from "../theme";
 import CommandPalette, { PaletteItem } from "../components/CommandPalette";
 
+// Two-key "go to" shortcuts, in the style of common admin tools: press g, then the letter.
+const GO_KEYS: Record<string, string> = { d: "/", a: "/assets", s: "/scans", h: "/hardening", r: "/reports", u: "/audit", b: "/benchmarks", t: "/settings" };
+
 const GROUPS = [
   { label: "Overview", items: [{ to: "/", key: "nav.dashboard" }, { to: "/assets", key: "nav.assets" }] },
   {
@@ -65,6 +68,8 @@ export default function Shell() {
   const [menu, setMenu] = useState(false);
   const [bell, setBell] = useState(false);
   const [palette, setPalette] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  const [help, setHelp] = useState(false);
   const [theme, setTheme] = useState<ThemePref>(getThemePref);
   const menuRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -72,15 +77,31 @@ export default function Shell() {
   useOutside(bellRef, () => setBell(false), bell);
 
   useEffect(() => {
+    let armed = 0;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setHelp(false);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPalette(true);
+        return;
+      }
+      const target = e.target instanceof Element ? e.target : null;
+      if (e.ctrlKey || e.metaKey || e.altKey || target?.closest("input, textarea, select, [contenteditable]")) return;
+      if (e.key === "?") {
+        setHelp((v) => !v);
+      } else if (e.key === "/") {
+        e.preventDefault();
+        setPalette(true);
+      } else if (e.key === "g") {
+        armed = Date.now();
+      } else if (armed && Date.now() - armed < 1500 && GO_KEYS[e.key]) {
+        armed = 0;
+        navigate(GO_KEYS[e.key]);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [navigate]);
 
   // Alerts: active drift events and failed hardening runs are the two things that need attention.
   const drift = useQuery({ queryKey: ["drift"], queryFn: () => request<{ id: number; message: string; severity: string; detected_at: string }[]>("/drift?active_only=true"), refetchInterval: 30_000 });
@@ -103,7 +124,8 @@ export default function Shell() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-slate-800 bg-slate-950">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[80] focus:rounded-md focus:bg-slate-100 focus:px-3 focus:py-2 focus:text-sm focus:text-slate-950">{az ? "Məzmuna keç" : "Skip to content"}</a>
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-slate-800 bg-slate-950 lg:flex">
         <Link to="/" className="flex items-center gap-2.5 px-5 py-5">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-sm font-bold text-slate-950">W</span>
           <span className="text-base font-semibold tracking-tight text-slate-50">Wearden</span>
@@ -134,10 +156,49 @@ export default function Shell() {
           <div>{user?.role}</div>
         </div>
       </aside>
+      {drawer && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation" onMouseDown={(e) => e.target === e.currentTarget && setDrawer(false)}>
+          <div className="absolute inset-0 bg-black/60" aria-hidden />
+          <aside className="relative flex h-full w-[min(18rem,85vw)] flex-col border-r border-slate-800 bg-slate-950 shadow-2xl" onClick={(e) => (e.target as HTMLElement).closest("a") && setDrawer(false)}>
+        <Link to="/" className="flex items-center gap-2.5 px-5 py-5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-sm font-bold text-slate-950">W</span>
+          <span className="text-base font-semibold tracking-tight text-slate-50">Wearden</span>
+        </Link>
+        <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+          {GROUPS.map((group) => (
+            <div key={group.label}>
+              <div className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wider text-slate-500">{group.label}</div>
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/"}
+                    className={({ isActive }) =>
+                      `block rounded-md px-3 py-1.5 text-sm transition-colors ${isActive ? "bg-slate-800 font-medium text-slate-50" : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"}`
+                    }
+                  >
+                    {t(item.key)}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+        <div className="border-t border-slate-800 px-5 py-3 text-xs text-slate-500">
+          <div className="truncate text-slate-300">{user?.username}</div>
+          <div>{user?.role}</div>
+        </div>
+          </aside>
+        </div>
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-slate-800 bg-slate-950/90 px-6 py-2.5 backdrop-blur">
-          <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-800 bg-slate-950/90 px-4 py-2.5 backdrop-blur md:gap-4 md:px-6">
+          <button onClick={() => setDrawer(true)} aria-label="Open navigation" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-800 text-slate-300 hover:bg-slate-900 lg:hidden">
+            <Icon d="M4 6h16M4 12h16M4 18h16" />
+          </button>
+          <nav aria-label="breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-sm md:flex-none">
             {crumbs.map((c, i) => (
               <span key={c.to} className="flex items-center gap-2">
                 {i > 0 && <span aria-hidden className="text-slate-700">/</span>}
@@ -146,10 +207,10 @@ export default function Shell() {
             ))}
           </nav>
 
-          <button onClick={() => setPalette(true)} className="ml-auto hidden w-72 items-center gap-2 rounded-md border border-slate-800 px-3 py-1.5 text-left text-sm text-slate-500 hover:border-slate-600 md:flex" aria-label="Search">
+          <button onClick={() => setPalette(true)} className="ml-auto flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 text-slate-400 hover:border-slate-600 md:h-auto md:w-72 md:justify-start md:gap-2 md:px-3 md:py-1.5 md:text-left md:text-sm md:text-slate-500" aria-label="Search">
             <Icon d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
-            <span className="flex-1">{az ? "Axtar..." : "Search..."}</span>
-            <kbd className="rounded border border-slate-700 px-1.5 text-[10px] text-slate-500">Ctrl K</kbd>
+            <span className="hidden flex-1 md:block">{az ? "Axtar..." : "Search..."}</span>
+            <kbd className="hidden rounded border border-slate-700 px-1.5 text-[10px] text-slate-500 md:block">Ctrl K</kbd>
           </button>
 
           <div className="flex items-center gap-2">
@@ -159,7 +220,7 @@ export default function Shell() {
                 {alerts.length > 0 && <span aria-hidden className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-400 px-1 text-[10px] font-semibold text-slate-950">{alerts.length}</span>}
               </button>
               {bell && (
-                <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+                <div className="absolute right-0 mt-2 w-[min(20rem,92vw)] overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
                   <div className="border-b border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-100">{az ? "Xəbərdarlıqlar" : "Alerts"}</div>
                   {alerts.length === 0 ? <p className="px-4 py-6 text-center text-sm text-slate-500">{az ? "Aktiv xəbərdarlıq yoxdur." : "No active alerts."}</p> : (
                     <ul className="max-h-72 divide-y divide-slate-800 overflow-y-auto">
@@ -182,7 +243,7 @@ export default function Shell() {
                 <span className="hidden max-w-28 truncate sm:inline">{user?.username}</span>
               </button>
               {menu && (
-                <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+                <div className="absolute right-0 mt-2 w-[min(16rem,92vw)] overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
                   <div className="border-b border-slate-800 px-4 py-3">
                     <div className="truncate text-sm font-medium text-slate-50">{user?.username}</div>
                     <div className="text-xs text-slate-500">{user?.role}</div>
@@ -190,6 +251,7 @@ export default function Shell() {
                   <div className="p-1 text-sm">
                     <Link to="/settings?section=profile" onClick={() => setMenu(false)} className="block rounded-md px-3 py-2 text-slate-200 hover:bg-slate-800">{az ? "Profil" : "Profile"}</Link>
                     <Link to="/settings" onClick={() => setMenu(false)} className="block rounded-md px-3 py-2 text-slate-200 hover:bg-slate-800">{t("nav.settings")}</Link>
+                    <button onClick={() => { setMenu(false); setHelp(true); }} className="block w-full rounded-md px-3 py-2 text-left text-slate-200 hover:bg-slate-800">{az ? "Qısayollar" : "Keyboard shortcuts"}</button>
                   </div>
                   <div className="border-t border-slate-800 px-4 py-3">
                     <div className="mb-1.5 text-[11px] uppercase tracking-wide text-slate-500">{az ? "Tema" : "Theme"}</div>
@@ -213,11 +275,35 @@ export default function Shell() {
             </div>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1400px] flex-1 p-6">
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1400px] flex-1 p-4 outline-none md:p-6">
           <Outlet />
         </main>
       </div>
       <CommandPalette open={palette} onClose={() => setPalette(false)} pages={pages} />
+      {help && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onMouseDown={(e) => e.target === e.currentTarget && setHelp(false)}>
+          <div className="w-full max-w-md space-y-3 rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-50">{az ? "Klaviatura qısayolları" : "Keyboard shortcuts"}</h2>
+              <button onClick={() => setHelp(false)} aria-label="Close" className="text-slate-500 hover:text-slate-200">x</button>
+            </div>
+            <dl className="space-y-1.5 text-sm">
+              {[
+                ["Ctrl K  or  /", az ? "Axtarış və keçid" : "Search and jump"],
+                ["?", az ? "Bu pəncərə" : "This window"],
+                ["g d", t("nav.dashboard")], ["g a", t("nav.assets")], ["g s", t("nav.scans")], ["g h", t("nav.hardening")],
+                ["g r", t("nav.reports")], ["g b", t("nav.benchmarks")], ["g u", t("nav.audit")], ["g t", t("nav.settings")],
+                ["Esc", az ? "Pəncərəni bağla" : "Close a window"],
+              ].map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between gap-4 border-b border-slate-800/70 py-1.5 last:border-0">
+                  <dt className="text-slate-300">{v}</dt>
+                  <dd><kbd className="rounded border border-slate-700 bg-slate-950 px-2 py-0.5 font-mono text-xs text-slate-200">{k}</kbd></dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

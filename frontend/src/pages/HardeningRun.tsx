@@ -7,6 +7,7 @@ import ControlInfo from "../components/ControlInfo";
 import { useHardeningSocket } from "../hooks/useHardeningSocket";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { useFeedback } from "../components/feedback";
 import StatusPill from "../components/StatusPill";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -25,6 +26,7 @@ export default function HardeningRun() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { confirm } = useFeedback();
   const queryClient = useQueryClient();
   const canOperate = user?.role === "admin" || user?.role === "operator";
   const { connected, log } = useHardeningSocket(id);
@@ -152,7 +154,7 @@ export default function HardeningRun() {
             {t("hr.rollbackSel")} ({selected.length})
           </button>
           <button
-            onClick={() => window.confirm(t("hr.rollbackConfirm")) && rollback.mutate(undefined)}
+            onClick={async () => (await confirm({ title: t("hr.rollbackConfirm"), confirmLabel: t("hr.rollback"), cancelLabel: t("common.cancel"), danger: true })) && rollback.mutate(undefined)}
             disabled={!finished || rollback.isPending}
             className="rounded-md bg-red-800 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-40"
           >

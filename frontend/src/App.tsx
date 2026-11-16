@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth";
 import Shell from "./layout/Shell";
 import Login from "./pages/Login";
@@ -16,7 +16,6 @@ import Hardening from "./pages/Hardening";
 import HardeningRun from "./pages/HardeningRun";
 import Rollback from "./pages/Rollback";
 import Reports from "./pages/Reports";
-import HostAnalytics from "./pages/HostAnalytics";
 import AttackMatrix from "./pages/AttackMatrix";
 import { useI18n } from "./i18n";
 
@@ -34,6 +33,12 @@ function RequireAuth({ children }: { children: ReactNode }) {
     return <Navigate to="/change-password" replace />;
   }
   return <>{children}</>;
+}
+
+/** The host panel on the Assets page replaced the standalone analytics page; old links keep working. */
+function HostRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/assets?host=${encodeURIComponent(id ?? "")}`} replace />;
 }
 
 function LoginRoute() {
@@ -77,7 +82,7 @@ export default function App() {
             <Route path="/rollback" element={<Rollback />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/attack" element={<AttackMatrix />} />
-            <Route path="/hosts/:id" element={<HostAnalytics />} />
+            <Route path="/hosts/:id" element={<HostRedirect />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
