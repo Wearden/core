@@ -171,7 +171,15 @@ func (s *Server) enroll(w http.ResponseWriter, r *http.Request) {
 	}
 	data, _ := json.Marshal(map[string]any{"name": in.Hostname, "host": in.Hostname, "os_type": in.OS, "os_version": nil, "os_detected": nil, "privilege": nil, "ssh_port": 22, "rdp_port": 3389, "winrm_port": 5985, "winrm_https_port": 5986, "tags": []string{}, "status": "online", "latency_ms": nil, "last_seen": now(), "last_checked": now(), "credential_username": nil})
 	var assetID int64
-	err = tx.QueryRowContext(r.Context(), "INSERT INTO assets(data) VALUES($1) RETURNING id", data).Scan(&assetID)
+	// A reinstalled workstation reuses its asset instead of creating a duplicate.
+	err = tx.QueryRowContext(r.Context(), `SELECT a.id FROM assets a WHERE a.data->>'name'=$1 AND a.data->>'os_type'=$2
+		AND NOT EXISTS (SELECT 1 FROM agents g WHERE g.asset_id=a.id AND NOT g.revoked) ORDER BY a.id LIMIT 1`, in.Hostname, in.OS).Scan(&assetID)
+	if err == sql.ErrNoRows {
+		err = tx.QueryRowContext(r.Context(), "INSERT INTO assets(data) VALUES($1) RETURNING id", data).Scan(&assetID)
+	} else if err == nil {
+		// asset_id is unique: detach the revoked agent(s) so the asset can be handed to the new one.
+		_, err = tx.ExecContext(r.Context(), "UPDATE agents SET asset_id=NULL WHERE asset_id=$1 AND revoked", assetID)
+	}
 	if err == nil {
 		_, err = tx.ExecContext(r.Context(), "INSERT INTO agents(id,asset_id,hostname,os,version,benchmark_id,token_hash,last_seen) VALUES($1,$2,$3,$4,$5,$6,$7,now())", id, assetID, in.Hostname, osName, in.AgentVersion, bid, digest(secret))
 	}

@@ -36,8 +36,10 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:8080}
+      AGENT_DOWNLOADS_DIR: /data/downloads
     volumes:
       - ${RULESET_PATH:-../ruleset}:/app/ruleset:ro
+      - ${AGENT_DOWNLOADS_HOST_DIR:-./downloads}:/data/downloads:ro
       - recordings:/data/recordings:ro
     depends_on:
       postgres:

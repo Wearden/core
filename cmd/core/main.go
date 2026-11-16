@@ -60,7 +60,7 @@ func run() error {
 		return err
 	}
 	defer db.DB.Close()
-	cfg := app.Config{SessionControlKey: os.Getenv("GUAC_CONTROL_KEY"), VaultKey: os.Getenv("WEARDEN_VAULT_KEY"), GuacKey: os.Getenv("GUAC_CRYPT_KEY"), RecordingsDir: os.Getenv("RECORDINGS_DIR"), AnthropicKey: os.Getenv("ANTHROPIC_API_KEY"), AnthropicModel: os.Getenv("ANTHROPIC_MODEL"), AllowedOrigin: os.Getenv("PUBLIC_ORIGIN")}
+	cfg := app.Config{SessionControlKey: os.Getenv("GUAC_CONTROL_KEY"), VaultKey: os.Getenv("WEARDEN_VAULT_KEY"), GuacKey: os.Getenv("GUAC_CRYPT_KEY"), RecordingsDir: os.Getenv("RECORDINGS_DIR"), AnthropicKey: os.Getenv("ANTHROPIC_API_KEY"), AnthropicModel: os.Getenv("ANTHROPIC_MODEL"), AllowedOrigin: os.Getenv("PUBLIC_ORIGIN"), DownloadsDir: os.Getenv("AGENT_DOWNLOADS_DIR")}
 	if cfg.RecordingsDir == "" {
 		cfg.RecordingsDir = "/data/recordings"
 	}

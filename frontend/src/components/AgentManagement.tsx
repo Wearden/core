@@ -21,6 +21,8 @@ export default function AgentManagement() {
   const [benchmarkId, setBenchmarkId] = useState("");
   const [ttl, setTtl] = useState(15);
   const [logsFor, setLogsFor] = useState<string | null>(null);
+  const [remediation, setRemediation] = useState(false);
+  const install = useQuery({ queryKey: ["install-info"], queryFn: agentsApi.installInfo });
   const [token, setToken] = useState<EnrollmentToken | null>(null);
   const eligible = (benchmarks.data ?? []).filter((b) => b.os === os);
   const activeBenchmark = eligible.find((b) => b.id === benchmarkId)?.id ?? eligible[0]?.id ?? "";
@@ -105,7 +107,19 @@ export default function AgentManagement() {
       {token && isAdmin && (
         <div className="space-y-2 rounded-md border border-amber-800 bg-slate-950 p-3 text-sm">
           <p>{az ? "Bu tokeni yalnız agentin quraşdırılması üçün istifadə edin. Bitmə vaxtı:" : "Use this token only to enroll the agent. Expires:"} {token.expires_at}</p>
-          <code className="block break-all select-all">{token.token}</code>
+          {os === "linux" && install.data?.linux_available && (
+            <>
+              <p className="text-slate-400">{az ? "Agenti maşında bu tək əmrlə qurun (root lazımdır):" : "Install the agent on the machine with this single command (root required):"}</p>
+              <code className="block break-all select-all rounded-md border border-slate-800 bg-slate-900 p-3 text-xs">
+                {`curl -fsSL ${window.location.origin}/install-agent.sh | sudo sh -s -- --token ${token.token}${remediation ? " --allow-remediation" : ""}`}
+              </code>
+              <label className="flex items-center gap-2 text-xs text-slate-400">
+                <input type="checkbox" checked={remediation} onChange={(e) => setRemediation(e.target.checked)} />
+                {az ? "Bu agentdə təsdiqlənmiş möhkəmləndirməyə icazə ver" : "Allow confirmed hardening on this agent"}
+              </label>
+            </>
+          )}
+          {!(os === "linux" && install.data?.linux_available) && <code className="block break-all select-all">{token.token}</code>}
           <button className="text-cyan-300 hover:underline" onClick={() => setToken(null)}>{az ? "Gizlət" : "Hide"}</button>
         </div>
       )}

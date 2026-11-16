@@ -27,5 +27,6 @@ export const agentsApi = {
   enroll: (body: { os: Agent["os"]; benchmark_id: string; ttl_minutes: number }) =>
     request<EnrollmentToken>("/agents/enrollment-tokens", { method: "POST", body: JSON.stringify(body) }),
   logs: (id: string, level: string) => request<AgentLog[]>(`/agents/${encodeURIComponent(id)}/logs?limit=100${level ? `&level=${level}` : ""}`),
+  installInfo: () => request<{ linux_available: boolean }>("/agents/install-info"),
   revoke: (id: string) => request<void>(`/agents/${encodeURIComponent(id)}/revoke`, { method: "POST" }),
 };
