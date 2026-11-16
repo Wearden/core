@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/Wearden/core/internal/security"
@@ -21,6 +22,7 @@ type settingDef struct {
 
 var settingDefs = map[string]settingDef{
 	"anthropic_api_key": {"Anthropic API key", true, func(v string) bool { return len(v) >= 20 && len(v) <= 512 && !strings.ContainsAny(v, " \r\n\t") }},
+	"log_retention_days": {"Agent log retention in days (1 to 365, default 30)", false, func(v string) bool { n, err := strconv.Atoi(v); return err == nil && n >= 1 && n <= 365 }},
 	"anthropic_model":   {"Anthropic model", false, func(v string) bool { return len(v) >= 3 && len(v) <= 100 && !strings.ContainsAny(v, " \r\n\t") }},
 }
 

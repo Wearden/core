@@ -72,3 +72,11 @@ ALTER TABLE enrollment_tokens ADD COLUMN IF NOT EXISTS request_id text;
 ALTER TABLE enrollment_tokens ADD COLUMN IF NOT EXISTS request_digest text;
 ALTER TABLE enrollment_tokens ADD COLUMN IF NOT EXISTS agent_id text REFERENCES agents(id);
 ALTER TABLE enrollment_tokens ADD COLUMN IF NOT EXISTS enrolled_at timestamptz;
+
+CREATE TABLE IF NOT EXISTS agent_logs (
+ id bigserial PRIMARY KEY, agent_id text NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+ logged_at timestamptz NOT NULL, received_at timestamptz NOT NULL DEFAULT now(),
+ level text NOT NULL CHECK(level IN ('info','warn','error')), message text NOT NULL
+);
+CREATE INDEX IF NOT EXISTS agent_logs_agent ON agent_logs(agent_id,id DESC);
+CREATE INDEX IF NOT EXISTS agent_logs_received ON agent_logs(received_at);
