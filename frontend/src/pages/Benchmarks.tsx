@@ -210,7 +210,7 @@ export default function Benchmarks() {
             )}
           </span>
         ))}
-        <button onClick={() => setSelected(new Set())} className="text-sm text-slate-400 hover:text-slate-200">
+        <button onClick={() => setSelected(new Set())} className="inline-flex h-8 items-center text-sm text-slate-400 hover:text-slate-200">
           {t("bm.clearSel")}
         </button>
         {canOperate && (
