@@ -176,3 +176,7 @@ select, input:not([type]), input:is([type="text"], [type="search"], [type="email
 @keyframes wd-panel-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(16px); } }
 .wd-panel-in { animation: wd-panel-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .wd-panel-out { animation: wd-panel-out 170ms ease-in both; pointer-events: none; }
+
+/* Soft fade and rise used when a panel swaps its content (login tabs). */
+@keyframes wd-swap { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.wd-swap { animation: wd-swap 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
