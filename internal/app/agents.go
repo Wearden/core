@@ -171,9 +171,23 @@ func (s *Server) enroll(w http.ResponseWriter, r *http.Request) {
 	}
 	data, _ := json.Marshal(map[string]any{"name": in.Hostname, "host": in.Hostname, "os_type": in.OS, "os_version": nil, "os_detected": nil, "privilege": nil, "ssh_port": 22, "rdp_port": 3389, "winrm_port": 5985, "winrm_https_port": 5986, "tags": []string{}, "status": "online", "latency_ms": nil, "last_seen": now(), "last_checked": now(), "credential_username": nil})
 	var assetID int64
-	// A reinstalled workstation reuses its asset instead of creating a duplicate.
-	err = tx.QueryRowContext(r.Context(), `SELECT a.id FROM assets a WHERE a.data->>'name'=$1 AND a.data->>'os_type'=$2
-		AND NOT EXISTS (SELECT 1 FROM agents g WHERE g.asset_id=a.id AND NOT g.revoked) ORDER BY a.id LIMIT 1`, in.Hostname, in.OS).Scan(&assetID)
+	err = sql.ErrNoRows
+	// A token issued by a remote installation is bound to the asset it was started from.
+	var binding []byte
+	if tx.QueryRowContext(r.Context(), "SELECT data FROM documents WHERE collection=$1 AND id=$2", agentInstallsCollection, digest(token)).Scan(&binding) == nil {
+		var bound struct {
+			AssetID int64 `json:"asset_id"`
+		}
+		if json.Unmarshal(binding, &bound) == nil && bound.AssetID > 0 {
+			err = tx.QueryRowContext(r.Context(), `SELECT a.id FROM assets a WHERE a.id=$1 AND a.data->>'os_type'=$2
+				AND NOT EXISTS (SELECT 1 FROM agents g WHERE g.asset_id=a.id AND NOT g.revoked)`, bound.AssetID, in.OS).Scan(&assetID)
+		}
+	}
+	if err == sql.ErrNoRows {
+		// A reinstalled workstation reuses its asset instead of creating a duplicate.
+		err = tx.QueryRowContext(r.Context(), `SELECT a.id FROM assets a WHERE a.data->>'name'=$1 AND a.data->>'os_type'=$2
+			AND NOT EXISTS (SELECT 1 FROM agents g WHERE g.asset_id=a.id AND NOT g.revoked) ORDER BY a.id LIMIT 1`, in.Hostname, in.OS).Scan(&assetID)
+	}
 	if err == sql.ErrNoRows {
 		err = tx.QueryRowContext(r.Context(), "INSERT INTO assets(data) VALUES($1) RETURNING id", data).Scan(&assetID)
 	} else if err == nil {
