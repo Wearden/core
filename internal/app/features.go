@@ -30,6 +30,7 @@ func (s *Server) featureRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/reports/hardening/{file}", s.require("viewer", s.featureHardeningExport))
 	mux.HandleFunc("GET /api/sessions", s.require("operator", s.featureSessions))
 	mux.HandleFunc("POST /api/sessions", s.require("operator", s.featureOpenSession))
+	mux.HandleFunc("GET /api/assets/{id}/rdp-certificate", s.require("operator", s.rdpCertificateInfo))
 	mux.HandleFunc("POST /api/sessions/{id}/end", s.require("operator", s.featureEndSession))
 	mux.HandleFunc("GET /api/sessions/{id}/recording", s.require("operator", s.featureRecording))
 }

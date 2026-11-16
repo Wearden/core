@@ -66,7 +66,7 @@ func (s *Server) queueScan(ctx context.Context, in scanInput, username string) (
 		var assetRaw []byte
 		err = tx.QueryRowContext(ctx, "SELECT a.id,a.benchmark_id,a.os,x.data FROM agents a JOIN assets x ON x.id=a.asset_id WHERE a.asset_id=$1 AND NOT a.revoked FOR UPDATE OF a", assetID).Scan(&agentID, &native, &osName, &assetRaw)
 		if err != nil || osName != b.OS || (in.Benchmark != native && in.Benchmark != originalBenchmark(native)) {
-			return nil, fmt.Errorf("asset %d is not enrolled for the selected benchmark", assetID)
+			return nil, fmt.Errorf("asset %d has no agent for the selected benchmark yet; install the agent or run agentless setup for it first", assetID)
 		}
 		nb := s.Catalog[native]
 		if nb == nil || len(nb.Native) == 0 {

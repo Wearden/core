@@ -137,6 +137,13 @@ func installLinux(ctx context.Context, client *ssh.Client, password []byte, base
 		flag = " --allow-remediation"
 	}
 	script := "set -eu\ntmp=\"$(mktemp)\"\ntrap 'rm -f \"$tmp\"' EXIT\ncurl -fsSL '" + base + "/install-agent.sh' -o \"$tmp\"\nsh \"$tmp\" --token '" + token + "'" + flag + "\n"
+	return linuxAsRoot(ctx, client, password, script, out)
+}
+
+// linuxAsRoot runs a fixed script as root: directly, through passwordless sudo, or
+// through sudo with the stored password on standard input. The script itself also
+// travels on standard input, so neither appears on a command line.
+func linuxAsRoot(ctx context.Context, client *ssh.Client, password []byte, script string, out *boundedBuffer) error {
 	uid := &boundedBuffer{max: 64}
 	if err := sshRun(ctx, client, "id -u", nil, uid); err != nil {
 		return installFailure{"Cannot determine the remote account; a POSIX shell is required"}
@@ -331,28 +338,9 @@ func (s *Server) installAgentRemote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer clear(secret)
-	var auth []ssh.AuthMethod
-	var password []byte
-	switch authType {
-	case "password":
-		password = secret
-		value := string(secret)
-		auth = []ssh.AuthMethod{ssh.Password(value), ssh.KeyboardInteractive(func(_, _ string, questions []string, _ []bool) ([]string, error) {
-			answers := make([]string, len(questions))
-			for i := range answers {
-				answers[i] = value
-			}
-			return answers, nil
-		})}
-	case "ssh_key":
-		signer, err := ssh.ParsePrivateKey(secret)
-		if err != nil {
-			problem(w, 400, "The stored SSH key cannot be parsed; passphrase protected keys are not supported")
-			return
-		}
-		auth = []ssh.AuthMethod{ssh.PublicKeys(signer)}
-	default:
-		problem(w, 400, "Unsupported SSH credential type")
+	auth, password, err := sshAuthMethods(authType, secret)
+	if err != nil {
+		problem(w, 400, err.Error())
 		return
 	}
 	cfg := &ssh.ClientConfig{User: username, Auth: auth, Timeout: 10 * time.Second, HostKeyCallback: func(_ string, _ net.Addr, key ssh.PublicKey) error {
@@ -422,6 +410,29 @@ func (s *Server) installAgentRemote(w http.ResponseWriter, r *http.Request) {
 	}
 	s.audit(r, "agent.remote_install", target, true, osType)
 	writeJSON(w, 200, map[string]any{"status": "installed", "output": log, "host_key": presented, "expires_at": expires})
+}
+
+// sshAuthMethods builds SSH authentication from a stored credential. The returned
+// password is non-nil only for password credentials, so sudo can use it.
+func sshAuthMethods(authType string, secret []byte) ([]ssh.AuthMethod, []byte, error) {
+	switch authType {
+	case "password":
+		value := string(secret)
+		return []ssh.AuthMethod{ssh.Password(value), ssh.KeyboardInteractive(func(_, _ string, questions []string, _ []bool) ([]string, error) {
+			answers := make([]string, len(questions))
+			for i := range answers {
+				answers[i] = value
+			}
+			return answers, nil
+		})}, secret, nil
+	case "ssh_key":
+		signer, err := ssh.ParsePrivateKey(secret)
+		if err != nil {
+			return nil, nil, errors.New("The stored SSH key cannot be parsed; passphrase protected keys are not supported")
+		}
+		return []ssh.AuthMethod{ssh.PublicKeys(signer)}, nil, nil
+	}
+	return nil, nil, errors.New("Unsupported SSH credential type")
 }
 
 // auditDetached records an event even when the request context has already expired.
