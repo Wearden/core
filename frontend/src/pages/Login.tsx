@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "../auth";
 import { ApiError } from "../api";
 import { useI18n } from "../i18n";
+import Logo from "../components/Logo";
 import CursorGrid from "../components/CursorGrid";
 
 /** Follows the data-theme attribute so the animated grid keeps its contrast in both themes. */
@@ -19,7 +20,7 @@ function useIsLight(): boolean {
 function Brand({ size = 28 }: { size?: number }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span style={{ width: size, height: size }} className="flex items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-950">W</span>
+      <span style={{ width: size, height: size }} className="flex items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-950"><Logo className="h-[55%] w-auto" /></span>
       <span className="text-base font-semibold tracking-tight text-slate-50">Wearden</span>
     </span>
   );
