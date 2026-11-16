@@ -7,7 +7,7 @@ import { SettingRow, settingsApi } from "../settingsApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { useFeedback } from "../components/feedback";
-import { getDensity, getThemePref, setDensity, setThemePref, Density, ThemePref } from "../theme";
+import { getDensity, getMotion, getThemePref, setDensity, setMotion, setThemePref, Density, Motion, ThemePref } from "../theme";
 import { PageHeader } from "../components/ui";
 import { btn, btnPrimary, Card, errText, field } from "../components/settingsUi";
 import AiProviders from "./settings/AiProviders";
@@ -103,6 +103,7 @@ function Appearance() {
   const az = lang === "az";
   const [theme, setTheme] = useState<ThemePref>(getThemePref);
   const [density, setDens] = useState<Density>(getDensity);
+  const [motion, setMotionPref] = useState<Motion>(getMotion);
   const choice = <T extends string>(value: T, current: T, label: string, on: (v: T) => void) => (
     <button key={value} onClick={() => on(value)} aria-pressed={current === value} className={`rounded-md border px-4 py-2 text-sm ${current === value ? "border-slate-100 bg-slate-100 text-slate-950" : "border-slate-800 text-slate-300 hover:bg-slate-900"}`}>{label}</button>
   );
@@ -119,6 +120,13 @@ function Appearance() {
         <div className="flex flex-wrap gap-2">
           {choice<Density>("comfortable", density, az ? "Rahat" : "Comfortable", (v) => { setDens(v); setDensity(v); })}
           {choice<Density>("compact", density, az ? "Sıx" : "Compact", (v) => { setDens(v); setDensity(v); })}
+        </div>
+      </Card>
+      <Card title={az ? "Animasiyalar" : "Animations"} hint={az ? "Sistem seçimi əməliyyat sisteminin 'hərəkəti azalt' ayarına tabe olur. Windows-da animasiyalar söndürülübsə, Açıq seçin." : "System follows the operating system reduce motion setting. If animations are switched off in Windows, choose On."}>
+        <div className="flex flex-wrap gap-2">
+          {choice<Motion>("on", motion, az ? "Açıq" : "On", (v) => { setMotionPref(v); setMotion(v); })}
+          {choice<Motion>("system", motion, az ? "Sistem" : "System", (v) => { setMotionPref(v); setMotion(v); })}
+          {choice<Motion>("off", motion, az ? "Bağlı" : "Off", (v) => { setMotionPref(v); setMotion(v); })}
         </div>
       </Card>
       <Card title={az ? "Dil" : "Language"}>
