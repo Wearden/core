@@ -261,7 +261,7 @@ export default function DataTable<T>({
                         {c.sort ? (
                           <button onClick={() => toggleSort(c)} className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-200">
                             {c.header}
-                            <span aria-hidden className={active ? "text-slate-100" : "text-slate-700"}>{active ? (sort!.dir === "asc" ? "▲" : "▼") : "↕"}</span>
+                            <span aria-hidden className={active ? "text-slate-100" : "text-slate-500"}>{active ? (sort!.dir === "asc" ? "▲" : "▼") : "↕"}</span>
                           </button>
                         ) : c.header}
                       </th>
