@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PermissionDef, RoleInput, rolesApi, RoleRow, UserRow, usersApi } from "../../settingsApi";
+import { PermissionDef, registrationApi, RoleInput, rolesApi, RoleRow, UserRow, usersApi } from "../../settingsApi";
 import { useAuth } from "../../auth";
 import { useI18n } from "../../i18n";
 import { useFeedback } from "../../components/feedback";
@@ -45,7 +45,7 @@ function UserDialog({ roles, onClose }: { roles: RoleRow[]; onClose: () => void 
   const qc = useQueryClient();
   const { toast } = useFeedback();
   const canGrant = useCanGrant();
-  const options = roles.filter(canGrant);
+  const options = roles.filter((r) => r.name !== "admin" && canGrant(r));
   const [form, setForm] = useState({ username: "", password: generatePassword(), role: options.find((r) => r.name === "viewer")?.name ?? options[0]?.name ?? "viewer" });
   const [shown, setShown] = useState(true);
   const create = useMutation({
@@ -109,7 +109,7 @@ export function Users() {
   const roles = useRoles();
   const roleRows = roles.data?.roles ?? [];
   const [q, setQ] = useState("");
-  const [state, setState] = useState<"all" | "active" | "disabled">("all");
+  const [state, setState] = useState<"all" | "active" | "disabled" | "pending">("all");
   const [adding, setAdding] = useState(false);
   const [reset, setReset] = useState<{ id: number; name: string; password: string } | null>(null);
   const refresh = (msg: string) => {
@@ -127,6 +127,18 @@ export function Users() {
     onSuccess: () => refresh(az ? "İstifadəçi silindi." : "User deleted."),
     onError: (e) => toast(errText(e), "error"),
   });
+  const approve = useMutation({
+    mutationFn: (id: number) => usersApi.approve(id),
+    onSuccess: () => refresh(az ? "İstifadəçi təsdiqləndi." : "User approved."),
+    onError: (e) => toast(errText(e), "error"),
+  });
+  const reg = useQuery({ queryKey: ["registration"], queryFn: registrationApi.get });
+  const setReg = useMutation({
+    mutationFn: (open: boolean) => registrationApi.set(open),
+    onSuccess: (r) => { toast(r.open ? (az ? "Qeydiyyat açıldı." : "Registration opened.") : az ? "Qeydiyyat bağlandı." : "Registration closed.", "success"); qc.invalidateQueries({ queryKey: ["registration"] }); },
+    onError: (e) => toast(errText(e), "error"),
+  });
+  const pendingCount = (list.data ?? []).filter((u) => u.pending).length;
   const doReset = useMutation({
     mutationFn: () => usersApi.resetPassword(reset!.id, reset!.password),
     onSuccess: () => { setReset(null); toast(az ? "Parol sıfırlandı." : "Password reset.", "success"); },
@@ -134,7 +146,7 @@ export function Users() {
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return (list.data ?? []).filter((u) => (state === "all" || (state === "active") === u.active) && (!needle || `${u.username} ${u.role}`.toLowerCase().includes(needle)));
+    return (list.data ?? []).filter((u) => (state === "all" || (state === "pending" ? u.pending : state === "active" ? u.active : !u.active && !u.pending)) && (!needle || `${u.username} ${u.role}`.toLowerCase().includes(needle)));
   }, [list.data, q, state]);
   const manageable = (u: UserRow) => {
     const r = roleRows.find((x) => x.name === u.role);
@@ -151,24 +163,38 @@ export function Users() {
     { id: "role", header: az ? "Rol" : "Role", sort: (a, b) => a.role.localeCompare(b.role), csv: (u) => u.role, cell: (u) => (
       <select className="h-8 rounded-md border border-slate-800 bg-slate-950 px-2 text-xs" disabled={!manageable(u)} value={u.role} onChange={(e) => update.mutate({ id: u.id, role: e.target.value })}>
         {!roleRows.some((r) => r.name === u.role) && <option value={u.role}>{u.role}</option>}
-        {roleRows.map((r) => <option key={r.name} value={r.name} disabled={!canGrant(r)}>{r.name}</option>)}
+        {roleRows.map((r) => <option key={r.name} value={r.name} disabled={!canGrant(r) || (r.name === "admin" && u.role !== "admin")}>{r.name}</option>)}
       </select>
     ) },
     { id: "state", header: az ? "Vəziyyət" : "State", sort: (a, b) => Number(a.active) - Number(b.active), csv: (u) => (u.active ? "active" : "disabled"), cell: (u) => (
-      <span className="inline-flex items-center gap-1.5 text-xs text-slate-300"><span aria-hidden className={`h-1.5 w-1.5 rounded-full ${u.active ? "bg-emerald-400" : "bg-slate-500"}`} />{u.active ? (az ? "aktiv" : "active") : az ? "bağlı" : "disabled"}{u.must_change_password && <span className="ml-2 text-slate-500">{az ? "parol dəyişməli" : "must change password"}</span>}</span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-slate-300"><span aria-hidden className={`h-1.5 w-1.5 rounded-full ${u.pending ? "bg-amber-400" : u.active ? "bg-emerald-400" : "bg-slate-500"}`} />{u.pending ? (az ? "təsdiq gözləyir" : "awaiting approval") : u.active ? (az ? "aktiv" : "active") : az ? "bağlı" : "disabled"}{u.must_change_password && <span className="ml-2 text-slate-500">{az ? "parol dəyişməli" : "must change password"}</span>}</span>
     ) },
     { id: "created", header: az ? "Yaradılıb" : "Created", defaultHidden: true, sort: (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at), csv: (u) => u.created_at, cell: (u) => <span className="text-xs text-slate-500">{new Date(u.created_at).toLocaleDateString()}</span> },
     { id: "actions", header: "", locked: true, className: "text-right", cell: (u) => (
       <div className="flex justify-end gap-2">
         <button className={btnSmall} disabled={!manageable(u) && u.id !== user?.id} onClick={() => setReset({ id: u.id, name: u.username, password: generatePassword() })}>{az ? "Parolu sıfırla" : "Reset password"}</button>
-        <button className={btnSmall} disabled={!manageable(u)} onClick={() => update.mutate({ id: u.id, active: !u.active })}>{u.active ? (az ? "Bağla" : "Disable") : az ? "Aç" : "Enable"}</button>
-        <button className={btnDanger} disabled={!manageable(u)} onClick={async () => (await confirm({ title: az ? `${u.username} silinsin?` : `Delete ${u.username}?`, message: az ? "İstifadəçi və onun bütün sessiyaları silinir. Bu geri qaytarılmır." : "The user and all of their sessions are removed. This cannot be undone.", confirmLabel: az ? "Sil" : "Delete", cancelLabel: az ? "Vaz keç" : "Cancel", danger: true })) && remove.mutate(u.id)}>{az ? "Sil" : "Delete"}</button>
+        {u.pending
+          ? <button className={btnPrimary + " !h-8 !px-2.5 !text-xs"} disabled={!manageable(u) || approve.isPending} onClick={() => approve.mutate(u.id)}>{az ? "Təsdiqlə" : "Approve"}</button>
+          : <button className={btnSmall} disabled={!manageable(u)} onClick={() => update.mutate({ id: u.id, active: !u.active })}>{u.active ? (az ? "Bağla" : "Disable") : az ? "Aç" : "Enable"}</button>}
+        <button className={btnDanger} disabled={!manageable(u)} onClick={async () => (await confirm({ title: az ? `${u.username} silinsin?` : `Delete ${u.username}?`, message: az ? "İstifadəçi və onun bütün sessiyaları silinir. Bu geri qaytarılmır." : "The user and all of their sessions are removed. This cannot be undone.", confirmLabel: az ? "Sil" : "Delete", cancelLabel: az ? "Vaz keç" : "Cancel", danger: true })) && remove.mutate(u.id)}>{u.pending ? (az ? "Rədd et" : "Reject") : az ? "Sil" : "Delete"}</button>
       </div>
     ) },
   ];
 
   return (
     <>
+      <Card
+        title={az ? "Qeydiyyat" : "Registration"}
+        hint={az ? "Hər kəs login səhifəsindən hesab sorğusu göndərə bilər. Sorğu təsdiqinizi gözləyir və hesab viewer olur. Yeganə administrator ilk qeydiyyatdan keçən şəxsdir." : "Anyone can request an account on the sign-in page. A request waits for your approval and becomes a viewer. The only administrator is whoever registered first."}
+        action={
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
+            <input type="checkbox" checked={reg.data?.open ?? true} disabled={reg.isLoading || setReg.isPending} onChange={(e) => setReg.mutate(e.target.checked)} />
+            {az ? "Qeydiyyat açıqdır" : "Registration open"}
+          </label>
+        }
+      >
+        <p className="text-xs text-slate-500">{pendingCount > 0 ? (az ? `${pendingCount} sorğu təsdiq gözləyir.` : `${pendingCount} request${pendingCount === 1 ? " is" : "s are"} waiting for approval.`) : az ? "Gözləyən sorğu yoxdur." : "No requests are waiting."}</p>
+      </Card>
       <Card
         title={az ? "İstifadəçilər" : "Users"}
         hint={az ? "İstifadəçi əlavə edin, rolunu dəyişin, bağlayın və ya silin. Son aktiv administratoru silmək olmaz." : "Add users, change their role, disable or delete them. The last active administrator cannot be removed."}
@@ -187,7 +213,7 @@ export function Users() {
           toolbar={
             <>
               <input type="search" className={`${searchCls} !w-56`} placeholder={az ? "Ad və ya rol" : "Search name or role"} value={q} onChange={(e) => setQ(e.target.value)} />
-              <Chips label="state" value={state} onChange={setState} options={[{ id: "all", label: az ? "Hamısı" : "All" }, { id: "active", label: az ? "Aktiv" : "Active" }, { id: "disabled", label: az ? "Bağlı" : "Disabled" }]} />
+              <Chips label="state" value={state} onChange={setState} options={[{ id: "all", label: az ? "Hamısı" : "All" }, { id: "pending", label: az ? "Gözləyən" : "Pending", count: pendingCount }, { id: "active", label: az ? "Aktiv" : "Active" }, { id: "disabled", label: az ? "Bağlı" : "Disabled" }]} />
             </>
           }
         />

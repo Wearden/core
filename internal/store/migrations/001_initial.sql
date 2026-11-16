@@ -84,3 +84,7 @@ CREATE INDEX IF NOT EXISTS agent_logs_received ON agent_logs(received_at);
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_format;
 ALTER TABLE users ADD CONSTRAINT users_role_format CHECK(role ~ '^[a-z0-9][a-z0-9_-]{1,31}$');
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pending boolean NOT NULL DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS users_username_ci ON users (lower(username));
+CREATE UNIQUE INDEX IF NOT EXISTS users_single_admin ON users (role) WHERE role = 'admin';

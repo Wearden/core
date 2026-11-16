@@ -124,6 +124,9 @@ export async function fetchBlobUrl(path: string): Promise<string> {
 export const api = {
   login: (username: string, password: string) =>
     request<Tokens>("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }, false),
+  setup: () => request<{ admin_exists: boolean; registration_open: boolean }>("/auth/setup", {}, false),
+  register: (username: string, password: string) =>
+    request<{ status: "admin" | "pending" }>("/auth/register", { method: "POST", body: JSON.stringify({ username, password }) }, false),
   me: () => request<User>("/auth/me"),
   changePassword: (current_password: string, new_password: string) =>
     request<void>("/auth/change-password", {

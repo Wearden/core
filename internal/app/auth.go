@@ -3,36 +3,13 @@ package app
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"github.com/Wearden/core/internal/security"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 )
 
 func digest(s string) string { return security.Digest(s) }
-func (s *Server) Bootstrap(ctx context.Context, username, password string) error {
-	var count int
-	if err := s.DB.QueryRowContext(ctx, "SELECT count(*) FROM users").Scan(&count); err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-	if len(username) < 1 || len(username) > 64 {
-		return errors.New("ADMIN_USERNAME must contain 1..64 characters")
-	}
-	if strings.HasPrefix(password, "CHANGE-ME") {
-		return errors.New("replace the administrator password placeholder")
-	}
-	hash, err := security.HashPassword(password)
-	if err != nil {
-		return err
-	}
-	_, err = s.DB.ExecContext(ctx, `INSERT INTO users(username,password_hash,role) VALUES($1,$2,'admin') ON CONFLICT(username) DO NOTHING`, username, hash)
-	return err
-}
 func (s *Server) rateAllowed(r *http.Request) bool {
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	s.mu.Lock()
@@ -107,10 +84,20 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	var u User
 	var hash string
-	var active bool
-	err := s.DB.QueryRowContext(r.Context(), "SELECT id,username,role,must_change_password,password_hash,active FROM users WHERE username=$1", in.Username).Scan(&u.ID, &u.Username, &u.Role, &u.MustChange, &hash, &active)
-	if err != nil || !active || !security.VerifyPassword(in.Password, hash) {
+	var active, pending bool
+	// Usernames are case-insensitive: "Admin" and "admin" are the same account.
+	err := s.DB.QueryRowContext(r.Context(), "SELECT id,username,role,must_change_password,password_hash,active,pending FROM users WHERE lower(username)=lower($1)", in.Username).Scan(&u.ID, &u.Username, &u.Role, &u.MustChange, &hash, &active, &pending)
+	if err != nil || !security.VerifyPassword(in.Password, hash) {
 		s.audit(r, "auth.login", in.Username, false, "")
+		problem(w, 401, "Invalid credentials")
+		return
+	}
+	if !active {
+		s.audit(r, "auth.login", in.Username, false, "inactive")
+		if pending {
+			problem(w, 403, "Your registration is waiting for administrator approval")
+			return
+		}
 		problem(w, 401, "Invalid credentials")
 		return
 	}

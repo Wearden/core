@@ -49,12 +49,15 @@ export interface UserRow {
   active: boolean;
   must_change_password: boolean;
   created_at: string;
+  /** Registered on their own and waiting for the administrator to approve. */
+  pending: boolean;
 }
 
 export const usersApi = {
   list: () => request<UserRow[]>("/users"),
   create: (body: { username: string; password: string; role: string }) => request<unknown>("/users", { method: "POST", body: JSON.stringify(body) }),
   remove: (id: number) => request<void>(`/users/${id}`, { method: "DELETE" }),
+  approve: (id: number) => request<void>(`/users/${id}/approve`, { method: "POST" }),
   update: (id: number, body: { role?: string; active?: boolean }) => request<void>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   resetPassword: (id: number, password: string) => request<void>(`/users/${id}/reset-password`, { method: "POST", body: JSON.stringify({ password }) }),
   changeOwnPassword: (current: string, next: string) => request<void>("/auth/change-password", { method: "POST", body: JSON.stringify({ current_password: current, new_password: next }) }),
@@ -122,4 +125,9 @@ export const rolesApi = {
   create: (body: RoleInput) => request<unknown>("/roles", { method: "POST", body: JSON.stringify(body) }),
   update: (body: RoleInput) => request<unknown>(`/roles/${body.name}`, { method: "PUT", body: JSON.stringify(body) }),
   remove: (name: string) => request<void>(`/roles/${name}`, { method: "DELETE" }),
+};
+
+export const registrationApi = {
+  get: () => request<{ open: boolean }>("/registration"),
+  set: (open: boolean) => request<{ open: boolean }>("/registration", { method: "PUT", body: JSON.stringify({ open }) }),
 };
