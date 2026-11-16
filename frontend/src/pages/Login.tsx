@@ -97,7 +97,7 @@ export default function Login() {
         <div className="flex flex-col justify-between p-7 sm:p-9">
           <div className="space-y-8">
             <Brand />
-            <div className="space-y-1.5">
+            <div key={`h-${mode}`} className="wd-swap space-y-1.5">
               <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
                 {mode === "requested" ? (az ? "Sorğu göndərildi" : "Request sent") : firstRun ? (az ? "Administrator hesabı yaradın" : "Create the administrator account") : mode === "register" ? (az ? "Hesab sorğusu" : "Request an account") : az ? "Hesabınıza daxil olun" : "Sign in to your account"}
               </h1>
@@ -113,13 +113,15 @@ export default function Login() {
             </div>
 
             {canRegister && !firstRun && mode !== "requested" && (
-              <div role="tablist" aria-label={az ? "Giriş və ya hesab sorğusu" : "Sign in or request an account"} className="grid grid-cols-2 gap-1 rounded-lg border border-slate-800 bg-slate-950 p-1">
+              <div role="tablist" aria-label={az ? "Giriş və ya hesab sorğusu" : "Sign in or request an account"} className="relative grid grid-cols-2 gap-1 rounded-lg border border-slate-800 bg-slate-950 p-1">
+                <span aria-hidden className="absolute inset-y-1 left-1 w-[calc(50%-6px)] rounded-md bg-slate-100 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" style={{ transform: mode === "register" ? "translateX(calc(100% + 4px))" : "none" }} />
                 {([["signin", az ? "Daxil ol" : "Sign in"], ["register", az ? "Hesab sorğusu" : "Request account"]] as const).map(([id, label]) => (
-                  <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => switchMode(id)} className={`h-9 rounded-md text-sm transition-colors ${mode === id ? "bg-slate-100 font-medium text-slate-950" : "text-slate-400 hover:text-slate-100"}`}>{label}</button>
+                  <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => switchMode(id)} className={`relative z-10 h-9 rounded-md text-sm transition-colors duration-300 ${mode === id ? "font-medium text-slate-950" : "text-slate-400 hover:text-slate-100"}`}>{label}</button>
                 ))}
               </div>
             )}
 
+            <div key={mode} className="wd-swap">
             {mode === "requested" ? (
               <button type="button" onClick={() => switchMode("signin")} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-700 text-sm font-medium text-slate-200 hover:bg-slate-800">
                 {az ? "Girişə qayıt" : "Back to sign in"}
@@ -185,6 +187,7 @@ export default function Login() {
               </button>
             </form>
             )}
+            </div>
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-3 text-xs text-slate-500">
