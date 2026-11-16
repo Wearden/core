@@ -1,0 +1,5 @@
+# Automatic HTTPS for the domain in WEARDEN_DOMAIN (certificate from Let's Encrypt). Used by the tls compose profile.
+{$WEARDEN_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy nginx:80
+}

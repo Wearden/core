@@ -4,6 +4,26 @@
 
 Go central API and durable PostgreSQL backend. The React dashboard and optional Guacamole bridge are reused from the prototype. Original prototype files are untouched. This rewrite is still in progress; consult `docs/rewrite/progress.md` for incomplete features. No tests or live OS scans are run after the user's explicit no-test instruction.
 
+## One line install
+
+On a Linux x86_64 server with Docker (add `--install-docker` to let the installer set Docker up):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Wearden/core/main/scripts/install.sh | sudo sh -s -- --domain wearden.example.com
+```
+
+The installer downloads the source, writes `/opt/wearden/core/.env` with freshly generated secrets, builds the images and the Linux agent, and starts everything. With `--domain` it serves HTTPS on ports 80 and 443 with an automatic certificate; without it the web page stays on `127.0.0.1:8080` (use `--bind 0.0.0.0 --port 8080` for a lab LAN). Open the address it prints and register: the first account becomes the one and only administrator.
+
+Run the same command again to upgrade; the `.env`, the database and the agent downloads are kept. Pin a release with `--ref <tag>` in production, or download the script first and read it. Remove with `--uninstall` (data volumes are kept) or `--uninstall --purge --yes` (deletes the data too).
+
+Workstations then install the agent with one command shown in Assets, Agents, Enroll a new agent:
+
+```sh
+curl -fsSL https://wearden.example.com/install-agent.sh | sudo sh -s -- --token <enrollment token>
+```
+
+Agents refuse plain http for a core that is not on the same machine, so use `--domain` for real hosts. The installer has not been run end to end yet; see `docs/rewrite/progress.md`.
+
 ## Implemented source
 
 - PostgreSQL schema/bootstrap and bounded connection pool.
@@ -35,7 +55,7 @@ The v0.0.0 requirement is a local bootstrap placeholder until proto is tagged an
 3. Leave ANTHROPIC_API_KEY/MODEL empty to use static explanations. A nonempty model is an operator-selected model identifier, not a guarantee that an old prototype model is available.
 4. Keep `RULESET_PATH=../ruleset`, or point it to the sibling checkout. Compose mounts it read-only inside core.
 5. Run `docker compose up --build -d` from core when Docker is available. This has not been executed in this session. The local gateway binds only `127.0.0.1:8080`.
-6. Sign in with configured admin credentials and change the initial password. Create a token for a native benchmark in Assets; use the matching OS agent's daemon instructions.
+6. Open the page and register; the first account becomes the administrator. Create a token for a native benchmark in Assets; use the matching OS agent's daemon instructions.
 
 For optional remote sessions, set independent GUAC_CRYPT_KEY (32 ASCII bytes) and GUAC_CONTROL_KEY (a long random control secret), then enable the compose `sessions` profile. TLS is mandatory before exposing the gateway beyond a disposable local lab. The current compose file supplies isolated plain HTTP only on loopback.
 
