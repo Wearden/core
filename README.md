@@ -1,3 +1,5 @@
+<p align="center"><img src="frontend/public/favicon.svg" alt="Wearden" width="72" height="72"></p>
+
 # Wearden core
 
 Go central API and durable PostgreSQL backend. The React dashboard and optional Guacamole bridge are reused from the prototype. Original prototype files are untouched. This rewrite is still in progress; consult `docs/rewrite/progress.md` for incomplete features. No tests or live OS scans are run after the user's explicit no-test instruction.

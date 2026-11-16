@@ -7,6 +7,7 @@ import { scansApi } from "../scansApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { applyAppearance, getThemePref, setThemePref, ThemePref } from "../theme";
+import Logo from "../components/Logo";
 import CommandPalette, { PaletteItem } from "../components/CommandPalette";
 
 // Two-key "go to" shortcuts, in the style of common admin tools: press g, then the letter.
@@ -98,7 +99,7 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
     <>
       <div className={`flex items-center ${rail ? "justify-center px-2" : "justify-between px-4"} py-4`}>
         <Link to="/" className="flex items-center gap-2.5" aria-label="Wearden">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-950">W</span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-950"><Logo className="h-[18px] w-auto" /></span>
           {!rail && <span className="text-base font-semibold tracking-tight text-slate-50">Wearden</span>}
         </Link>
         {!mobile && !rail && onToggle && (
