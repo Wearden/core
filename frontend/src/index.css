@@ -163,5 +163,8 @@ button:disabled { cursor: not-allowed; }
 ::selection { background: rgb(var(--slate-700)); color: rgb(var(--slate-50)); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
+/* One control height scale: 36px form controls, 32px table toolbar controls (h-8 on those). */
+select, input:not([type]), input:is([type="text"], [type="search"], [type="email"], [type="password"], [type="number"], [type="url"], [type="date"]) { height: 2.25rem; }
+
 /* Table density preference (Settings, Appearance). */
 :root[data-density="compact"] table :is(td, th) { padding-top: 0.3rem; padding-bottom: 0.3rem; }
