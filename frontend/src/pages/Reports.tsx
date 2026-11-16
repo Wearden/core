@@ -7,6 +7,7 @@ import { analyticsApi, download } from "../analyticsApi";
 import { hardeningApi } from "../hardeningApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { Chips, EmptyState, PageHeader } from "../components/ui";
 
 const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
@@ -19,13 +20,16 @@ function heatColor(v: number | null): string {
 
 export default function Reports() {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const canOperate = user?.role === "admin" || user?.role === "operator";
   const benches = useQuery({ queryKey: ["benchmarks"], queryFn: benchmarksApi.list });
   const scans = useQuery({ queryKey: ["scans"], queryFn: scansApi.list });
   const runs = useQuery({ queryKey: ["runs"], queryFn: hardeningApi.runs });
   const [bid, setBid] = useState("");
-  const benchmarkId = bid || benches.data?.[0]?.id || "";
+  const [tab, setTab] = useState<"export" | "heat" | "changes">("export");
+  // Default to a benchmark that actually has scan data instead of the first one alphabetically.
+  const withData = (scans.data ?? []).find((s) => s.status === "completed")?.benchmark_id;
+  const benchmarkId = bid || withData || benches.data?.[0]?.id || "";
   const heat = useQuery({ queryKey: ["heatmap", benchmarkId], queryFn: () => analyticsApi.heatmap(benchmarkId), enabled: !!benchmarkId });
 
   const [scanId, setScanId] = useState("");
@@ -50,23 +54,30 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{t("rep.title")}</h1>
-          <p className="text-sm text-slate-400">{t("rep.subtitle")}</p>
-        </div>
-        <label className="text-sm">
-          <span className="text-slate-400">{t("hard.benchmark")} </span>
-          <select className={field} value={benchmarkId} onChange={(e) => setBid(e.target.value)}>
-            {(benches.data ?? []).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-        </label>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title={t("rep.title")} subtitle={t("rep.subtitle")} />
+      <Chips
+        label="report section"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { id: "export", label: lang === "az" ? "Yoxlama hesabatları" : "Scan reports" },
+          { id: "heat", label: lang === "az" ? "Uyğunluq xəritəsi" : "Compliance heatmap" },
+          { id: "changes", label: lang === "az" ? "Əvvəl və sonra" : "Before and after" },
+        ]}
+      />
 
-      <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-5">
-        <h2 className="font-semibold">{t("rep.heatTitle")}</h2>
-        {heat.data && heat.data.rows.length === 0 && <p className="text-sm text-slate-400">{t("rep.noHeat")}</p>}
+      {tab === "heat" && <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold">{t("rep.heatTitle")}</h2>
+          <label className="text-sm">
+            <span className="text-slate-500">{t("hard.benchmark")} </span>
+            <select className={field} value={benchmarkId} onChange={(e) => setBid(e.target.value)}>
+              {(benches.data ?? []).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </label>
+        </div>
+        {heat.data && heat.data.rows.length === 0 && <EmptyState title={t("rep.noHeat")} hint={lang === "az" ? "Başqa benchmark seçin və ya əvvəlcə yoxlama işlədin." : "Pick another benchmark or run a scan first."} />}
         {heat.data && heat.data.rows.length > 0 && (
           <div className="overflow-x-auto">
             <table className="text-xs">
@@ -102,9 +113,9 @@ export default function Reports() {
             </table>
           </div>
         )}
-      </section>
+      </section>}
 
-      <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-5">
+      {tab === "changes" && <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-semibold">{t("rep.beforeAfter")}</h2>
           <select className={field} value={runId} onChange={(e) => setRunId(e.target.value)} aria-label="run">
@@ -143,9 +154,9 @@ export default function Reports() {
                       <div>{r.title}</div>
                       <div className="font-mono text-xs text-slate-500">{r.control_id} · {r.severity}</div>
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs text-slate-400">{r.expected}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-slate-300">{r.before ?? "-"}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-slate-100">{r.after ?? "-"}</td>
+                    <td className="max-w-[10rem] truncate px-3 py-2 font-mono text-xs text-slate-400" title={r.expected}>{r.expected}</td>
+                    <td className="max-w-[14rem] truncate px-3 py-2 font-mono text-xs text-slate-300" title={r.before ?? ""}>{r.before ?? "-"}</td>
+                    <td className="max-w-[14rem] truncate px-3 py-2 font-mono text-xs text-slate-100" title={r.after ?? ""}>{r.after ?? "-"}</td>
                     <td className="px-3 py-2 text-xs">{r.status.replace(/_/g, " ")}</td>
                   </tr>
                 ))}
@@ -158,9 +169,9 @@ export default function Reports() {
             {t("rep.exportCsv")}
           </button>
         )}
-      </section>
+      </section>}
 
-      <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-5">
+      {tab === "export" && <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
         <h2 className="font-semibold">{t("rep.scanReport")}</h2>
         <div className="flex flex-wrap items-center gap-3">
           <select className={field} value={activeScan} onChange={(e) => setScanId(e.target.value)} aria-label="scan">
@@ -174,7 +185,7 @@ export default function Reports() {
         </div>
         <p className="text-xs text-slate-500">{t("rep.pdfNote")}</p>
         {message && <p role="alert" className="text-sm text-red-300">{message}</p>}
-      </section>
+      </section>}
     </div>
   );
 }
