@@ -5,11 +5,10 @@
       "benchmark_id": "ubuntu-22.04-native",
       "ruleset_version": "native-linux-2204-1",
       "total_controls": 100,
-      "compiled_write_ids": 59,
+      "compiled_write_ids": 60,
       "remaining_by_kind": {
         "apt_https": 1,
         "audit_rules": 10,
-        "auditd_enabled": 1,
         "package_installed": 8,
         "sshd_config": 14,
         "ufw_runtime": 5,
@@ -81,12 +80,6 @@
           "id": "LNX-AUD-001",
           "kind": "package_installed",
           "target": "auditd",
-          "severity": "high"
-        },
-        {
-          "id": "LNX-AUD-002",
-          "kind": "auditd_enabled",
-          "target": "auditd.service",
           "severity": "high"
         },
         {
