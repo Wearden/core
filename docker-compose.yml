@@ -70,11 +70,23 @@ services:
     depends_on:
       - nginx
     restart: unless-stopped
+  # A new volume is owned by root, so guacd could not save recordings. Owner is guacd (uid 1000 in
+  # guacamole/guacd) and the setgid group is the backend's wearden group (gid 101, core/Dockerfile),
+  # so every recording guacd writes is readable by the backend.
+  recordings-init:
+    profiles: [sessions]
+    image: alpine:3.22
+    command: ["sh", "-c", "chown 1000:101 /data/recordings && chmod 2770 /data/recordings"]
+    volumes:
+      - recordings:/data/recordings
   guacd:
     profiles: [sessions]
     image: guacamole/guacd:1.5.5
     volumes:
       - recordings:/data/recordings
+    depends_on:
+      recordings-init:
+        condition: service_completed_successfully
     restart: unless-stopped
   guac-tunnel:
     profiles: [sessions]
