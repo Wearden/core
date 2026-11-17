@@ -1,4 +1,4 @@
-import { Fragment, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, tableWrap, theadCls } from "./ui";
 import { SkeletonRows } from "./feedback";
 import { useI18n } from "../i18n";
@@ -209,6 +209,13 @@ export default function DataTable<T>({
     selection.onChange(next);
   };
   const colSpan = visible.length + (selection ? 1 : 0);
+  const body = useRef<HTMLTableSectionElement>(null);
+  // Cells that render to nothing visible (an empty span, say) get a quiet dash through CSS.
+  useLayoutEffect(() => {
+    body.current?.querySelectorAll<HTMLTableCellElement>(":scope > tr > td").forEach((td) => {
+      td.toggleAttribute("data-empty", !td.textContent?.trim() && !td.querySelector("img,svg,input,button,select,a,canvas,[role]"));
+    });
+  });
 
   const from = sorted.length === 0 ? 0 : current * prefs.pageSize + 1;
   const to = Math.min(sorted.length, (current + 1) * prefs.pageSize);
@@ -283,7 +290,7 @@ export default function DataTable<T>({
                   })}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 tabular-nums">
+              <tbody ref={body} className="divide-y divide-slate-800/60 tabular-nums">
                 {slice.map((r) => {
                   const key = rowKey(r);
                   const click = onRowClick ? () => onRowClick(r) : expanded ? () => toggle(key) : undefined;
@@ -300,7 +307,7 @@ export default function DataTable<T>({
                         {selection && <td className="w-10 px-4 py-2.5 align-middle"><input type="checkbox" aria-label="Select row" checked={selection.selected.has(key)} onChange={() => toggleOne(key)} /></td>}
                         {visible.map((c) => {
                           const v = c.cell(r);
-                          return <td key={c.id} className={`px-4 py-2.5 align-middle text-slate-200 ${layout(c)} ${c.className ?? ""}`}>{blank(v) ? <span className="text-slate-600">-</span> : v}</td>;
+                          return <td key={c.id} className={`px-4 py-2.5 align-middle text-slate-200 ${layout(c)} ${c.className ?? ""}`}>{blank(v) ? <span className="text-slate-500">-</span> : v}</td>;
                         })}
                       </tr>
                       {expanded && isOpen && (
