@@ -16,6 +16,9 @@ interface Line { key: string; text: string; tone?: "ok" | "bad" | "warn"; info?:
 interface Call { key: string; name: string; arg: string; status: CallChipStatus; info: Detail }
 // CallChip colours matched to the app's dark palette.
 const CHIP = { surfaceColor: "#0f172a", color: "#e2e8f0", progressColor: "#22d3ee", doneColor: "#10b981", errorColor: "#ef4444" } as const;
+interface Stat { label: string; value: string | number; tone: "ok" | "bad" | "warn" | "plain" }
+const STAT_TONE = { ok: "text-emerald-300", bad: "text-red-300", warn: "text-amber-300", plain: "text-white" };
+const DOTS = { backgroundColor: "#050505", backgroundImage: "radial-gradient(rgba(255,255,255,.11) 1px, transparent 1px)", backgroundSize: "18px 18px" };
 interface Chip { key: string; label: string; ok: number; bad: number; warn: number; info: Detail }
 
 const NODE: Record<StepState, string> = {
@@ -43,7 +46,7 @@ function stateOf(i: number, current: number, end: "ok" | "fail" | "stop" | null)
 
 function Arrow({ flowing, color }: { flowing: boolean; color: string }) {
   return (
-    <svg viewBox="0 0 48 14" className="h-4 w-12 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 48 14" className="h-5 w-16 shrink-0" aria-hidden="true">
       <line x1="2" y1="7" x2="38" y2="7" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={flowing ? "4 4" : undefined} className={flowing ? "wf-flow" : undefined} />
       <polygon points="36,2 47,7 36,12" fill={color} />
     </svg>
@@ -77,7 +80,7 @@ function StepPopover({ detail, alignRight }: { detail: Detail; alignRight: boole
 }
 
 /** Large window: coloured boxes joined by arrows (the active one pulses, the arrow into it flows). Click anything for details. */
-function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle, headline, live, summary }: { title: string; steps: Step[]; current: number; end: "ok" | "fail" | "stop" | null; lines: Line[]; chips?: Chip[]; calls?: Call[]; callsTitle?: string; headline?: Call; live: boolean; summary: string }) {
+function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle, headline, stats, progress, live, summary }: { title: string; steps: Step[]; current: number; end: "ok" | "fail" | "stop" | null; lines: Line[]; chips?: Chip[]; calls?: Call[]; callsTitle?: string; headline?: Call; stats?: Stat[]; progress?: number; live: boolean; summary: string }) {
   const { lang } = useI18n();
   const az = lang === "az";
   const [open, setOpen] = useState(() => live && getPrefs().liveAutoOpen);
@@ -107,7 +110,27 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
               <button onClick={() => setOpen(false)} aria-label={az ? "Bağla" : "Close"} className="rounded border border-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-800">Esc</button>
             </div>
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-              <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
+              <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-8" style={DOTS}>
+                {stats && stats.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                      {stats.map((t) => (
+                        <div key={t.label} className="rounded-xl border border-slate-800 bg-black/70 px-4 py-3">
+                          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t.label}</div>
+                          <div className={`mt-1 text-3xl font-semibold tabular-nums ${STAT_TONE[t.tone]}`}>{t.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {progress !== undefined && (
+                      <div className="flex items-center gap-3">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+                          <div className={`h-full rounded-full transition-all duration-700 ${end === "fail" ? "bg-red-500" : end === "stop" ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${progress}%` }} />
+                        </div>
+                        <span className="w-10 text-right text-xs tabular-nums text-slate-400">{progress}%</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center">
                   {steps.map((s, i) => {
                     const st = stateOf(i, current, end);
@@ -116,12 +139,12 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
                       <div key={s.label} className="flex min-w-0 flex-1 items-center">
                         {i > 0 && <Arrow flowing={st === "active" && end === null} color={ARROW[st]} />}
                         <div className="relative min-w-0 flex-1">
-                        <button onClick={() => setSel(sel?.id === id ? null : { id, detail: s.info })} aria-pressed={sel?.id === id} className={`w-full rounded-xl border-2 px-4 py-3 text-left text-sm transition-colors duration-500 hover:brightness-125 ${NODE[st]} ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
+                        <button onClick={() => setSel(sel?.id === id ? null : { id, detail: s.info })} aria-pressed={sel?.id === id} className={`w-full rounded-2xl border-2 px-5 py-5 text-left text-base transition-colors duration-500 hover:brightness-125 ${NODE[st]} ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
                           <span className="flex items-center gap-2 font-medium">
                             {st === "active" ? <span className="wf-anim h-3.5 w-3.5 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" /> : <span>{st === "done" ? "✓" : st === "fail" ? "✕" : st === "stop" ? "■" : "○"}</span>}
                             {s.label}
                           </span>
-                          {s.detail && <span className="mt-1 block text-xs opacity-80">{s.detail}</span>}
+                          {s.detail && <span className="mt-1.5 block text-sm opacity-80">{s.detail}</span>}
                         </button>
                         {sel?.id === id && <StepPopover detail={s.info} alignRight={i >= steps.length - 2} />}
                         </div>
@@ -137,7 +160,7 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
                         const id = `call-${c.key}`;
                         return (
                           <span key={c.key} className="relative block"><button onClick={() => setSel(sel?.id === id ? null : { id, detail: c.info })} aria-pressed={sel?.id === id} className={`rounded-lg ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
-                            <CallChip {...CHIP} size={30} icon={headline?.name === "harden" ? "edit" : "search"} showTimer={false} expectedMs={1} name={c.name} argument={c.arg} status={c.status} />
+                            <CallChip {...CHIP} size={36} icon={headline?.name === "harden" ? "edit" : "search"} showTimer={false} expectedMs={1} name={c.name} argument={c.arg} status={c.status} />
                           </button>{sel?.id === id && <StepPopover detail={c.info} alignRight={false} />}</span>
                         );
                       })}
@@ -216,7 +239,13 @@ export function ScanFlow({ scan, feed }: { scan: ScanDetail; feed: LiveCheck[] }
     key: String(h.id), label: h.asset_name || h.host, ok: h.passed, bad: h.failed, warn: h.errored,
     info: { title: h.asset_name || h.host, rows: [["Host", h.host], ["OS", fmt(h.os_detected)], [L("Status", "Status"), h.status], [L("Passed", "Keçdi"), String(h.passed)], [L("Failed", "Uğursuz"), String(h.failed)], [L("Errors", "Xəta"), String(h.errored)], [L("Not applicable", "Aid deyil"), String(h.not_applicable)], [L("Score", "Skor"), h.score == null ? "-" : `${h.score}%`], [L("Recent checks", "Son yoxlamalar"), feed.filter((c) => c.hostName === (h.asset_name || h.host) || c.hostId === h.id).slice(-5).map((c) => `${c.controlId} ${c.status}`).join(", ")]] },
   }));
-  return <LiveFlow title={L("Live scan", "Canlı skan")} summary={`${scan.done_checks}/${scan.total_checks} · ${scan.status}`} steps={steps} current={cur} end={end} lines={lines} chips={chips} calls={calls} callsTitle={L("Live checks", "Canlı yoxlamalar")} headline={headline} live={scan.status === "queued" || running} />;
+  const stats: Stat[] = [
+    { label: L("Passed", "Keçdi"), value: sum("passed"), tone: "ok" },
+    { label: L("Failed", "Uğursuz"), value: sum("failed"), tone: sum("failed") ? "bad" : "plain" },
+    { label: L("Errors", "Xəta"), value: sum("errored"), tone: sum("errored") ? "warn" : "plain" },
+    { label: L("Checks done", "Yoxlama"), value: `${scan.done_checks}/${scan.total_checks}`, tone: "plain" },
+  ];
+  return <LiveFlow stats={stats} progress={pct} title={L("Live scan", "Canlı skan")} summary={`${scan.done_checks}/${scan.total_checks} · ${scan.status}`} steps={steps} current={cur} end={end} lines={lines} chips={chips} calls={calls} callsTitle={L("Live checks", "Canlı yoxlamalar")} headline={headline} live={scan.status === "queued" || running} />;
 }
 
 /** Hardening run: plan, queued, applying changes, finished (or rolled back). */
@@ -246,5 +275,12 @@ export function HardeningFlow({ run, log }: { run: RunSummary & { changes?: Chan
     info: { title: c.control_id, rows: [[L("Host", "Host"), c.host], [L("Severity", "Ciddilik"), c.severity], [L("Status", "Status"), c.status], [L("Before", "Əvvəl"), `${fmt(c.before_status)} ${fmt(c.before_value)}`], [L("After", "Sonra"), `${fmt(c.after_status)} ${fmt(c.after_value)}`], [L("Risky", "Riskli"), c.risky ? L("yes", "bəli") : L("no", "xeyr")], [L("Message", "Mesaj"), fmt(c.message)], [L("Output", "Çıxış"), fmt(c.remediation_output).slice(0, 300)]] },
   }));
   const headline: Call = { key: "harden", name: "harden", arg: run.name, status: run.status === "queued" ? "idle" : run.status === "running" ? "running" : end === "ok" ? "done" : "error", info: steps[0].info };
-  return <LiveFlow title={L("Live hardening", "Canlı sərtləşdirmə")} calls={calls} callsTitle={L("Changes", "Dəyişikliklər")} headline={headline} summary={`${done}/${run.total_changes} · ${run.status}`} steps={steps} current={cur} end={end} lines={lines} live={active} />;
+  const failedN = (run.changes ?? []).filter((c) => c.status === "failed" || c.status === "error").length;
+  const stats: Stat[] = [
+    { label: L("Applied", "Tətbiq olunub"), value: run.applied_count, tone: "ok" },
+    { label: L("Failed", "Uğursuz"), value: failedN, tone: failedN ? "bad" : "plain" },
+    { label: L("Remaining", "Qalır"), value: Math.max(0, run.total_changes - done), tone: run.total_changes - done > 0 ? "warn" : "plain" },
+    { label: L("Hosts", "Hostlar"), value: run.host_count, tone: "plain" },
+  ];
+  return <LiveFlow stats={stats} progress={run.total_changes ? Math.round((done / run.total_changes) * 100) : 0} title={L("Live hardening", "Canlı sərtləşdirmə")} calls={calls} callsTitle={L("Changes", "Dəyişikliklər")} headline={headline} summary={`${done}/${run.total_changes} · ${run.status}`} steps={steps} current={cur} end={end} lines={lines} live={active} />;
 }
