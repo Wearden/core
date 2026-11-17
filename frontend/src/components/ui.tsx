@@ -50,8 +50,8 @@ export function Chips<T extends string>({ options, value, onChange, label }: { o
 }
 
 /** Table shell: sticky header, hover rows, horizontal scroll on small screens. */
-export const tableWrap = "overflow-x-auto rounded-xl border border-slate-800 bg-slate-950";
-export const theadCls = "sticky top-0 bg-slate-900/80 text-xs uppercase tracking-wide text-slate-500";
+export const tableWrap = "overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 shadow-sm";
+export const theadCls = "sticky top-0 z-10 border-b border-slate-800 bg-slate-900 text-[11px] font-semibold uppercase tracking-wider text-slate-400";
 export const searchCls = "w-full max-w-sm rounded-md border border-slate-800 bg-slate-950 px-3 py-1.5 text-sm outline-none placeholder:text-slate-500 focus:border-slate-500";
 
 /** Long identifiers are shortened; the full value stays in the tooltip. */
