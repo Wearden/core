@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { assetsApi } from "../assetsApi";
 import { pamApi, PamTestResult } from "../pamApi";
-import { sessionsApi } from "../sessionsApi";
+import { openSession } from "../components/openSession";
 import type { SessionOpenResult } from "../sessionTypes";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
@@ -72,22 +72,8 @@ export default function PamAssets() {
   const connect = async (asset: Asset) => {
     setOpening(asset.id);
     try {
-      let fingerprint = "";
-      if (asset.os_type === "windows") {
-        const cert = await sessionsApi.rdpCertificate(asset.id);
-        if (!cert.trusted) {
-          const ok = await confirm({
-            title: cert.changed ? L("RDP certificate changed", "RDP sertifikatı dəyişib") : L("Confirm the RDP certificate", "RDP sertifikatını təsdiqləyin"),
-            message: `${cert.changed ? L("This host's certificate differs from the one confirmed earlier. Continue only if the host was reinstalled or its certificate renewed. ", "Bu hostun sertifikatı əvvəl təsdiqlənəndən fərqlidir. Yalnız host yenidən qurulubsa və ya sertifikat yenilənibsə davam edin. ") : ""}${L("Compare the fingerprint with the one on the host", "Barmaq izini hostdakı ilə müqayisə edin")}: ${cert.fingerprint} (${cert.subject})`,
-            confirmLabel: L("Trust and connect", "Etibar et və qoşul"),
-            cancelLabel: t("common.cancel"),
-            danger: cert.changed,
-          });
-          if (!ok) return;
-          fingerprint = cert.fingerprint;
-        }
-      }
-      setLive(await sessionsApi.open(asset.id, Math.max(640, window.innerWidth - 340), Math.max(480, window.innerHeight - 60), fingerprint));
+      const session = await openSession(asset, confirm, az, t("common.cancel"));
+      if (session) setLive(session);
     } catch (err) {
       toast(`${t("assets.sessionFail")}: ${(err as Error).message}`, "error");
     } finally {
