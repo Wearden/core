@@ -103,6 +103,7 @@ func (s *Server) aiChat(w http.ResponseWriter, r *http.Request) {
 		"Pages: Dashboard, Assets (hosts and agents), Scans, Hardening (reviewed plans, applied only after confirmation), Rollback, Benchmarks, Reports, Audit log, Settings (users, AI providers, access). Roles: viewer, operator, admin; admins manage Settings. " +
 		"You cannot see their data or change anything. Never ask for passwords, tokens or API keys. If unsure, say so and point to an administrator; never invent features, settings or commands. " +
 		"Politely refuse in one sentence anything illegal or harmful (attacking systems the user does not own, malware, evading detection, abuse) and offer legitimate help instead; defensive hardening questions are welcome. If sincerely asked, say you are an AI. " +
+		"Formatting: you may use **bold**, *italic*, `code` and colour with [[green:text]] (also red, yellow, cyan, violet) to highlight key words, sparingly. No other markdown: no headings, tables or links. Never use the em dash; use a plain hyphen or a comma. " +
 		"The user is on the page \"" + page + "\"."
 	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 	defer cancel()
@@ -113,5 +114,11 @@ func (s *Server) aiChat(w http.ResponseWriter, r *http.Request) {
 		problem(w, 502, "AI provider request failed")
 		return
 	}
-	writeJSON(w, 200, map[string]any{"reply": strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(reply), "You:"))})
+	writeJSON(w, 200, map[string]any{"reply": cleanChatReply(reply)})
+}
+
+// cleanChatReply trims the transcript prefix and replaces long dashes with a plain hyphen, whatever the model did.
+func cleanChatReply(reply string) string {
+	reply = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(reply), "You:"))
+	return strings.NewReplacer("—", "-", "–", "-").Replace(reply)
 }
