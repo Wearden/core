@@ -372,6 +372,47 @@ func (s *Server) featureRecordingMP4(w http.ResponseWriter, r *http.Request, id 
 	http.ServeContent(w, r, "session.mp4", info.ModTime(), video)
 }
 
+// featureDeleteSession removes an ended session: its recording folder first, then its entry.
+// A session that is still live must be ended first, so nothing deletes a recording being written.
+func (s *Server) featureDeleteSession(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if !featureSessionID.MatchString(id) {
+		problem(w, 404, "Session not found")
+		return
+	}
+	doc, err := s.Store.Get(r.Context(), "sessions", id)
+	if errors.Is(err, sql.ErrNoRows) {
+		problem(w, 404, "Session not found")
+		return
+	}
+	if err != nil {
+		s.databaseError(w, err)
+		return
+	}
+	if featureSessionLive(doc) {
+		problem(w, 409, "End the session before deleting its recording")
+		return
+	}
+	if s.Config.RecordingsDir != "" {
+		root, err := os.OpenRoot(s.Config.RecordingsDir)
+		if err == nil {
+			err = root.RemoveAll(id)
+			root.Close()
+		}
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			slog.Error("recording delete failed", "session", id, "error", err)
+			problem(w, 500, "Cannot delete the recording files")
+			return
+		}
+	}
+	if _, err := s.DB.ExecContext(r.Context(), "DELETE FROM documents WHERE collection='sessions' AND id=$1", id); err != nil {
+		s.databaseError(w, err)
+		return
+	}
+	s.audit(r, "session.delete", id, true, text(doc["asset_name"])+" "+text(doc["started_at"]))
+	w.WriteHeader(204)
+}
+
 // sessionControlRoutes is intentionally outside /api: only the bridge calls it with a shared key.
 func (s *Server) sessionControlRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /internal/guac/authorize", s.featureControlAuth(s.featureSessionAuthorize))

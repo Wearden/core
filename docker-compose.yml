@@ -40,7 +40,7 @@ services:
     volumes:
       - ${RULESET_PATH:-../ruleset}:/app/ruleset:ro
       - ${AGENT_DOWNLOADS_HOST_DIR:-./downloads}:/data/downloads:ro
-      - recordings:/data/recordings:ro
+      - recordings:/data/recordings
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,8 +78,8 @@ services:
       - nginx
     restart: unless-stopped
   # A new volume is owned by root, so guacd could not save recordings. Owner is guacd (uid 1000 in
-  # guacamole/guacd) and the setgid group is the backend's wearden group (gid 101, core/Dockerfile),
-  # so every recording guacd writes is readable by the backend.
+  # guacamole/guacd) and the setgid group is the backend's wearden group (gid 101, core/Dockerfile).
+  # The backend also runs as uid 1000, so it can read recordings and delete them when asked to.
   recordings-init:
     profiles: [sessions]
     image: alpine:3.22
