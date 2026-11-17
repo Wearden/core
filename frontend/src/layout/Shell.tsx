@@ -138,7 +138,7 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
       <div className={`flex items-center ${rail ? "justify-center px-2" : "justify-between px-4"} py-4`}>
         <Link to="/" className="flex items-center gap-2.5" aria-label="Wearden">
           <MetalMark size={34} />
-          {!rail && <span className="leading-tight"><MetalWord text="Wearden" /><span className="block text-[11px] text-slate-500">{az ? "Təhlükəsizlik sərtləşdirmə" : "Security hardening"}</span></span>}
+          {!rail && <span className="flex flex-col items-center leading-tight"><MetalWord text="Wearden" /><span className="block whitespace-nowrap text-[11px] text-slate-500">{az ? "Təhlükəsizlik sərtləşdirmə" : "Security hardening"}</span></span>}
         </Link>
         {!mobile && !rail && onToggle && (
           <button onClick={onToggle} aria-label={az ? "Paneli yığ" : "Collapse sidebar"} title={(az ? "Paneli yığ" : "Collapse sidebar") + "  ["} className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-900 hover:text-slate-100">
