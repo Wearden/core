@@ -196,3 +196,6 @@ select, input:not([type]), input:is([type="text"], [type="search"], [type="email
 
 /* Table cells with nothing to show (marked by DataTable) display a quiet dash instead of a gap. */
 td[data-empty]::after { content: "-"; color: rgb(var(--slate-500)); }
+
+/* Button groups in compact columns stay on one line instead of stacking when the table squeezes them. */
+td.whitespace-nowrap > .flex-wrap { flex-wrap: nowrap; }
