@@ -10,6 +10,7 @@ import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { applyAppearance, getMotion, getThemePref, Motion, setMotion, setThemePref, ThemePref } from "../theme";
 import Logo from "../components/Logo";
+import { MetalMark, MetalWord } from "../components/MetalBrand";
 import UserAvatar, { DisplayName, useProfile } from "../components/UserAvatar";
 import CommandPalette, { PaletteItem } from "../components/CommandPalette";
 import ChatWidget from "../components/ChatWidget";
@@ -136,8 +137,8 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
     <>
       <div className={`flex items-center ${rail ? "justify-center px-2" : "justify-between px-4"} py-4`}>
         <Link to="/" className="flex items-center gap-2.5" aria-label="Wearden">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-950"><Logo className="h-[18px] w-auto" /></span>
-          {!rail && <span className="leading-tight"><span className="block text-base font-semibold tracking-tight text-slate-50">Wearden</span><span className="block text-[11px] text-slate-500">{az ? "Təhlükəsizlik sərtləşdirmə" : "Security hardening"}</span></span>}
+          <MetalMark size={34} />
+          {!rail && <span className="leading-tight"><MetalWord text="Wearden" /><span className="block text-[11px] text-slate-500">{az ? "Təhlükəsizlik sərtləşdirmə" : "Security hardening"}</span></span>}
         </Link>
         {!mobile && !rail && onToggle && (
           <button onClick={onToggle} aria-label={az ? "Paneli yığ" : "Collapse sidebar"} title={(az ? "Paneli yığ" : "Collapse sidebar") + "  ["} className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-900 hover:text-slate-100">
