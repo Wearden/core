@@ -10,6 +10,7 @@ import { scansApi } from "../scansApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { Bars, ChartCard, HeatGrid, Legend, RadarScores, Ring, Spark, TrendArea, useChartColors } from "../components/charts";
+import { dateTime } from "../time";
 
 interface DriftRow {
   id: number;
@@ -30,7 +31,7 @@ function Kpi({ label, value, hint, spark, tone }: { label: string; value: string
 }
 
 const SEVERITIES = ["critical", "high", "medium", "low"];
-const short = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const short = (iso: string) => dateTime(iso, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -263,7 +264,7 @@ export default function Dashboard() {
                 {(drift.data ?? []).map((ev) => (
                   <li key={ev.id} className="rounded-md border border-slate-800 px-3 py-2">
                     <div className="text-slate-200">{ev.message}</div>
-                    <div className="text-xs text-slate-500">{new Date(ev.detected_at).toLocaleString()} · {ev.severity}</div>
+                    <div className="text-xs text-slate-500">{dateTime(ev.detected_at)} · {ev.severity}</div>
                   </li>
                 ))}
               </ul>
@@ -278,7 +279,7 @@ export default function Dashboard() {
               <ul className="divide-y divide-slate-800 text-sm">
                 {d.recent_activity.slice(0, 8).map((a, i) => (
                   <li key={i} className="flex flex-wrap items-center gap-3 py-2">
-                    <span className="w-40 text-xs text-slate-500">{new Date(a.at).toLocaleString()}</span>
+                    <span className="w-40 text-xs text-slate-500">{dateTime(a.at)}</span>
                     <span className="font-mono text-xs text-slate-300">{a.action}</span>
                     <span className="text-slate-400">{a.target ?? ""}</span>
                     {!a.success && <span className="text-red-300">{t("dash.failed")}</span>}

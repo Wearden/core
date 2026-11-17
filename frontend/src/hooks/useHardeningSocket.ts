@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getTokens } from "../api";
+import { timeOnly } from "../time";
 
 export interface LogLine {
   key: string;
@@ -38,7 +39,7 @@ export function useHardeningSocket(runId: string | undefined): { connected: bool
         else if (msg.type === "run") text = `run ${msg.status}`;
         else if (msg.type === "rollback") text = `rollback ${msg.control_id} on ${msg.asset_name}: ${msg.status}`;
         else text = `${msg.asset_name} ${msg.control_id}: ${msg.status}${msg.message ? ` (${msg.message})` : ""}`;
-        setLog((lines) => [...lines.slice(-299), { key: `${counter}`, text: `${new Date().toLocaleTimeString()}  ${text}` }]);
+        setLog((lines) => [...lines.slice(-299), { key: `${counter}`, text: `${timeOnly()}  ${text}` }]);
         queryClient.invalidateQueries({ queryKey: ["run", runId] });
       };
     };

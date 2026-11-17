@@ -3,6 +3,7 @@ import Guacamole from "guacamole-common-js";
 import { sessionsApi } from "../sessionsApi";
 import type { SessionOpenResult } from "../sessionTypes";
 import { useI18n } from "../i18n";
+import { timeOnly } from "../time";
 
 const STATES = ["idle", "connecting", "waiting", "connected", "disconnecting", "disconnected"] as const;
 
@@ -30,7 +31,7 @@ export default function RemoteSession({ session, onClose, sideContent }: Props) 
   const [log, setLog] = useState<LogLine[]>([]);
 
   const addLog = (text: string) =>
-    setLog((lines) => [...lines.slice(-199), { at: new Date().toLocaleTimeString(), text }]);
+    setLog((lines) => [...lines.slice(-199), { at: timeOnly(), text }]);
 
   useEffect(() => {
     const container = screenRef.current;
