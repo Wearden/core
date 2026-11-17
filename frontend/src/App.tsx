@@ -76,7 +76,8 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="/assets" element={<Assets />} />
             <Route path="/audit" element={<Audit />} />
-            <Route path="/sessions" element={<Sessions />} />
+            <Route path="/pam/sessions" element={<Sessions />} />
+            <Route path="/sessions" element={<Navigate to="/pam/sessions" replace />} />
             <Route path="/benchmarks" element={<Benchmarks />} />
             <Route path="/scans" element={<Scans />} />
             <Route path="/scans/:id" element={<ScanDetail />} />
