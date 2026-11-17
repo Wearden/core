@@ -50,7 +50,7 @@ const GROUPS = [
   },
   {
     // Agentless management over SSH or WinRM, kept apart from the agent pages above.
-    label: "PAM",
+    label: "Remote Control",
     items: [
       { to: "/pam/assets", key: "nav.pamAssets", hint: "" },
       { to: "/pam/scans", key: "nav.pamScans", hint: "" },
