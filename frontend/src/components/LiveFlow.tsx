@@ -85,6 +85,9 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
   const az = lang === "az";
   const [open, setOpen] = useState(() => live && getPrefs().liveAutoOpen);
   const [sel, setSel] = useState<{ id: string; detail: Detail } | null>(null);
+  // The event log can be folded away; the choice is remembered in this browser.
+  const [logOpen, setLogOpen] = useState(() => { try { return localStorage.getItem("wearden.liveflow.log") !== "closed"; } catch { return true; } });
+  const toggleLog = () => setLogOpen((o) => { try { localStorage.setItem("wearden.liveflow.log", o ? "closed" : "open"); } catch { /* convenience only */ } return !o; });
   useEffect(() => { if (live && getPrefs().liveAutoOpen) setOpen(true); }, [live]);
   useEffect(() => {
     if (!open) return;
@@ -93,6 +96,7 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  const problems = lines.filter((l) => l.tone === "bad" || l.tone === "warn");
   const dot = live ? "wf-anim wf-pulse bg-cyan-400" : end === "fail" ? "bg-red-500" : end === "stop" ? "bg-amber-500" : "bg-emerald-500";
   return (
     <>
@@ -190,14 +194,24 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
                 )}
               </div>
             </div>
-            <ul className="max-h-44 shrink-0 space-y-0.5 overflow-y-auto border-t border-slate-800 bg-black/40 px-5 py-3 font-mono text-xs" aria-live="off">
-              {lines.length === 0 && <li className="text-slate-600">{az ? "Hadisə gözlənilir…" : "Waiting for events…"}</li>}
-              {lines.map((l) => (
-                <li key={l.key} className="wf-line">
-                  <span className={`block w-full truncate text-left ${l.tone ? TONE[l.tone] : "text-slate-400"} `}>{l.text}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="shrink-0 border-t border-slate-800 bg-black/40">
+              <button onClick={toggleLog} aria-expanded={logOpen} className="flex w-full items-center justify-between px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-300">
+                <span>{az ? "Hadisələr" : "Events"} ({lines.length}) · <span className={problems.length ? "text-red-300" : "text-emerald-300"}>{az ? "Problemlər" : "Problems"} ({problems.length})</span></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${logOpen ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+              {logOpen && (
+                <div className="grid max-h-44 gap-x-6 px-5 pb-3 font-mono text-xs md:grid-cols-2" aria-live="off">
+                  <ul className="min-h-0 space-y-0.5 overflow-y-auto">
+                    {lines.length === 0 && <li className="text-slate-600">{az ? "Hadisə gözlənilir…" : "Waiting for events…"}</li>}
+                    {lines.map((l) => <li key={l.key} className="wf-line"><span className={`block w-full truncate ${l.tone ? TONE[l.tone] : "text-slate-400"}`}>{l.text}</span></li>)}
+                  </ul>
+                  <ul className="min-h-0 space-y-0.5 overflow-y-auto border-slate-800 md:border-l md:pl-6">
+                    {problems.length === 0 && <li className="text-emerald-300/70">{az ? "Problem yoxdur" : "No problems so far"}</li>}
+                    {problems.map((l) => <li key={l.key} className="wf-line"><span className={`block w-full truncate ${l.tone ? TONE[l.tone] : "text-slate-400"}`}>{l.text}</span></li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
