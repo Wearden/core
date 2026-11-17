@@ -8,7 +8,7 @@ import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { useFeedback } from "../components/feedback";
 import { getDensity, getMotion, getThemePref, setDensity, setMotion, setThemePref, Density, Motion, ThemePref } from "../theme";
-import { PageHeader } from "../components/ui";
+import { PageHeader, Segment } from "../components/ui";
 import { btn, btnPrimary, Card, errText, field } from "../components/settingsUi";
 import AiProviders from "./settings/AiProviders";
 import { Roles, Users } from "./settings/Access";
@@ -104,36 +104,19 @@ function Appearance() {
   const [theme, setTheme] = useState<ThemePref>(getThemePref);
   const [density, setDens] = useState<Density>(getDensity);
   const [motion, setMotionPref] = useState<Motion>(getMotion);
-  const choice = <T extends string>(value: T, current: T, label: string, on: (v: T) => void) => (
-    <button key={value} onClick={() => on(value)} aria-pressed={current === value} className={`rounded-md border px-4 py-2 text-sm ${current === value ? "border-slate-100 bg-slate-100 text-slate-950" : "border-slate-800 text-slate-300 hover:bg-slate-900"}`}>{label}</button>
-  );
   return (
     <>
       <Card title={az ? "Tema" : "Theme"} hint={az ? "Qara, ağ və ya sistem ayarı." : "Black, white or follow the system setting."}>
-        <div className="flex flex-wrap gap-2">
-          {choice<ThemePref>("dark", theme, az ? "Qara" : "Black", (v) => { setTheme(v); setThemePref(v); })}
-          {choice<ThemePref>("light", theme, az ? "Ağ" : "White", (v) => { setTheme(v); setThemePref(v); })}
-          {choice<ThemePref>("system", theme, az ? "Sistem" : "System", (v) => { setTheme(v); setThemePref(v); })}
-        </div>
+        <Segment label="theme" size="md" equal value={theme} onChange={(v) => { setTheme(v); setThemePref(v); }} options={[{ id: "dark", label: az ? "Qara" : "Black" }, { id: "light", label: az ? "Ağ" : "White" }, { id: "system", label: az ? "Sistem" : "System" }]} />
       </Card>
       <Card title={az ? "Cədvəl sıxlığı" : "Table density"} hint={az ? "Sıx rejim bir ekrana daha çox sətir sığdırır." : "Compact fits more rows on screen."}>
-        <div className="flex flex-wrap gap-2">
-          {choice<Density>("comfortable", density, az ? "Rahat" : "Comfortable", (v) => { setDens(v); setDensity(v); })}
-          {choice<Density>("compact", density, az ? "Sıx" : "Compact", (v) => { setDens(v); setDensity(v); })}
-        </div>
+        <Segment label="table density" size="md" equal value={density} onChange={(v) => { setDens(v); setDensity(v); }} options={[{ id: "comfortable", label: az ? "Rahat" : "Comfortable" }, { id: "compact", label: az ? "Sıx" : "Compact" }]} />
       </Card>
       <Card title={az ? "Animasiyalar" : "Animations"} hint={az ? "Sistem seçimi əməliyyat sisteminin 'hərəkəti azalt' ayarına tabe olur. Windows-da animasiyalar söndürülübsə, Açıq seçin." : "System follows the operating system reduce motion setting. If animations are switched off in Windows, choose On."}>
-        <div className="flex flex-wrap gap-2">
-          {choice<Motion>("on", motion, az ? "Açıq" : "On", (v) => { setMotionPref(v); setMotion(v); })}
-          {choice<Motion>("system", motion, az ? "Sistem" : "System", (v) => { setMotionPref(v); setMotion(v); })}
-          {choice<Motion>("off", motion, az ? "Bağlı" : "Off", (v) => { setMotionPref(v); setMotion(v); })}
-        </div>
+        <Segment label="animations" size="md" equal value={motion} onChange={(v) => { setMotionPref(v); setMotion(v); }} options={[{ id: "on", label: az ? "Açıq" : "On" }, { id: "system", label: az ? "Sistem" : "System" }, { id: "off", label: az ? "Bağlı" : "Off" }]} />
       </Card>
       <Card title={az ? "Dil" : "Language"}>
-        <div className="flex gap-2">
-          {choice<"en" | "az">("en", lang, "English", setLang)}
-          {choice<"en" | "az">("az", lang, "Azərbaycanca", setLang)}
-        </div>
+        <Segment label="language" size="md" equal value={lang} onChange={setLang} options={[{ id: "en", label: "English" }, { id: "az", label: "Azərbaycanca" }]} />
       </Card>
     </>
   );
