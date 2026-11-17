@@ -324,7 +324,11 @@ func (s *Server) featureAttack(w http.ResponseWriter, r *http.Request) {
 		if v, ok := featureNumber(after); ok && v >= 90 {
 			mitigatedAfter++
 		}
-		out = append(out, map[string]any{"id": technique, "name": technique, "controls": controls, "before": before, "after": after})
+		name := attackNames[technique]
+		if name == "" {
+			name = technique
+		}
+		out = append(out, map[string]any{"id": technique, "name": name, "controls": controls, "before": before, "after": after})
 	}
 	writeJSON(w, 200, map[string]any{"techniques": out, "total": len(out), "mitigated_before": mitigatedBefore, "mitigated_after": mitigatedAfter, "threshold": 90, "hosts_assessed": len(latest)})
 }
