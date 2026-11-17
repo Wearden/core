@@ -35,6 +35,25 @@ func (s *Server) aiRoutes(mux *http.ServeMux) {
 	}))
 	mux.HandleFunc("POST /api/ai/analyze", s.require("operator", s.aiAnalyze))
 	s.aiChatRoutes(mux)
+	// Compact list of stored analyses (newest first) for the scan list and the dashboard.
+	mux.HandleFunc("GET /api/ai/analyses", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
+		docs, err := s.Store.List(r.Context(), "ai_analyses")
+		if err != nil {
+			s.databaseError(w, err)
+			return
+		}
+		out := []map[string]any{}
+		for _, d := range docs {
+			counts := map[string]int{}
+			for _, x := range array(d["decisions"]) {
+				if m, ok := x.(map[string]any); ok {
+					counts[text(m["action"])]++
+				}
+			}
+			out = append(out, map[string]any{"scan_id": d["scan_id"], "benchmark_id": d["benchmark_id"], "provider": d["provider"], "model": d["model"], "summary": d["summary"], "created_at": d["created_at"], "counts": counts})
+		}
+		writeJSON(w, 200, out)
+	}))
 	mux.HandleFunc("GET /api/ai/analyses/{scan_id}", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
 		doc, err := s.Store.Get(r.Context(), "ai_analyses", r.PathValue("scan_id"))
 		if errors.Is(err, sql.ErrNoRows) {
