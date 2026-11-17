@@ -191,6 +191,7 @@ func (s *Server) Handler() http.Handler {
 	s.pamRoutes(m)
 	s.pamVaultRoutes(m)
 	s.aiRoutes(m)
+	s.profileRoutes(m)
 	s.userRoutes(m)
 	s.roleRoutes(m)
 	s.registrationRoutes(m)

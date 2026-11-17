@@ -88,3 +88,9 @@ ALTER TABLE users ADD CONSTRAINT users_role_format CHECK(role ~ '^[a-z0-9][a-z0-
 ALTER TABLE users ADD COLUMN IF NOT EXISTS pending boolean NOT NULL DEFAULT false;
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_ci ON users (lower(username));
 CREATE UNIQUE INDEX IF NOT EXISTS users_single_admin ON users (role) WHERE role = 'admin';
+
+-- Profile: display name, contact details and a small inline picture.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar text NOT NULL DEFAULT '';

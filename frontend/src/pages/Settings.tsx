@@ -1,7 +1,9 @@
-import { FormEvent, ReactNode, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../api";
+import { api, Profile as ProfileData } from "../api";
+import { setPref, usePrefs } from "../prefs";
+import UserAvatar, { useProfile } from "../components/UserAvatar";
 import { agentsApi } from "../agentsApi";
 import { SettingRow, settingsApi } from "../settingsApi";
 import { useAuth } from "../auth";
@@ -9,11 +11,11 @@ import { useI18n } from "../i18n";
 import { useFeedback } from "../components/feedback";
 import { getDensity, getMotion, getThemePref, setDensity, setMotion, setThemePref, Density, Motion, ThemePref } from "../theme";
 import { PageHeader, Segment } from "../components/ui";
-import { btn, btnPrimary, Card, errText, field } from "../components/settingsUi";
+import { btn, btnPrimary, Card, errText, field, Labeled } from "../components/settingsUi";
 import AiProviders from "./settings/AiProviders";
 import { Roles, Users } from "./settings/Access";
 
-type Section = "profile" | "appearance" | "ai" | "agents" | "users" | "roles" | "about";
+type Section = "profile" | "preferences" | "appearance" | "ai" | "agents" | "users" | "roles" | "about";
 
 /** One stored setting: current source, an input, save and remove. Secret values are never shown again. */
 function SettingField({ row, vaultReady, label, hint, type = "text", listId, extra }: { row: SettingRow | undefined; vaultReady: boolean; label: string; hint?: string; type?: string; listId?: string; extra?: ReactNode }) {
@@ -52,6 +54,117 @@ function SettingField({ row, vaultReady, label, hint, type = "text", listId, ext
   );
 }
 
+/** Shrinks a chosen image to a 256 px centred square and returns a data URL small enough for the profile. */
+async function squareImage(file: File): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 256;
+    canvas.getContext("2d")!.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+    const webp = canvas.toDataURL("image/webp", 0.85);
+    // Browsers without a WebP encoder return PNG here; JPEG keeps the size down instead.
+    return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function ProfileCard() {
+  const { user } = useAuth();
+  const { lang } = useI18n();
+  const az = lang === "az";
+  const qc = useQueryClient();
+  const { toast } = useFeedback();
+  const profile = useProfile();
+  const [form, setForm] = useState<ProfileData | null>(null);
+  useEffect(() => { if (profile.data && !form) setForm(profile.data); }, [profile.data, form]);
+  const save = useMutation({
+    mutationFn: (body: ProfileData) => api.updateProfile(body),
+    onSuccess: (p) => { qc.setQueryData(["profile"], p); setForm(p); toast(az ? "Profil yadda saxlanıldı." : "Profile saved.", "success"); },
+    onError: (e) => toast(errText(e), "error"),
+  });
+  const pick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !form) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return toast(az ? "PNG, JPEG və ya WebP şəkil seçin." : "Choose a PNG, JPEG or WebP image.", "error");
+    try {
+      setForm({ ...form, avatar: await squareImage(file) });
+    } catch {
+      toast(az ? "Şəkil oxuna bilmədi." : "The image could not be read.", "error");
+    }
+  };
+  if (profile.error) return <Card title={az ? "Profil" : "Profile"}><p className="text-sm text-red-300">{errText(profile.error)}</p></Card>;
+  if (!form) return <Card title={az ? "Profil" : "Profile"}><p className="text-sm text-slate-500">{az ? "Yüklənir..." : "Loading..."}</p></Card>;
+  const dirty = JSON.stringify(form) !== JSON.stringify(profile.data);
+  const set = (k: keyof ProfileData) => (e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
+  return (
+    <Card title={az ? "Profil" : "Profile"} hint={az ? "Adınız və şəkliniz menyuda və Wardy-nin salamında görünür." : "Your name and picture appear in the menu and in Wardy's greeting."}>
+      <div className="flex flex-col gap-6 sm:flex-row">
+        <div className="flex flex-col items-center gap-3">
+          <UserAvatar size={96} src={form.avatar} name={form.display_name || user?.username} />
+          <div className="flex gap-2">
+            <label className={`${btn} cursor-pointer`}>
+              {az ? "Şəkil yüklə" : "Upload"}
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={pick} />
+            </label>
+            {form.avatar && <button type="button" className={btn} onClick={() => setForm({ ...form, avatar: "" })}>{az ? "Sil" : "Remove"}</button>}
+          </div>
+          <p className="max-w-[12rem] text-center text-[11px] text-slate-500">{az ? "PNG, JPEG və ya WebP; 256×256-ya kiçildilir." : "PNG, JPEG or WebP; resized to 256×256."}</p>
+        </div>
+        <form className="grid flex-1 content-start gap-3" onSubmit={(e) => { e.preventDefault(); save.mutate(form); }}>
+          <Labeled label={az ? "Görünən ad" : "Display name"}>
+            <input className={`${field} h-9`} maxLength={60} value={form.display_name} placeholder={user?.username} onChange={set("display_name")} />
+          </Labeled>
+          <Labeled label={az ? "Vəzifə" : "Job title"}>
+            <input className={`${field} h-9`} maxLength={60} value={form.job_title} placeholder={az ? "məs. Təhlükəsizlik mühəndisi" : "e.g. Security engineer"} onChange={set("job_title")} />
+          </Labeled>
+          <Labeled label={az ? "E-poçt" : "Email"}>
+            <input className={`${field} h-9`} type="email" maxLength={120} value={form.email} placeholder="name@example.com" onChange={set("email")} />
+          </Labeled>
+          <dl className="grid gap-2 rounded-lg border border-slate-800 p-3 text-xs sm:grid-cols-3">
+            <div><dt className="text-slate-500">{az ? "İstifadəçi adı" : "Username"}</dt><dd className="mt-0.5 font-mono text-slate-200">{user?.username}</dd></div>
+            <div><dt className="text-slate-500">{az ? "Rol" : "Role"}</dt><dd className="mt-0.5 text-slate-200">{user?.role}</dd></div>
+            <div><dt className="text-slate-500">{az ? "İcazələr" : "Permissions"}</dt><dd className="mt-0.5 text-slate-200">{user?.permissions.length ?? 0}</dd></div>
+          </dl>
+          <div className="flex gap-2">
+            <button className={btnPrimary} disabled={!dirty || save.isPending}>{save.isPending ? "..." : az ? "Yadda saxla" : "Save changes"}</button>
+            {dirty && <button type="button" className={btn} onClick={() => setForm(profile.data ?? form)}>{az ? "Ləğv et" : "Discard"}</button>}
+          </div>
+        </form>
+      </div>
+    </Card>
+  );
+}
+
+function Preferences() {
+  const { lang, t } = useI18n();
+  const az = lang === "az";
+  const prefs = usePrefs();
+  const onOff = [{ id: "on", label: az ? "Açıq" : "On" }, { id: "off", label: az ? "Bağlı" : "Off" }];
+  return (
+    <>
+      <Card title={az ? "Saat formatı" : "Time format"} hint={az ? "Bütün tarix və saatlar Bakı vaxtı ilə göstərilir." : "Every date and time is shown in Baku time."}>
+        <Segment label="time format" size="md" equal value={prefs.hour12} onChange={(v) => setPref("hour12", v)} options={[{ id: "auto", label: az ? "Avtomatik" : "Automatic" }, { id: "24", label: "24h · 14:30" }, { id: "12", label: "12h · 2:30 PM" }]} />
+      </Card>
+      <Card title={az ? "Başlanğıc səhifə" : "Start page"} hint={az ? "Daxil olduqdan sonra açılan səhifə." : "The page that opens after you sign in."}>
+        <Segment label="start page" size="md" value={prefs.startPage} onChange={(v) => setPref("startPage", v)} options={[{ id: "/", label: t("nav.dashboard") }, { id: "/assets", label: t("nav.assets") }, { id: "/scans", label: t("nav.scans") }, { id: "/hardening", label: t("nav.hardening") }, { id: "/reports", label: t("nav.reports") }]} />
+      </Card>
+      <Card title={az ? "Dəstək köməkçisi (Wardy)" : "Support assistant (Wardy)"} hint={az ? "Sağ aşağıdakı dəstək düyməsi. AI provayderi qurulmayıbsa onsuz da görünmür." : "The support button at the bottom right. It stays hidden while no AI provider is set."}>
+        <Segment label="support assistant" size="md" equal value={prefs.assistant ? "on" : "off"} onChange={(v) => setPref("assistant", v === "on")} options={onOff} />
+      </Card>
+      <Card title={az ? "Canlı axın pəncərəsi" : "Live flow window"} hint={az ? "Skan və ya sərtləşdirmə işləyərkən pəncərə özü açılsın. Bağlı olanda səhifənin yuxarısındakı zolaqdan açırsınız." : "Open the window by itself while a scan or hardening run is in progress. When off, open it from the bar at the top of the page."}>
+        <Segment label="live flow auto open" size="md" equal value={prefs.liveAutoOpen ? "on" : "off"} onChange={(v) => setPref("liveAutoOpen", v === "on")} options={onOff} />
+      </Card>
+      <p className="text-xs text-slate-500">{az ? "Bu seçimlər bu brauzerdə saxlanılır." : "These preferences are kept in this browser."}</p>
+    </>
+  );
+}
+
 function Profile() {
   const { user } = useAuth();
   const { lang } = useI18n();
@@ -74,15 +187,7 @@ function Profile() {
   };
   return (
     <>
-      <Card title={az ? "Hesab" : "Account"}>
-        <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-xl font-semibold text-slate-950">{user?.username?.[0]?.toUpperCase() ?? "?"}</span>
-          <div>
-            <div className="text-base font-medium text-slate-50">{user?.username}</div>
-            <div className="mt-1 inline-flex rounded-full border border-slate-700 px-2 py-0.5 text-xs text-slate-300">{user?.role}</div>
-          </div>
-        </div>
-      </Card>
+      <ProfileCard />
       <Card title={az ? "Parolu dəyiş" : "Change password"} hint={az ? "Ən azı 12 simvol. Digər sessiyalar bağlanacaq." : "At least 12 characters. Your other sessions will be signed out."}>
         <form onSubmit={submit} className="grid max-w-md gap-3">
           <input className={field} type="password" autoComplete="current-password" placeholder={az ? "Cari parol" : "Current password"} value={cur} onChange={(e) => setCur(e.target.value)} />
@@ -174,6 +279,7 @@ export default function Settings() {
   const section = (params.get("section") as Section) || "profile";
   const allowed: Record<Section, boolean> = {
     profile: true,
+    preferences: true,
     appearance: true,
     ai: can("ai.manage"),
     agents: can("settings.manage"),
@@ -188,6 +294,7 @@ export default function Settings() {
 
   const nav: { id: Section; label: string; group: string }[] = [
     { id: "profile", label: az ? "Profil" : "Profile", group: az ? "Hesab" : "Account" },
+    { id: "preferences", label: az ? "Seçimlər" : "Preferences", group: az ? "Hesab" : "Account" },
     { id: "appearance", label: az ? "Görünüş" : "Appearance", group: az ? "Hesab" : "Account" },
     { id: "ai", label: az ? "AI provayderləri" : "AI providers", group: az ? "Platforma" : "Platform" },
     { id: "agents", label: az ? "Agentlər və loglar" : "Agents and logs", group: az ? "Platforma" : "Platform" },
@@ -219,6 +326,7 @@ export default function Settings() {
             <p className="rounded-md border border-slate-700 bg-slate-900 p-3 text-sm text-slate-300">{az ? "WEARDEN_VAULT_KEY server mühitində təyin edilməyib, ona görə dəyərləri yadda saxlamaq olmur." : "WEARDEN_VAULT_KEY is not set in the server environment, so values cannot be saved yet."}</p>
           )}
           {section === "profile" && <Profile />}
+          {section === "preferences" && <Preferences />}
           {section === "appearance" && <Appearance />}
           {section === "ai" && allowed.ai && <AiProviders />}
           {section === "agents" && allowed.agents && <AgentSettings rows={rows} vaultReady={vaultReady} />}
