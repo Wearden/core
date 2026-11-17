@@ -1,10 +1,14 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { api } from "../api";
 import { aiApi } from "../settingsApi";
+import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import Logo from "./Logo";
 
 interface Msg { role: "user" | "assistant"; content: string }
+type Tab = "home" | "chat" | "help";
 
 const COLOR: Record<string, string> = { red: "text-red-300", green: "text-emerald-300", yellow: "text-amber-300", cyan: "text-cyan-300", violet: "text-violet-300" };
 const TOKEN = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|\[\[(?:red|green|yellow|cyan|violet):[^\]\n]+\]\])/g;
@@ -46,20 +50,44 @@ function WardyAvatar({ size = 36, online = false }: { size?: number; online?: bo
   );
 }
 
-/** Floating support chat. Needs an AI provider (Settings, AI providers); hidden otherwise. History lives in memory only. */
+const ICON: Record<Tab, string> = {
+  home: "M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10",
+  chat: "M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z",
+  help: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01",
+};
+const Chevron = () => <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>;
+const card = "w-full rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-left transition hover:border-slate-600";
+
+// Hand-written answers: no tokens are spent until the user chooses to ask Wardy.
+const ARTICLES: { q: [string, string]; a: [string, string] }[] = [
+  { q: ["How do I enroll an agent?", "Agenti necə qeydiyyata salım?"], a: ["Open Assets, then Agents, then Enroll a new agent. Copy the one-line command and run it on the host. The token is single-use and scoped to one benchmark.", "Aktivlər, sonra Agentlər, sonra Yeni agent qeydiyyatı bölməsinə keçin. Bir sətirlik əmri kopyalayıb hostda işlədin. Token birdəfəlikdir və bir benchmark-a aiddir."] },
+  { q: ["How do I read a scan result?", "Skan nəticəsini necə oxuyum?"], a: ["Open Scans and pick a scan. Failed controls are the ones to fix; filter by severity or status, and press Explain on a control for a plain-language reason. Errors mean the agent could not check, they are not passes.", "Skanlar bölməsində skanı açın. Uğursuz nəzarətlər düzəldilməlidir; ciddilik və ya statusa görə süzün, izah üçün nəzarətdə İzah et düyməsini basın. Xəta o deməkdir ki, agent yoxlaya bilməyib, bu keçid deyil."] },
+  { q: ["How do I harden a host safely?", "Hostu necə təhlükəsiz sərtləşdirim?"], a: ["In Hardening, build a plan from a scan and review the risk and reboot notes before confirming. Agents only apply changes when started with remediation enabled. Every change can be undone from Rollback.", "Sərtləşdirmə bölməsində skandan plan qurun, təsdiqdən əvvəl risk və yenidən başlatma qeydlərinə baxın. Agentlər yalnız remediation aktiv olduqda dəyişiklik edir. Hər dəyişiklik Rollback bölməsindən geri qaytarıla bilər."] },
+  { q: ["How do I add an AI provider?", "AI provayderi necə əlavə edim?"], a: ["Settings, then AI providers, then Add provider. Pick a preset or Custom OpenAI compatible, enter the model and key, press Check connection, then Save. Choose below which AI handles scan analysis and which handles this chat.", "Parametrlər, sonra AI provayderləri, sonra Provayder əlavə et. Hazır növü və ya Custom OpenAI compatible seçin, model və açarı yazın, Bağlantını yoxla, sonra Saxla basın. Aşağıda skan analizi və bu çat üçün hansı AI-ın işləyəcəyini seçin."] },
+  { q: ["How do I watch a scan live?", "Skanı canlı necə izləyim?"], a: ["Open a running scan or hardening run. A Live flow bar sits at the top of the page and the window opens by itself while work is running; click any box, host or event line for details.", "İşləyən skanı və ya sərtləşdirməni açın. Səhifənin yuxarısında Canlı axın zolağı var və iş gedərkən pəncərə özü açılır; istənilən qutuya, hosta və ya hadisə sətrinə basaraq ətraflı məlumat görün."] },
+  { q: ["Who can approve new users?", "Yeni istifadəçiləri kim təsdiqləyir?"], a: ["The first account that registers becomes the administrator. Later registrations wait for the administrator's approval under Settings.", "İlk qeydiyyatdan keçən hesab administrator olur. Sonrakı qeydiyyatlar Parametrlərdə administratorun təsdiqini gözləyir."] },
+];
+
+/** Messenger-style support window: Home, Messages (chat with Wardy) and Help. Needs an AI provider; hidden otherwise. History lives in memory only. */
 export default function ChatWidget() {
   const { lang } = useI18n();
   const az = lang === "az";
+  const L = (en: string, a: string) => (az ? a : en);
+  const { user } = useAuth();
   const { pathname } = useLocation();
   const status = useQuery({ queryKey: ["ai-status"], queryFn: aiApi.status, staleTime: 60_000 });
+  const ready = useQuery({ queryKey: ["chat-ready"], queryFn: api.ready, refetchInterval: 30_000, enabled: status.data?.chat_enabled === true });
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("home");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
+  const [search, setSearch] = useState("");
+  const [openArticle, setOpenArticle] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, busy, open]);
+  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, busy, open, tab]);
 
   if (!status.data?.chat_enabled) return null;
 
@@ -67,6 +95,7 @@ export default function ChatWidget() {
     content = content.trim();
     if (!content || busy) return;
     const next: Msg[] = [...msgs, { role: "user", content }];
+    setTab("chat");
     setMsgs(next);
     setText("");
     setBusy(true);
@@ -75,72 +104,135 @@ export default function ChatWidget() {
       const { reply } = await aiApi.chat(next, lang, pathname);
       setMsgs([...next, { role: "assistant", content: reply }]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : az ? "Cavab alınmadı" : "Could not get a reply");
+      setError(err instanceof Error ? err.message : L("Could not get a reply", "Cavab alınmadı"));
     } finally {
       setBusy(false);
     }
   };
   const send = (e: FormEvent) => { e.preventDefault(); void ask(text); };
 
-  const suggestions = az
-    ? ["Agenti necə qeydiyyata salım?", "Skan nəticəsini necə oxuyum?", "AI provayderi necə əlavə edim?"]
-    : ["How do I enroll an agent?", "How do I read a scan result?", "How do I add an AI provider?"];
+  const healthy = ready.data?.status === "ok" && ready.data?.database === "ok";
+  const checking = ready.isLoading;
+  const statusTone = checking ? "bg-slate-700 text-slate-200" : healthy ? "bg-emerald-600 text-white" : "bg-amber-600 text-white";
+  const updated = ready.dataUpdatedAt ? new Date(ready.dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+  const articles = ARTICLES.map((a, i) => ({ ...a, i })).filter((a) => `${a.q[0]} ${a.q[1]}`.toLowerCase().includes(search.trim().toLowerCase()));
 
+  const home: ReactNode = (
+    <div className="flex-1 overflow-y-auto">
+      <div className="bg-gradient-to-b from-cyan-950/70 via-slate-900 to-slate-900 px-5 pb-6 pt-5">
+        <div className="flex items-center justify-between pr-6">
+          <span className="flex items-center gap-2 text-cyan-300"><Logo className="h-6 w-auto" /><span className="text-lg font-bold tracking-wide text-slate-50">WEARDEN</span></span>
+          <WardyAvatar size={36} online />
+        </div>
+        <div className="mt-10">
+          <p className="text-2xl font-bold text-slate-400">{L("Hi", "Salam")} {user?.username} <span aria-hidden="true">👋</span></p>
+          <p className="text-2xl font-bold text-slate-50">{L("How can we help?", "Sizə necə kömək edək?")}</p>
+        </div>
+      </div>
+      <div className="space-y-3 px-4 pb-4">
+        <button onClick={() => setTab("chat")} className={`${card} flex items-center justify-between gap-3`}>
+          <span><span className="block text-sm font-semibold text-slate-50">{L("Send us a message", "Bizə mesaj yazın")}</span><span className="block text-xs text-slate-400">{L("Wardy usually replies in seconds", "Wardy adətən saniyələr içində cavab verir")}</span></span>
+          <svg viewBox="0 0 24 24" className="h-5 w-5 text-cyan-300" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z" /></svg>
+        </button>
+        <div className={`${card} flex items-center gap-3`} role="status">
+          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${statusTone}`}>{checking ? "…" : healthy ? "✓" : "!"}</span>
+          <span>
+            <span className="block text-sm font-semibold text-slate-50">{checking ? L("Checking status…", "Status yoxlanır…") : healthy ? L("Status: all systems operational", "Status: bütün sistemlər işləyir") : L("Status: a service needs attention", "Status: bir xidmət diqqət tələb edir")}</span>
+            {updated && <span className="block text-xs text-slate-400">{L("Updated", "Yenilənib")} {updated}</span>}
+          </span>
+        </div>
+        <div className={card}>
+          <input value={search} onChange={(e) => { setSearch(e.target.value); setOpenArticle(null); }} placeholder={L("Search for help", "Yardım axtarın")} aria-label={L("Search for help", "Yardım axtarın")} className="mb-2 w-full rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:ring-1 focus:ring-cyan-600" />
+          {articles.slice(0, 4).map((a) => (
+            <button key={a.i} onClick={() => { setTab("help"); setSearch(""); setOpenArticle(a.i); }} className="flex w-full items-center justify-between gap-3 border-t border-slate-800 py-2.5 text-left text-sm text-slate-200 first:border-0 hover:text-white">{a.q[az ? 1 : 0]}<Chevron /></button>
+          ))}
+          {articles.length === 0 && <p className="py-2 text-xs text-slate-500">{L("Nothing found. Ask Wardy instead.", "Heç nə tapılmadı. Əvəzinə Wardy-dən soruşun.")}</p>}
+        </div>
+      </div>
+    </div>
+  );
+
+  const help: ReactNode = (
+    <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      <input value={search} onChange={(e) => { setSearch(e.target.value); setOpenArticle(null); }} placeholder={L("Search for help", "Yardım axtarın")} aria-label={L("Search for help", "Yardım axtarın")} className="w-full rounded-lg bg-slate-800 px-3 py-2 pr-8 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:ring-1 focus:ring-cyan-600" />
+      {articles.map((a) => (
+        <div key={a.i} className="rounded-xl border border-slate-800 bg-slate-950/70">
+          <button onClick={() => setOpenArticle(openArticle === a.i ? null : a.i)} aria-expanded={openArticle === a.i} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-slate-100">{a.q[az ? 1 : 0]}<Chevron /></button>
+          {openArticle === a.i && (
+            <div className="space-y-3 border-t border-slate-800 px-4 py-3 text-sm text-slate-300">
+              <p>{a.a[az ? 1 : 0]}</p>
+              <button onClick={() => void ask(a.q[az ? 1 : 0])} className="rounded-full border border-cyan-900 bg-cyan-950/30 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-900/40">{L("Ask Wardy about this", "Bu barədə Wardy-dən soruş")}</button>
+            </div>
+          )}
+        </div>
+      ))}
+      {articles.length === 0 && <p className="text-sm text-slate-500">{L("Nothing found. Ask Wardy instead.", "Heç nə tapılmadı. Əvəzinə Wardy-dən soruşun.")}</p>}
+    </div>
+  );
+
+  const chat: ReactNode = (
+    <>
+      <div className="flex items-center gap-3 border-b border-slate-800 bg-gradient-to-r from-cyan-950/70 to-slate-900 px-4 py-3 pr-8">
+        <WardyAvatar size={36} online />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-slate-50">Wardy</div>
+          <div className="truncate text-xs text-cyan-200/70">{L("Wearden support · AI assistant", "Wearden dəstək · AI köməkçi")}</div>
+        </div>
+        {msgs.length > 0 && <button onClick={() => { setMsgs([]); setError(null); }} className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800">{L("New chat", "Yeni söhbət")}</button>}
+      </div>
+      <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
+        <div className="flex items-end gap-2">
+          <WardyAvatar size={28} />
+          <p className="max-w-[80%] rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-2 text-slate-200">{L("Hi! I'm Wardy. Ask me anything about using Wearden.", "Salam! Mən Wardy. Wearden ilə bağlı nə lazımdırsa, soruş.")}</p>
+        </div>
+        {msgs.map((m, i) =>
+          m.role === "user" ? (
+            <p key={i} className="ml-auto max-w-[80%] whitespace-pre-line rounded-2xl rounded-br-sm bg-cyan-700 px-3 py-2 text-white">{m.content}</p>
+          ) : (
+            <div key={i} className="flex items-end gap-2">
+              <WardyAvatar size={28} />
+              <p className="max-w-[80%] whitespace-pre-line rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-2 text-slate-200"><Rich text={m.content} /></p>
+            </div>
+          ),
+        )}
+        {busy && (
+          <div className="flex items-end gap-2" aria-label={L("Wardy is typing", "Wardy yazır")}>
+            <WardyAvatar size={28} />
+            <span className="flex gap-1 rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-3">
+              {[0, 150, 300].map((d) => <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: `${d}ms` }} />)}
+            </span>
+          </div>
+        )}
+        {error && <p className="text-xs text-red-300">{error}</p>}
+        <div ref={end} />
+      </div>
+      <form onSubmit={send} className="flex gap-2 border-t border-slate-800 p-3">
+        <input value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder={L("Your message…", "Mesajınız…")} aria-label={L("Message", "Mesaj")} className="min-w-0 flex-1 rounded-full border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-slate-100 outline-none focus:border-cyan-600" />
+        <button disabled={busy || !text.trim()} aria-label={L("Send", "Göndər")} className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-700 text-white hover:bg-cyan-600 disabled:opacity-40">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" /></svg>
+        </button>
+      </form>
+    </>
+  );
+
+  const tabs: [Tab, string][] = [["home", L("Home", "Əsas")], ["chat", L("Messages", "Mesajlar")], ["help", L("Help", "Kömək")]];
   return (
     <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3">
       {open && (
-        <div role="dialog" aria-label={az ? "Dəstək söhbəti" : "Support chat"} className="flex h-[34rem] max-h-[75vh] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
-          <div className="flex items-center gap-3 border-b border-slate-800 bg-gradient-to-r from-cyan-950/70 to-slate-900 px-4 py-3">
-            <WardyAvatar size={40} online />
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-slate-50">Wardy</div>
-              <div className="truncate text-xs text-cyan-200/70">{az ? "Wearden dəstək · AI köməkçi" : "Wearden support · AI assistant"}</div>
-            </div>
-            {msgs.length > 0 && <button onClick={() => { setMsgs([]); setError(null); }} className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800">{az ? "Yeni söhbət" : "New chat"}</button>}
-            <button onClick={() => setOpen(false)} aria-label={az ? "Bağla" : "Close"} className="text-slate-500 hover:text-slate-200">x</button>
-          </div>
-          <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
-            <div className="flex items-end gap-2">
-              <WardyAvatar size={28} />
-              <p className="max-w-[80%] rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-2 text-slate-200">
-                {az ? "Salam! Mən Wardy. Wearden ilə bağlı nə lazımdırsa, soruş." : "Hi! I'm Wardy. Ask me anything about using Wearden."}
-              </p>
-            </div>
-            {msgs.length === 0 && (
-              <div className="flex flex-wrap gap-2 pl-9">
-                {suggestions.map((q) => <button key={q} onClick={() => void ask(q)} className="rounded-full border border-cyan-900 bg-cyan-950/30 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-900/40">{q}</button>)}
-              </div>
-            )}
-            {msgs.map((m, i) =>
-              m.role === "user" ? (
-                <p key={i} className="ml-auto max-w-[80%] whitespace-pre-line rounded-2xl rounded-br-sm bg-cyan-700 px-3 py-2 text-white">{m.content}</p>
-              ) : (
-                <div key={i} className="flex items-end gap-2">
-                  <WardyAvatar size={28} />
-                  <p className="max-w-[80%] whitespace-pre-line rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-2 text-slate-200"><Rich text={m.content} /></p>
-                </div>
-              ),
-            )}
-            {busy && (
-              <div className="flex items-end gap-2" aria-label={az ? "Wardy yazır" : "Wardy is typing"}>
-                <WardyAvatar size={28} />
-                <span className="flex gap-1 rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-3">
-                  {[0, 150, 300].map((d) => <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: `${d}ms` }} />)}
-                </span>
-              </div>
-            )}
-            {error && <p className="text-xs text-red-300">{error}</p>}
-            <div ref={end} />
-          </div>
-          <form onSubmit={send} className="flex gap-2 border-t border-slate-800 p-3">
-            <input value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder={az ? "Mesajınız…" : "Your message…"} aria-label={az ? "Mesaj" : "Message"} className="min-w-0 flex-1 rounded-full border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-slate-100 outline-none focus:border-cyan-600" />
-            <button disabled={busy || !text.trim()} aria-label={az ? "Göndər" : "Send"} className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-700 text-white hover:bg-cyan-600 disabled:opacity-40">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" /></svg>
-            </button>
-          </form>
+        <div role="dialog" aria-label={L("Support", "Dəstək")} className="relative flex h-[36rem] max-h-[80vh] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+          <button onClick={() => setOpen(false)} aria-label={L("Close", "Bağla")} className="absolute right-3 top-2 z-10 text-slate-500 hover:text-slate-200">x</button>
+          {tab === "home" ? home : tab === "chat" ? chat : help}
+          <nav className="flex border-t border-slate-800 bg-slate-900" aria-label={L("Support sections", "Dəstək bölmələri")}>
+            {tabs.map(([id, label]) => (
+              <button key={id} onClick={() => setTab(id)} aria-current={tab === id ? "page" : undefined} className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-xs ${tab === id ? "text-cyan-300" : "text-slate-400 hover:text-slate-200"}`}>
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON[id]} /></svg>
+                {label}
+              </button>
+            ))}
+          </nav>
         </div>
       )}
-      <button onClick={() => setOpen(!open)} aria-label={az ? "Dəstək söhbəti" : "Support chat"} aria-expanded={open} className="rounded-full shadow-lg ring-2 ring-cyan-500/40 transition hover:scale-105 hover:ring-cyan-400">
+      <button onClick={() => setOpen(!open)} aria-label={L("Support", "Dəstək")} aria-expanded={open} className="rounded-full shadow-lg ring-2 ring-cyan-500/40 transition hover:scale-105 hover:ring-cyan-400">
         <WardyAvatar size={56} online />
       </button>
     </div>
