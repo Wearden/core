@@ -213,7 +213,7 @@ export default function DataTable<T>({
   // Cells that render to nothing visible (an empty span, say) get a quiet dash through CSS.
   useLayoutEffect(() => {
     body.current?.querySelectorAll<HTMLTableCellElement>(":scope > tr > td").forEach((td) => {
-      td.toggleAttribute("data-empty", !td.textContent?.trim() && !td.querySelector("img,svg,input,button,select,a,canvas,[role]"));
+      td.toggleAttribute("data-empty", !td.textContent?.trim() && ![...td.querySelectorAll("*")].some((e) => e.getBoundingClientRect().width > 0 && e.getBoundingClientRect().height > 0));
     });
   });
 
