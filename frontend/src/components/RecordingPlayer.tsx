@@ -20,6 +20,8 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [full, setFull] = useState(false);
   const fitRef = useRef<() => void>(() => undefined);
+  // True until the viewer pauses: the library ignores play() while no frames are loaded and pauses by itself when playback outruns loading.
+  const wantPlay = useRef(true);
 
   // Real browser full screen. It is requested right after Play was clicked, which the browser still counts as the user's gesture.
   useEffect(() => {
@@ -45,7 +47,9 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
         const recording = new Guacamole.SessionRecording(new Guacamole.StaticHTTPTunnel(blobUrl));
         recordingRef.current = recording;
         screenRef.current.appendChild(recording.getDisplay().getElement());
-        recording.onprogress = (at: number, total: number) => setProgress({ at, total });
+        const tryPlay = () => { if (wantPlay.current && !recording.isPlaying()) recording.play(); };
+        recording.onprogress = (at: number, total: number) => { setProgress({ at, total }); tryPlay(); };
+        recording.onload = tryPlay;
         recording.onplay = () => setPlaying(true);
         recording.onpause = () => setPlaying(false);
         // Keep the picture fitted to the window, whatever the recorded screen size is.
@@ -59,7 +63,6 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
         window.addEventListener("resize", fit);
         fitRef.current = fit;
         recording.connect();
-        recording.play(); // start at once; frames play as they arrive
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : t("rec.loadFail"));
       }
@@ -78,8 +81,8 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
   const toggle = () => {
     const rec = recordingRef.current;
     if (!rec) return;
-    if (playing) rec.pause();
-    else rec.play();
+    if (playing) { wantPlay.current = false; rec.pause(); }
+    else { wantPlay.current = true; rec.play(); }
   };
 
   const seconds = (ms: number) => `${Math.floor(ms / 1000)} s`;
