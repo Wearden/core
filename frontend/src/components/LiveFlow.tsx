@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../i18n";
+import { getPrefs } from "../prefs";
 import type { ScanDetail } from "../scansApi";
 import type { LiveCheck } from "../hooks/useScanSocket";
 import type { LogLine } from "../hooks/useHardeningSocket";
@@ -68,9 +69,9 @@ function DetailPanel({ detail, hint }: { detail: Detail | null; hint: string }) 
 function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle, headline, live, summary }: { title: string; steps: Step[]; current: number; end: "ok" | "fail" | "stop" | null; lines: Line[]; chips?: Chip[]; calls?: Call[]; callsTitle?: string; headline?: Call; live: boolean; summary: string }) {
   const { lang } = useI18n();
   const az = lang === "az";
-  const [open, setOpen] = useState(live);
+  const [open, setOpen] = useState(() => live && getPrefs().liveAutoOpen);
   const [sel, setSel] = useState<{ id: string; detail: Detail } | null>(null);
-  useEffect(() => { if (live) setOpen(true); }, [live]);
+  useEffect(() => { if (live && getPrefs().liveAutoOpen) setOpen(true); }, [live]);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);

@@ -10,6 +10,7 @@ import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { applyAppearance, getMotion, getThemePref, Motion, setMotion, setThemePref, ThemePref } from "../theme";
 import Logo from "../components/Logo";
+import UserAvatar, { DisplayName } from "../components/UserAvatar";
 import CommandPalette, { PaletteItem } from "../components/CommandPalette";
 import ChatWidget from "../components/ChatWidget";
 import { dateTime } from "../time";
@@ -185,10 +186,10 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
         </div>
         <div className={`flex items-center ${rail ? "flex-col gap-2" : "gap-2.5"}`}>
           <Link to="/settings?section=profile" title={rail ? `${user?.username} (${user?.role})` : undefined} className={`flex min-w-0 items-center gap-2.5 rounded-md ${rail ? "" : "flex-1 p-1 hover:bg-slate-900"}`}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-950">{user?.username?.[0]?.toUpperCase() ?? "?"}</span>
+            <UserAvatar size={32} />
             {!rail && (
               <span className="min-w-0 leading-tight">
-                <span className="block truncate text-sm text-slate-100">{user?.username}</span>
+                <span className="block truncate text-sm text-slate-100"><DisplayName /></span>
                 <span className="block text-[11px] capitalize text-slate-500">{user?.role}</span>
               </span>
             )}
@@ -340,13 +341,13 @@ export default function Shell() {
 
             <div className="relative" ref={menuRef}>
               <button onClick={() => setMenu(!menu)} aria-label="Account menu" aria-expanded={menu} className="flex items-center gap-2 rounded-md border border-slate-800 py-1 pl-1 pr-2.5 text-sm text-slate-200 hover:bg-slate-900">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-950">{user?.username?.[0]?.toUpperCase() ?? "?"}</span>
-                <span className="hidden max-w-28 truncate sm:inline">{user?.username}</span>
+                <UserAvatar size={24} />
+                <span className="hidden max-w-28 truncate sm:inline"><DisplayName /></span>
               </button>
               {menu && (
                 <div className="absolute right-0 mt-2 w-[min(16rem,92vw)] overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
                   <div className="border-b border-slate-800 px-4 py-3">
-                    <div className="truncate text-sm font-medium text-slate-50">{user?.username}</div>
+                    <div className="truncate text-sm font-medium text-slate-50"><DisplayName /></div>
                     <div className="text-xs text-slate-500">{user?.role}</div>
                   </div>
                   <div className="p-1 text-sm">
