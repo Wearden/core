@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ControlResultRow, scansApi } from "../scansApi";
 import { useScanSocket } from "../hooks/useScanSocket";
+import { ScanFlow } from "../components/LiveFlow";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import StatusPill from "../components/StatusPill";
@@ -101,6 +102,7 @@ export default function ScanDetail() {
 
   return (
     <div className="space-y-6">
+      <ScanFlow scan={s} feed={feed} />
       <div>
         {s.mode === "pam" ? (
           <Link to="/pam/scans" className="text-sm text-slate-500 hover:text-slate-200">{t("scan.allPamScans")}</Link>
