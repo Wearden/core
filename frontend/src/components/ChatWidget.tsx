@@ -64,12 +64,6 @@ const ARTICLES: { q: [string, string]; a: [string, string] }[] = [
   { q: ["Who can approve new users?", "Yeni istifadəçiləri kim təsdiqləyir?"], a: ["The first account that registers becomes the administrator. Later registrations wait for the administrator's approval under Settings.", "İlk qeydiyyatdan keçən hesab administrator olur. Sonrakı qeydiyyatlar Parametrlərdə administratorun təsdiqini gözləyir."] },
 ];
 
-// Thin overlay scrollbar: narrow, rounded and quiet until hovered.
-const SCROLL_CSS = `.wd-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
-.wd-scroll::-webkit-scrollbar{width:6px}.wd-scroll::-webkit-scrollbar-track{background:transparent}
-.wd-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:9999px}
-.wd-scroll::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.32)}`;
-
 // Launcher motion: a static dashed outline, a gentle float, a drifting orb and a pop-in greeting. All of it stops for reduced-motion users.
 const FX_CSS = `@keyframes wd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes wd-morph-a{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%;transform:translate(-10%,-8%) rotate(0deg)}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%;transform:translate(10%,8%) rotate(200deg)}}
@@ -149,7 +143,7 @@ export default function ChatWidget() {
   const articles = ARTICLES.map((a, i) => ({ ...a, i })).filter((a) => `${a.q[0]} ${a.q[1]}`.toLowerCase().includes(search.trim().toLowerCase()));
 
   const home: ReactNode = (
-    <div className="flex-1 overflow-y-auto wd-scroll">
+    <div className="flex-1 overflow-y-auto">
       <div className="bg-gradient-to-b from-cyan-950/70 via-slate-900 to-slate-900 px-5 pb-6 pt-5">
         <div className="flex items-center justify-between pr-11">
           <span className="flex items-center gap-2 text-cyan-300"><Logo className="h-6 w-auto" /><span className="text-lg font-bold tracking-wide text-slate-50">WEARDEN</span></span>
@@ -184,7 +178,7 @@ export default function ChatWidget() {
   );
 
   const help: ReactNode = (
-    <div className="flex-1 space-y-3 overflow-y-auto wd-scroll p-4">
+    <div className="flex-1 space-y-3 overflow-y-auto p-4">
       <input value={search} onChange={(e) => { setSearch(e.target.value); setOpenArticle(null); }} placeholder={L("Search for help", "Yardım axtarın")} aria-label={L("Search for help", "Yardım axtarın")} className="w-full rounded-lg bg-slate-800 px-3 py-2 pr-8 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:ring-1 focus:ring-cyan-600" />
       {articles.map((a) => (
         <div key={a.i} className="rounded-xl border border-slate-800 bg-slate-950/70">
@@ -211,7 +205,7 @@ export default function ChatWidget() {
         </div>
         {msgs.length > 0 && <button onClick={() => { setMsgs([]); setError(null); }} className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800">{L("New chat", "Yeni söhbət")}</button>}
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto wd-scroll p-4 text-sm" aria-live="polite">
+      <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
         <div className="flex items-end gap-2">
           <WardyAvatar size={28} />
           <p className="max-w-[80%] rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-2 text-slate-200">{L("Hi! I'm Wardy. Ask me anything about using Wearden.", "Salam! Mən Wardy. Wearden ilə bağlı nə lazımdırsa, soruş.")}</p>
@@ -252,7 +246,6 @@ export default function ChatWidget() {
       <style>{FX_CSS}</style>
       {open && (
         <div role="dialog" aria-label={L("Support", "Dəstək")} className="relative flex h-[36rem] max-h-[80vh] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
-          <style>{SCROLL_CSS}</style>
           <button onClick={() => setOpen(false)} aria-label={L("Close", "Bağla")} className="absolute right-4 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-slate-300 backdrop-blur transition hover:bg-black/80 hover:text-white">
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
