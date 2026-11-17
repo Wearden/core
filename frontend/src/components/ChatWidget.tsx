@@ -21,7 +21,7 @@ export default function ChatWidget() {
 
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, busy, open]);
 
-  if (!status.data?.enabled) return null;
+  if (!status.data?.chat_enabled) return null;
 
   const send = async (e: FormEvent) => {
     e.preventDefault();
