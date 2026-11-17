@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { getPrefs } from "../prefs";
 import type { ScanDetail } from "../scansApi";
@@ -85,6 +85,18 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
   const az = lang === "az";
   const [open, setOpen] = useState(() => live && getPrefs().liveAutoOpen);
   const [sel, setSel] = useState<{ id: string; detail: Detail } | null>(null);
+  // Zoom for the dotted working area: buttons, or Ctrl + mouse wheel.
+  const [zoom, setZoom] = useState(1);
+  const zoomBy = (d: number) => setZoom((z) => Math.min(1.6, Math.max(0.6, Math.round((z + d) * 10) / 10)));
+  const area = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    // A native listener, because React's wheel handler is passive and cannot stop the browser's own page zoom.
+    const wheel = (e: WheelEvent) => { if (e.ctrlKey) { e.preventDefault(); zoomBy(e.deltaY < 0 ? 0.1 : -0.1); } };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  }, [open]);
   // The event log can be folded away; the choice is remembered in this browser.
   const [logOpen, setLogOpen] = useState(() => { try { return localStorage.getItem("wearden.liveflow.log") !== "closed"; } catch { return true; } });
   const toggleLog = () => setLogOpen((o) => { try { localStorage.setItem("wearden.liveflow.log", o ? "closed" : "open"); } catch { /* convenience only */ } return !o; });
@@ -114,7 +126,15 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
               <button onClick={() => setOpen(false)} aria-label={az ? "Bağla" : "Close"} className="rounded border border-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-800">Esc</button>
             </div>
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-              <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-8" style={DOTS}>
+              <div ref={area} className="relative min-h-0 flex-1 overflow-auto" style={{ ...DOTS, backgroundSize: `${18 * zoom}px ${18 * zoom}px` }}>
+                <div className="pointer-events-none sticky top-0 z-30 flex justify-end p-3 pb-0">
+                  <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-slate-700 bg-black/80 p-1 text-xs text-slate-200 backdrop-blur">
+                    <button onClick={() => zoomBy(-0.1)} disabled={zoom <= 0.6} aria-label={az ? "Kiçilt" : "Zoom out"} className="h-7 w-7 rounded-md hover:bg-slate-800 disabled:opacity-40">−</button>
+                    <button onClick={() => setZoom(1)} title={az ? "Sıfırla (Ctrl + təkər ilə də olar)" : "Reset (Ctrl + mouse wheel also zooms)"} className="h-7 min-w-[3.25rem] rounded-md px-1 tabular-nums hover:bg-slate-800">{Math.round(zoom * 100)}%</button>
+                    <button onClick={() => zoomBy(0.1)} disabled={zoom >= 1.6} aria-label={az ? "Böyüt" : "Zoom in"} className="h-7 w-7 rounded-md hover:bg-slate-800 disabled:opacity-40">+</button>
+                  </div>
+                </div>
+                <div className="space-y-8 px-8 pb-8" style={{ zoom }}>
                 {stats && stats.length > 0 && (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -192,6 +212,7 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             </div>
             <div className="shrink-0 border-t border-slate-800 bg-black/40">
