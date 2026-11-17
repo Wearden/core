@@ -9,6 +9,8 @@ import { useI18n } from "../i18n";
 import StatusPill from "../components/StatusPill";
 import CopilotPanel from "../components/CopilotPanel";
 import AiAnalysisPanel from "../components/AiAnalysisPanel";
+import AiBadge from "../components/AiBadge";
+import { aiApi } from "../settingsApi";
 import ControlInfo from "../components/ControlInfo";
 import DataTable, { Column } from "../components/DataTable";
 import HostIcon from "../components/HostIcon";
@@ -37,6 +39,9 @@ export default function ScanDetail() {
   const { connected, feed } = useScanSocket(id);
 
   const scan = useQuery({ queryKey: ["scan", id], queryFn: () => scansApi.get(id!), enabled: !!id, refetchInterval: 10_000 });
+  // Shares its cache with the analysis panel, so a new analysis shows up in the rows at once.
+  const ai = useQuery({ queryKey: ["ai-analysis", id], queryFn: () => aiApi.stored(id!), enabled: !!id, retry: false });
+  const aiByControl = new Map((ai.data?.decisions ?? []).map((d) => [d.control_id, d]));
   const [hostFilter, setHostFilter] = useState<number | "">("");
   const [status, setStatus] = useState<StatusFilter>("fail");
   const [severity, setSeverity] = useState("");
@@ -91,7 +96,7 @@ export default function ScanDetail() {
   const columns: Column<ControlResultRow>[] = [
     { id: "host", header: t("col.host"), sort: (a, b) => a.asset_name.localeCompare(b.asset_name), csv: (r) => r.asset_name, cell: (r) => <span className="text-xs text-slate-300">{r.asset_name}</span>, defaultHidden: s.hosts.length < 2 },
     { id: "control", wide: true, header: t("col.control"), locked: true, sort: (a, b) => a.title.localeCompare(b.title), csv: (r) => `${r.control_id} ${r.title}`,
-      cell: (r) => (<><div className="text-slate-100">{r.title}</div><div className="text-xs text-slate-500"><span className="font-mono">{r.control_id}</span>{r.category && <span> · {r.category}</span>}</div></>) },
+      cell: (r) => (<><div className="text-slate-100">{r.title}</div><div className="text-xs text-slate-500"><span className="font-mono">{r.control_id}</span>{r.category && <span> · {r.category}</span>}</div>{aiByControl.has(r.control_id) && <div className="mt-1"><AiBadge label={`AI: ${t(`ai.action.${aiByControl.get(r.control_id)!.action}`)}`} title={aiByControl.get(r.control_id)!.reason} /></div>}</>) },
     { id: "severity", header: t("col.severity"), sort: (a, b) => (SEVERITY_ORDER[a.severity] ?? 0) - (SEVERITY_ORDER[b.severity] ?? 0), csv: (r) => r.severity,
       cell: (r) => <span className="inline-flex items-center gap-1.5 text-xs text-slate-200"><span aria-hidden className={`h-1.5 w-1.5 rounded-full ${SEVERITY_DOT[r.severity] ?? "bg-slate-500"}`} />{r.severity}</span> },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (r) => r.status, cell: (r) => <StatusPill status={r.status} /> },

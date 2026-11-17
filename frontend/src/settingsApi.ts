@@ -24,6 +24,7 @@ export interface AiAnalysis {
   scan_id: string;
   benchmark_id: string;
   model: string;
+  provider?: string;
   summary: string;
   decisions: AiDecision[];
   created_by: string;
@@ -36,7 +37,19 @@ export const settingsApi = {
   clear: (key: string) => request<unknown>(`/settings/${key}`, { method: "DELETE" }),
 };
 
+/** One stored analysis in brief, with how many controls the AI put in each decision. */
+export interface AiAnalysisBrief {
+  scan_id: string;
+  benchmark_id: string;
+  provider: string;
+  model: string;
+  summary: string;
+  created_at: string;
+  counts: Partial<Record<"remediate" | "review" | "accept", number>>;
+}
+
 export const aiApi = {
+  list: () => request<AiAnalysisBrief[]>("/ai/analyses"),
   status: () => request<{ enabled: boolean; chat_enabled?: boolean }>("/ai/status"),
   stored: (scanId: string) => request<AiAnalysis>(`/ai/analyses/${scanId}`),
   chat: (messages: { role: string; content: string }[], language: string, page: string) => request<{ reply: string }>("/ai/chat", { method: "POST", body: JSON.stringify({ messages, language, page }) }),

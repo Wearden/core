@@ -6,6 +6,8 @@ import NewScanModal from "../components/NewScanModal";
 import StatusPill from "../components/StatusPill";
 import DataTable, { Column } from "../components/DataTable";
 import { Chips, PageHeader, searchCls } from "../components/ui";
+import AiBadge from "../components/AiBadge";
+import { aiApi } from "../settingsApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { dateTime, isoTime } from "../time";
@@ -53,6 +55,8 @@ export default function Scans() {
     });
   }, [data, filter, q]);
 
+  const aiList = useQuery({ queryKey: ["ai-analyses"], queryFn: aiApi.list, staleTime: 60_000 });
+  const aiByScan = new Map((aiList.data ?? []).map((a) => [a.scan_id, a]));
   const columns: Column<ScanSummary>[] = [
     { id: "name", header: t("col.scan"), locked: true, sort: (a, b) => a.name.localeCompare(b.name), csv: (s) => s.name,
       cell: (s) => (<><Link to={`/scans/${s.id}`} className="font-medium text-slate-50 hover:underline">{s.name}</Link><div className="text-xs text-slate-500">{s.created_by}</div></>) },
@@ -60,6 +64,7 @@ export default function Scans() {
     { id: "benchmark", header: "Benchmark", defaultHidden: true, sort: (a, b) => a.benchmark_id.localeCompare(b.benchmark_id), csv: (s) => s.benchmark_id, cell: (s) => <span className="font-mono text-xs text-slate-400">{s.benchmark_id}</span> },
     { id: "hosts", header: t("col.hosts"), sort: (a, b) => a.host_count - b.host_count, csv: (s) => s.host_count, cell: (s) => s.host_count },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (s) => s.status, cell: (s) => <StatusPill status={s.status} /> },
+    { id: "ai", header: "AI", cell: (s) => { const a = aiByScan.get(s.id); return a ? <AiBadge label={`${a.counts.remediate ?? 0} ${L("to fix", "düzəlt")} · ${a.counts.review ?? 0} ${L("to review", "yoxla")}`} title={a.summary} /> : null; } },
     { id: "progress", header: t("col.progress"), sort: (a, b) => a.done_checks / Math.max(1, a.total_checks) - b.done_checks / Math.max(1, b.total_checks), csv: (s) => `${s.done_checks}/${s.total_checks}`, cell: (s) => <Progress s={s} /> },
     { id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? "").localeCompare(b.started_at ?? ""), csv: (s) => isoTime(s.started_at), cell: (s) => <span className="whitespace-nowrap text-xs text-slate-400">{s.started_at ? dateTime(s.started_at) : "-"}</span> },
     { id: "duration", header: L("Duration", "Müddət"), defaultHidden: true, csv: (s) => (s.started_at && s.finished_at ? Math.round((new Date(s.finished_at).getTime() - new Date(s.started_at).getTime()) / 1000) : ""),
