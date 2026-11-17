@@ -199,3 +199,8 @@ td[data-empty]::after { content: "-"; color: rgb(var(--slate-500)); }
 
 /* Button groups in compact columns stay on one line instead of stacking when the table squeezes them. */
 td.whitespace-nowrap > .flex-wrap { flex-wrap: nowrap; }
+
+/* A light sweep across a progress bar while work is running. */
+@keyframes wd-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.wd-shine { background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); background-size: 50% 100%; background-repeat: no-repeat; animation: wd-shine 1.6s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .wd-shine { animation: none; } }
