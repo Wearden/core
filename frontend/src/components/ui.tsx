@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import RubberSegment from "./RubberSegment";
 
 /** Shared layout pieces so every page has the same rhythm: title, one primary action, filters, content. */
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
@@ -24,24 +25,27 @@ export function EmptyState({ title, hint, action }: { title: string; hint?: stri
   );
 }
 
+// RubberSegment colours come from the theme palette, so the black and the white themes both work.
+const SEG_COLORS = { trackColor: "rgb(var(--slate-900))", thumbColor: "rgb(var(--slate-100))", textColor: "rgb(var(--slate-400))", activeTextColor: "rgb(var(--slate-950))" };
+
+/** Segmented control (React Bits RubberSegment): one choice at a time; the thumb stretches across and squashes into place. */
+export function Segment<T extends string>({ options, value, onChange, label, size = "sm", equal = false }: { options: { id: T; label: ReactNode }[]; value: T; onChange: (v: T) => void; label: string; size?: "sm" | "md" | "lg"; equal?: boolean }) {
+  return (
+    <div className="max-w-full overflow-x-auto">
+      <RubberSegment {...SEG_COLORS} items={options.map((o) => ({ value: o.id, label: o.label }))} value={value} onChange={(v) => onChange(v as T)} aria-label={label} size={size} equalSlots={equal} />
+    </div>
+  );
+}
+
 /** Quick filters above a table: instant, one click, one selected at a time. */
 export function Chips<T extends string>({ options, value, onChange, label }: { options: { id: T; label: string; count?: number }[]; value: T; onChange: (v: T) => void; label: string }) {
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.id}
-          onClick={() => onChange(o.id)}
-          aria-pressed={value === o.id}
-          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-            value === o.id ? "border-slate-100 bg-slate-100 text-slate-950" : "border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-100"
-          }`}
-        >
-          {o.label}
-          {o.count !== undefined && <span className={`ml-1.5 ${value === o.id ? "text-slate-600" : "text-slate-400"}`}>{o.count}</span>}
-        </button>
-      ))}
-    </div>
+    <Segment
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options.map((o) => ({ id: o.id, label: o.count === undefined ? o.label : <>{o.label}<span className="ml-1.5 opacity-60">{o.count}</span></> }))}
+    />
   );
 }
 
