@@ -319,6 +319,13 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 				}
 			}
 		}
+		chat := ""
+		if doc, err := s.Store.Get(r.Context(), aiMetaCollection, aiChatMeta); err == nil {
+			chat = text(doc["provider_id"])
+		}
+		for _, row := range out {
+			row["chat"] = chat != "" && row["id"] == chat
+		}
 		writeJSON(w, 200, map[string]any{"vault_ready": s.Config.VaultKey != "", "providers": out})
 	}))
 	type input struct {
@@ -368,6 +375,36 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 		sealed, err := security.Seal(s.Config.VaultKey, []byte(key))
 		return base64.StdEncoding.EncodeToString(sealed), err
 	}
+	// Check tests the form values before anything is saved. When editing, an empty key reuses the stored one.
+	mux.HandleFunc("POST /api/ai/providers/check", manage(func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			input
+			ID string `json:"id"`
+		}
+		if !decode(w, r, &in) || !validate(w, &in.input) {
+			return
+		}
+		p := aiProvider{Name: in.Name, Kind: in.Kind, BaseURL: in.BaseURL, Model: in.Model, Key: in.APIKey, Enabled: true}
+		if p.Key == "" && in.ID != "" {
+			if doc, err := s.Store.Get(r.Context(), aiProvidersCollection, in.ID); err == nil {
+				p.Key = s.openKey(doc)
+			}
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+		defer cancel()
+		started := time.Now()
+		if err := s.aiPing(ctx, p); err != nil {
+			writeJSON(w, 200, map[string]any{"ok": false, "message": "Connection failed: " + err.Error()})
+			return
+		}
+		latency := time.Since(started).Milliseconds()
+		models, _ := s.aiModelList(ctx, p)
+		listed := false
+		for _, m := range models {
+			listed = listed || m["id"] == p.Model
+		}
+		writeJSON(w, 200, map[string]any{"ok": true, "message": "The provider answered.", "latency_ms": latency, "models": models, "model_listed": listed})
+	}))
 	mux.HandleFunc("POST /api/ai/providers", manage(func(w http.ResponseWriter, r *http.Request) {
 		var in input
 		if !decode(w, r, &in) || !validate(w, &in) {

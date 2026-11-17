@@ -37,7 +37,7 @@ export const settingsApi = {
 };
 
 export const aiApi = {
-  status: () => request<{ enabled: boolean }>("/ai/status"),
+  status: () => request<{ enabled: boolean; chat_enabled?: boolean }>("/ai/status"),
   stored: (scanId: string) => request<AiAnalysis>(`/ai/analyses/${scanId}`),
   chat: (messages: { role: string; content: string }[], language: string, page: string) => request<{ reply: string }>("/ai/chat", { method: "POST", body: JSON.stringify({ messages, language, page }) }),
   analyze: (scanId: string, language: string) => request<AiAnalysis>("/ai/analyze", { method: "POST", body: JSON.stringify({ scan_id: scanId, language }) }),
@@ -75,6 +75,7 @@ export interface AiProvider {
   has_key: boolean;
   enabled: boolean;
   default: boolean;
+  chat?: boolean;
   /** Provided by the older key and model settings; edit it under Agents and logs. */
   readonly: boolean;
 }
@@ -94,6 +95,9 @@ export const aiAdminApi = {
   create: (body: AiProviderInput) => request<AiProvider>("/ai/providers", { method: "POST", body: JSON.stringify(body) }),
   update: (id: string, body: AiProviderInput) => request<AiProvider>(`/ai/providers/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   remove: (id: string) => request<void>(`/ai/providers/${id}`, { method: "DELETE" }),
+  check: (body: AiProviderInput & { id?: string }) => request<{ ok: boolean; message: string; latency_ms?: number; models?: { id: string; name: string }[]; model_listed?: boolean }>("/ai/providers/check", { method: "POST", body: JSON.stringify(body) }),
+  useForChat: (id: string) => request<void>(`/ai/providers/${id}/chat`, { method: "POST" }),
+  chatFollowsDefault: () => request<void>("/ai/chat-provider", { method: "DELETE" }),
   makeDefault: (id: string) => request<void>(`/ai/providers/${id}/default`, { method: "POST" }),
   test: (id: string) => request<{ ok: boolean; message: string; model?: string; latency_ms?: number }>(`/ai/providers/${id}/test`, { method: "POST" }),
   models: (id: string) => request<{ id: string; name: string }[]>(`/ai/providers/${id}/models`),
