@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { getPrefs } from "../prefs";
 import type { ScanDetail } from "../scansApi";
@@ -85,6 +85,21 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
   const az = lang === "az";
   const [open, setOpen] = useState(() => live && getPrefs().liveAutoOpen);
   const [sel, setSel] = useState<{ id: string; detail: Detail } | null>(null);
+  // Zoom for the dotted working area: buttons, or Ctrl + mouse wheel.
+  const [zoom, setZoom] = useState(1);
+  const zoomBy = (d: number) => setZoom((z) => Math.min(1.6, Math.max(0.6, Math.round((z + d) * 10) / 10)));
+  const area = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    // A native listener, because React's wheel handler is passive and cannot stop the browser's own page zoom.
+    const wheel = (e: WheelEvent) => { if (e.ctrlKey) { e.preventDefault(); zoomBy(e.deltaY < 0 ? 0.1 : -0.1); } };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  }, [open]);
+  // The event log can be folded away; the choice is remembered in this browser.
+  const [logOpen, setLogOpen] = useState(() => { try { return localStorage.getItem("wearden.liveflow.log") !== "closed"; } catch { return true; } });
+  const toggleLog = () => setLogOpen((o) => { try { localStorage.setItem("wearden.liveflow.log", o ? "closed" : "open"); } catch { /* convenience only */ } return !o; });
   useEffect(() => { if (live && getPrefs().liveAutoOpen) setOpen(true); }, [live]);
   useEffect(() => {
     if (!open) return;
@@ -93,6 +108,7 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  const problems = lines.filter((l) => l.tone === "bad" || l.tone === "warn");
   const dot = live ? "wf-anim wf-pulse bg-cyan-400" : end === "fail" ? "bg-red-500" : end === "stop" ? "bg-amber-500" : "bg-emerald-500";
   return (
     <>
@@ -110,7 +126,15 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
               <button onClick={() => setOpen(false)} aria-label={az ? "Bağla" : "Close"} className="rounded border border-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-800">Esc</button>
             </div>
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-              <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-8" style={DOTS}>
+              <div ref={area} className="relative min-h-0 flex-1 overflow-auto" style={{ ...DOTS, backgroundSize: `${18 * zoom}px ${18 * zoom}px` }}>
+                <div className="pointer-events-none sticky top-0 z-30 flex justify-end p-3 pb-0">
+                  <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-slate-700 bg-black/80 p-1 text-xs text-slate-200 backdrop-blur">
+                    <button onClick={() => zoomBy(-0.1)} disabled={zoom <= 0.6} aria-label={az ? "Kiçilt" : "Zoom out"} className="h-7 w-7 rounded-md hover:bg-slate-800 disabled:opacity-40">−</button>
+                    <button onClick={() => setZoom(1)} title={az ? "Sıfırla (Ctrl + təkər ilə də olar)" : "Reset (Ctrl + mouse wheel also zooms)"} className="h-7 min-w-[3.25rem] rounded-md px-1 tabular-nums hover:bg-slate-800">{Math.round(zoom * 100)}%</button>
+                    <button onClick={() => zoomBy(0.1)} disabled={zoom >= 1.6} aria-label={az ? "Böyüt" : "Zoom in"} className="h-7 w-7 rounded-md hover:bg-slate-800 disabled:opacity-40">+</button>
+                  </div>
+                </div>
+                <div className="space-y-8 px-8 pb-8" style={{ zoom }}>
                 {stats && stats.length > 0 && (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -188,16 +212,27 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             </div>
-            <ul className="max-h-44 shrink-0 space-y-0.5 overflow-y-auto border-t border-slate-800 bg-black/40 px-5 py-3 font-mono text-xs" aria-live="off">
-              {lines.length === 0 && <li className="text-slate-600">{az ? "Hadisə gözlənilir…" : "Waiting for events…"}</li>}
-              {lines.map((l) => (
-                <li key={l.key} className="wf-line">
-                  <span className={`block w-full truncate text-left ${l.tone ? TONE[l.tone] : "text-slate-400"} `}>{l.text}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="shrink-0 border-t border-slate-800 bg-black/40">
+              <button onClick={toggleLog} aria-expanded={logOpen} className="flex w-full items-center justify-between px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-300">
+                <span>{az ? "Hadisələr" : "Events"} ({lines.length}) · <span className={problems.length ? "text-red-300" : "text-emerald-300"}>{az ? "Problemlər" : "Problems"} ({problems.length})</span></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${logOpen ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+              {logOpen && (
+                <div className="grid max-h-44 gap-x-6 px-5 pb-3 font-mono text-xs md:grid-cols-2" aria-live="off">
+                  <ul className="min-h-0 space-y-0.5 overflow-y-auto">
+                    {lines.length === 0 && <li className="text-slate-600">{az ? "Hadisə gözlənilir…" : "Waiting for events…"}</li>}
+                    {lines.map((l) => <li key={l.key} className="wf-line"><span className={`block w-full truncate ${l.tone ? TONE[l.tone] : "text-slate-400"}`}>{l.text}</span></li>)}
+                  </ul>
+                  <ul className="min-h-0 space-y-0.5 overflow-y-auto border-slate-800 md:border-l md:pl-6">
+                    {problems.length === 0 && <li className="text-emerald-300/70">{az ? "Problem yoxdur" : "No problems so far"}</li>}
+                    {problems.map((l) => <li key={l.key} className="wf-line"><span className={`block w-full truncate ${l.tone ? TONE[l.tone] : "text-slate-400"}`}>{l.text}</span></li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
