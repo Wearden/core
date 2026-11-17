@@ -6,10 +6,12 @@ import { aiApi } from "../settingsApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import Logo from "./Logo";
-import { useProfile } from "./UserAvatar";
+import UserAvatar, { useProfile } from "./UserAvatar";
 import { usePrefs } from "../prefs";
 
 interface Msg { role: "user" | "assistant"; content: string }
+/** One saved conversation with Wardy, kept in this browser per user. */
+interface Convo { id: string; title: string; updated: number; msgs: Msg[] }
 type Tab = "home" | "chat" | "help";
 
 const COLOR: Record<string, string> = { red: "text-red-300", green: "text-emerald-300", yellow: "text-amber-300", cyan: "text-cyan-300", violet: "text-violet-300" };
@@ -95,7 +97,28 @@ export default function ChatWidget() {
   const ready = useQuery({ queryKey: ["chat-ready"], queryFn: api.ready, refetchInterval: 30_000, enabled: status.data?.chat_enabled === true });
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
-  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const storeKey = user ? `wearden.chat.${user.id}` : "";
+  const [convos, setConvos] = useState<Convo[]>([]);
+  // null shows the conversation list, "new" an empty conversation, otherwise that conversation.
+  const [current, setCurrent] = useState<string | null>(null);
+  useEffect(() => {
+    if (!storeKey) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(storeKey) || "[]");
+      setConvos(Array.isArray(saved) ? saved : []);
+    } catch {
+      setConvos([]);
+    }
+  }, [storeKey]);
+  const persist = (next: Convo[]) => {
+    try {
+      if (storeKey) localStorage.setItem(storeKey, JSON.stringify(next));
+    } catch {
+      /* history is a convenience; without storage it lasts until reload */
+    }
+  };
+  const convo = convos.find((c) => c.id === current);
+  const msgs = convo?.msgs ?? [];
   const [text, setText] = useState("");
   const [search, setSearch] = useState("");
   const [openArticle, setOpenArticle] = useState<number | null>(null);
@@ -105,7 +128,7 @@ export default function ChatWidget() {
 
   const [hint, setHint] = useState(false);
 
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, busy, open, tab]);
+  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [convo?.msgs.length, current, busy, open, tab]);
   // One short greeting per browser session.
   useEffect(() => {
     if (status.data?.chat_enabled !== true) return;
@@ -123,15 +146,25 @@ export default function ChatWidget() {
   const ask = async (content: string) => {
     content = content.trim();
     if (!content || busy) return;
-    const next: Msg[] = [...msgs, { role: "user", content }];
+    const id = current && current !== "new" ? current : Date.now().toString(36);
+    const base = convos.find((c) => c.id === id)?.msgs ?? [];
+    const next: Msg[] = [...base, { role: "user", content }];
+    const save = (m: Msg[]) =>
+      setConvos((cs) => {
+        const title = cs.find((c) => c.id === id)?.title ?? content.slice(0, 60);
+        const updated = [{ id, title, updated: Date.now(), msgs: m.slice(-40) }, ...cs.filter((c) => c.id !== id)].slice(0, 20);
+        persist(updated);
+        return updated;
+      });
+    setCurrent(id);
     setTab("chat");
-    setMsgs(next);
+    save(next);
     setText("");
     setBusy(true);
     setError(null);
     try {
       const { reply } = await aiApi.chat(next, lang, pathname);
-      setMsgs([...next, { role: "assistant", content: reply }]);
+      save([...next, { role: "assistant", content: reply }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : L("Could not get a reply", "Cavab alınmadı"));
     } finally {
@@ -146,12 +179,53 @@ export default function ChatWidget() {
   const updated = ready.dataUpdatedAt ? new Date(ready.dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
   const articles = ARTICLES.map((a, i) => ({ ...a, i })).filter((a) => `${a.q[0]} ${a.q[1]}`.toLowerCase().includes(search.trim().toLowerCase()));
 
+  const closeBtn = (
+    <button onClick={() => setOpen(false)} aria-label={L("Close", "Bağla")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-800 hover:text-white">
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  );
+  const ago = (t: number) => {
+    const m = Math.round((Date.now() - t) / 60000);
+    return m < 1 ? L("now", "indi") : m < 60 ? `${m}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`;
+  };
+  const list: ReactNode = (
+    <>
+      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+        <span className="text-sm font-semibold text-slate-50">{L("Messages", "Mesajlar")}</span>
+        {closeBtn}
+      </div>
+      <div className="flex-1 space-y-1 overflow-y-auto p-3">
+        <button onClick={() => { setCurrent("new"); setError(null); }} className="mb-2 flex w-full items-center justify-between rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-left text-sm font-semibold text-slate-50 transition hover:border-slate-500">
+          {L("New conversation", "Yeni söhbət")}
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        </button>
+        {convos.length === 0 && <p className="px-1 py-8 text-center text-xs text-slate-500">{L("No conversations yet. Start one above.", "Hələ söhbət yoxdur. Yuxarıdan başlayın.")}</p>}
+        {convos.map((c) => {
+          const last = c.msgs[c.msgs.length - 1];
+          return (
+            <button key={c.id} onClick={() => { setCurrent(c.id); setError(null); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-800/60">
+              <WardyAvatar size={32} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-medium text-slate-100">{c.title}</span>
+                  <span className="shrink-0 text-[11px] text-slate-500">{ago(c.updated)}</span>
+                </span>
+                <span className="block truncate text-xs text-slate-400">{last ? (last.role === "user" ? L("You: ", "Siz: ") : "") + last.content.replace(/[*`[\]]/g, "") : ""}</span>
+              </span>
+            </button>
+          );
+        })}
+        {convos.length > 0 && <button onClick={() => { setConvos([]); persist([]); }} className="mx-auto block pt-3 text-[11px] text-slate-500 hover:text-red-300">{L("Clear history", "Tarixçəni sil")}</button>}
+      </div>
+    </>
+  );
+
   const home: ReactNode = (
     <div className="flex-1 overflow-y-auto">
       <div className="bg-gradient-to-b from-cyan-950/70 via-slate-900 to-slate-900 px-5 pb-6 pt-5">
-        <div className="flex items-center justify-between pr-11">
+        <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-cyan-300"><Logo className="h-6 w-auto" /><span className="text-lg font-bold tracking-wide text-slate-50">WEARDEN</span></span>
-          <WardyAvatar size={36} online animated />
+          <span className="flex items-center gap-2"><WardyAvatar size={36} online animated />{closeBtn}</span>
         </div>
         <div className="mt-10">
           <p className="text-2xl font-bold text-slate-400">{L("Hi", "Salam")} {profile.data?.display_name || user?.username} <span aria-hidden="true">👋</span></p>
@@ -159,7 +233,7 @@ export default function ChatWidget() {
         </div>
       </div>
       <div className="space-y-3 px-4 pb-4">
-        <button onClick={() => setTab("chat")} className={`${card} flex items-center justify-between gap-3`}>
+        <button onClick={() => { setCurrent("new"); setTab("chat"); }} className={`${card} flex items-center justify-between gap-3`}>
           <span><span className="block text-sm font-semibold text-slate-50">{L("Send us a message", "Bizə mesaj yazın")}</span><span className="block text-xs text-slate-400">{L("Wardy usually replies in seconds", "Wardy adətən saniyələr içində cavab verir")}</span></span>
           <svg viewBox="0 0 24 24" className="h-5 w-5 text-cyan-300" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z" /></svg>
         </button>
@@ -182,6 +256,11 @@ export default function ChatWidget() {
   );
 
   const help: ReactNode = (
+    <>
+    <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+      <span className="text-sm font-semibold text-slate-50">{L("Help", "Kömək")}</span>
+      {closeBtn}
+    </div>
     <div className="flex-1 space-y-3 overflow-y-auto p-4">
       <input value={search} onChange={(e) => { setSearch(e.target.value); setOpenArticle(null); }} placeholder={L("Search for help", "Yardım axtarın")} aria-label={L("Search for help", "Yardım axtarın")} className="w-full rounded-lg bg-slate-800 px-3 py-2 pr-8 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:ring-1 focus:ring-cyan-600" />
       {articles.map((a) => (
@@ -197,17 +276,22 @@ export default function ChatWidget() {
       ))}
       {articles.length === 0 && <p className="text-sm text-slate-500">{L("Nothing found. Ask Wardy instead.", "Heç nə tapılmadı. Əvəzinə Wardy-dən soruşun.")}</p>}
     </div>
+    </>
   );
 
   const chat: ReactNode = (
     <>
-      <div className="flex items-center gap-3 border-b border-slate-800 bg-gradient-to-r from-cyan-950/70 to-slate-900 px-4 py-3 pr-12">
+      <div className="flex items-center gap-2 border-b border-slate-800 bg-gradient-to-r from-cyan-950/70 to-slate-900 px-3 py-3">
+        <button onClick={() => setCurrent(null)} aria-label={L("All conversations", "Bütün söhbətlər")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-800 hover:text-white">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+        </button>
         <WardyAvatar size={36} online animated />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-slate-50">Wardy</div>
           <div className="truncate text-xs text-cyan-200/70">{L("Wearden support · AI assistant", "Wearden dəstək · AI köməkçi")}</div>
         </div>
-        {msgs.length > 0 && <button onClick={() => { setMsgs([]); setError(null); }} className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800">{L("New chat", "Yeni söhbət")}</button>}
+        {msgs.length > 0 && <button onClick={() => { setCurrent("new"); setError(null); }} className="h-8 shrink-0 rounded-full border border-slate-700 px-3 text-[11px] text-slate-300 transition hover:bg-slate-800">{L("New chat", "Yeni söhbət")}</button>}
+        {closeBtn}
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
         <div className="flex items-end gap-2">
@@ -216,7 +300,10 @@ export default function ChatWidget() {
         </div>
         {msgs.map((m, i) =>
           m.role === "user" ? (
-            <p key={i} className="ml-auto max-w-[80%] whitespace-pre-line rounded-2xl rounded-br-sm bg-cyan-700 px-3 py-2 text-white">{m.content}</p>
+            <div key={i} className="flex items-end justify-end gap-2">
+              <p className="w-fit max-w-[80%] whitespace-pre-line break-words rounded-2xl rounded-br-sm bg-cyan-700 px-3 py-2 text-white">{m.content}</p>
+              <UserAvatar size={28} />
+            </div>
           ) : (
             <div key={i} className="flex items-end gap-2">
               <WardyAvatar size={28} />
@@ -250,13 +337,10 @@ export default function ChatWidget() {
       <style>{FX_CSS}</style>
       {open && (
         <div role="dialog" aria-label={L("Support", "Dəstək")} className="relative flex h-[36rem] max-h-[80vh] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
-          <button onClick={() => setOpen(false)} aria-label={L("Close", "Bağla")} className="absolute right-4 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-slate-300 backdrop-blur transition hover:bg-black/80 hover:text-white">
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-          </button>
-          {tab === "home" ? home : tab === "chat" ? chat : help}
+          {tab === "home" ? home : tab === "chat" ? (current === null ? list : chat) : help}
           <nav className="flex border-t border-slate-800 bg-slate-900" aria-label={L("Support sections", "Dəstək bölmələri")}>
             {tabs.map(([id, label]) => (
-              <button key={id} onClick={() => setTab(id)} aria-current={tab === id ? "page" : undefined} className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-xs ${tab === id ? "text-cyan-300" : "text-slate-400 hover:text-slate-200"}`}>
+              <button key={id} onClick={() => { setTab(id); if (id === "chat") setCurrent(null); }} aria-current={tab === id ? "page" : undefined} className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-xs ${tab === id ? "text-cyan-300" : "text-slate-400 hover:text-slate-200"}`}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON[id]} /></svg>
                 {label}
               </button>
