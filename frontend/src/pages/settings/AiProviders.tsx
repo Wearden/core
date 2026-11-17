@@ -143,7 +143,7 @@ function ProviderDialog({ initial, onClose, vaultReady }: { initial: AiProvider 
   );
 }
 
-function ProviderCard({ p }: { p: AiProvider }) {
+function ProviderCard({ p, chatSet }: { p: AiProvider; chatSet: boolean }) {
   const { lang } = useI18n();
   const az = lang === "az";
   const qc = useQueryClient();
@@ -154,8 +154,6 @@ function ProviderCard({ p }: { p: AiProvider }) {
     qc.invalidateQueries({ queryKey: ["ai-providers"] });
     qc.invalidateQueries({ queryKey: ["ai-status"] });
   };
-  const useForChat = useMutation({ mutationFn: () => (p.chat ? aiAdminApi.chatFollowsDefault() : aiAdminApi.useForChat(p.id)), onSuccess: () => { toast(az ? "Çat provayderi dəyişdi." : "Chat provider changed.", "success"); refresh(); }, onError: (e) => toast(errText(e), "error") });
-  const makeDefault = useMutation({ mutationFn: () => aiAdminApi.makeDefault(p.id), onSuccess: () => { toast(az ? "Standart provayder dəyişdi." : "Default provider changed.", "success"); refresh(); }, onError: (e) => toast(errText(e), "error") });
   const remove = useMutation({ mutationFn: () => aiAdminApi.remove(p.id), onSuccess: () => { toast(az ? "Provayder silindi." : "Provider deleted.", "success"); refresh(); }, onError: (e) => toast(errText(e), "error") });
   const local = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[::1\])/.test(hostOf(p.base_url).replace(/:\d+$/, ""));
   return (
@@ -164,8 +162,8 @@ function ProviderCard({ p }: { p: AiProvider }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-slate-50">{p.name}</span>
-            {p.default && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-950">{az ? "analiz (standart)" : "analysis (default)"}</span>}
-            {p.chat && <span className="rounded-full bg-cyan-900/60 px-2 py-0.5 text-[11px] font-medium text-cyan-200">{az ? "çat" : "chat"}</span>}
+            {p.default && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-950">{az ? "skan analizi üçün" : "used for scan analysis"}</span>}
+            {(p.chat || (p.default && !chatSet)) && <span className="rounded-full bg-cyan-900/60 px-2 py-0.5 text-[11px] font-medium text-cyan-200">{az ? "çat üçün" : "used for chat"}</span>}
             <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300">{p.kind === "anthropic" ? "Anthropic" : "OpenAI compatible"}</span>
             {local && <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300">{az ? "yerli" : "local"}</span>}
             {!p.enabled && <span className="rounded-full border border-slate-800 px-2 py-0.5 text-[11px] text-slate-500">{az ? "söndürülüb" : "disabled"}</span>}
@@ -175,8 +173,6 @@ function ProviderCard({ p }: { p: AiProvider }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button className={btnSmall} onClick={() => test.mutate()} disabled={test.isPending || !p.enabled}>{test.isPending ? (az ? "Yoxlanır..." : "Testing...") : az ? "Yoxla" : "Test"}</button>
-          {!p.default && p.enabled && <button className={btnSmall} onClick={() => makeDefault.mutate()} disabled={makeDefault.isPending}>{az ? "Standart et" : "Make default"}</button>}
-          {(p.chat || p.enabled) && <button className={btnSmall} onClick={() => useForChat.mutate()} disabled={useForChat.isPending}>{p.chat ? (az ? "Çat standartı izləsin" : "Chat: follow default") : az ? "Çat üçün istifadə et" : "Use for chat"}</button>}
           {!p.readonly && <button className={btnSmall} onClick={() => setEditing(true)}>{az ? "Redaktə" : "Edit"}</button>}
           {!p.readonly && (
             <button className={btnDanger} onClick={async () => (await confirm({ title: az ? `${p.name} silinsin?` : `Delete ${p.name}?`, message: az ? "Bu provayder artıq analiz üçün istifadə olunmayacaq." : "This provider will no longer be used for analysis.", confirmLabel: az ? "Sil" : "Delete", cancelLabel: az ? "Vaz keç" : "Cancel", danger: true })) && remove.mutate()}>{az ? "Sil" : "Delete"}</button>
@@ -190,6 +186,30 @@ function ProviderCard({ p }: { p: AiProvider }) {
   );
 }
 
+function Assign({ title, hint, providers, value, emptyLabel, onPick, effective, busy }: { title: string; hint: string; providers: AiProvider[]; value: string; emptyLabel?: string; onPick: (id: string) => void; effective?: AiProvider; busy: boolean }) {
+  const { lang } = useI18n();
+  const az = lang === "az";
+  const test = useMutation({ mutationFn: () => aiAdminApi.test(effective!.id) });
+  return (
+    <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <div>
+        <div className="text-sm font-medium text-slate-50">{title}</div>
+        <p className="mt-0.5 text-xs text-slate-500">{hint}</p>
+      </div>
+      <select className={`${field} h-9`} value={value} disabled={busy} aria-label={title} onChange={(e) => { test.reset(); onPick(e.target.value); }}>
+        {emptyLabel ? <option value="">{emptyLabel}</option> : !value && <option value="" disabled>{az ? "Provayder seçin…" : "Choose a provider…"}</option>}
+        {providers.filter((p) => p.enabled).map((p) => <option key={p.id} value={p.id}>{p.name} · {p.model}</option>)}
+      </select>
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className={effective ? "text-slate-300" : "text-amber-300"}>{effective ? `${az ? "İşləyir" : "Uses"}: ${effective.name} · ${effective.model}` : az ? "Hələ seçilməyib" : "Not set yet"}</span>
+        {effective && <button className={btnSmall} onClick={() => test.mutate()} disabled={test.isPending}>{test.isPending ? (az ? "Yoxlanır..." : "Testing...") : az ? "Yoxla" : "Test"}</button>}
+      </div>
+      {test.data && <p className={`text-xs ${test.data.ok ? "text-emerald-300" : "text-red-300"}`}>{test.data.message}{test.data.ok && test.data.latency_ms !== undefined ? ` (${test.data.latency_ms} ms)` : ""}</p>}
+      {test.error && <p className="text-xs text-red-300">{errText(test.error)}</p>}
+    </div>
+  );
+}
+
 export default function AiProviders() {
   const { lang } = useI18n();
   const az = lang === "az";
@@ -197,21 +217,36 @@ export default function AiProviders() {
   const list = useQuery({ queryKey: ["ai-providers"], queryFn: aiAdminApi.providers });
   const providers = list.data?.providers ?? [];
   const vaultReady = list.data?.vault_ready ?? false;
+  const qc = useQueryClient();
+  const { toast } = useFeedback();
+  const scanP = providers.find((p) => p.default);
+  const chatP = providers.find((p) => p.chat);
+  const done = (msg: string) => () => { toast(msg, "success"); qc.invalidateQueries({ queryKey: ["ai-providers"] }); qc.invalidateQueries({ queryKey: ["ai-status"] }); };
+  const setScan = useMutation({ mutationFn: (id: string) => aiAdminApi.makeDefault(id), onSuccess: done(az ? "Skan analizi provayderi dəyişdi." : "Scan analysis provider changed."), onError: (e) => toast(errText(e), "error") });
+  const setChat = useMutation({ mutationFn: (id: string) => (id ? aiAdminApi.useForChat(id) : aiAdminApi.chatFollowsDefault()), onSuccess: done(az ? "Çat provayderi dəyişdi." : "Chat provider changed."), onError: (e) => toast(errText(e), "error") });
   return (
     <>
+      {providers.length > 0 && (
+        <Card title={az ? "Hansı AI nə üçün işləyir" : "Which AI does what"} hint={az ? "İki ayrı yer: hər biri üçün öz provayderinizi seçin. Provayderləri aşağıda əlavə edirsiniz." : "Two separate settings: pick a provider for each. You add providers in the library below."}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Assign busy={setScan.isPending} title={az ? "Skan analizi AI" : "Scan analysis AI"} hint={az ? "Skan nəticələrini təhlil edir və nəyi düzəltməyi məsləhət görür." : "Analyses scan results and advises what to fix."} providers={providers} value={scanP?.id ?? ""} effective={scanP} onPick={(id) => id && setScan.mutate(id)} />
+            <Assign busy={setChat.isPending} title={az ? "Dəstək çatı AI (Wardy)" : "Support chat AI (Wardy)"} hint={az ? "Sağ aşağıdakı çat köməkçisi. Seçməsəniz skan analizi ilə eyni provayder işləyir." : "The chat assistant at the bottom right. If you leave it unset it uses the scan analysis provider."} providers={providers} value={chatP?.id ?? ""} emptyLabel={az ? "Skan analizi ilə eyni" : "Same as scan analysis"} effective={chatP ?? scanP} onPick={(id) => setChat.mutate(id)} />
+          </div>
+        </Card>
+      )}
       <Card
-        title={az ? "AI provayderləri" : "AI providers"}
-        hint={az ? "İstədiyiniz qədər provayder əlavə edin: bulud API və ya öz serverinizdə işləyən yerli model. Analiz standart provayderlə işləyir; dəstək çatı ayrıca seçilmiş provayderi, seçilməyibsə standartı istifadə edir." : "Add as many providers as you like: a cloud API or a local model on your own server. Analysis uses the default provider; the support chat uses its own provider if you pick one, otherwise the default."}
+        title={az ? "Provayder kitabxanası" : "Provider library"}
+        hint={az ? "Burada bulud API və ya öz serverinizdəki yerli modeli əlavə edirsiniz. Hansının nə üçün işlədiyini yuxarıda seçirsiniz." : "Add cloud APIs or local models here. Choose above which one does what."}
         action={<button className={btnPrimary} onClick={() => setAdding(true)}>{az ? "Provayder əlavə et" : "Add provider"}</button>}
       >
         {list.isLoading && <p className="text-sm text-slate-500">{az ? "Yüklənir..." : "Loading..."}</p>}
         {list.error && <p className="text-sm text-red-300">{errText(list.error)}</p>}
         {list.data && providers.length === 0 && (
           <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
-            {az ? "Hələ provayder yoxdur. AI analizini işə salmaq üçün birini əlavə edin." : "No provider yet. Add one to turn on AI analysis."}
+            {az ? "Hələ provayder yoxdur. Birini əlavə edin, sonra yuxarıda nə üçün işləyəcəyini seçin." : "No provider yet. Add one, then choose above what it is used for."}
           </div>
         )}
-        <div className="space-y-3">{providers.map((p) => <ProviderCard key={p.id} p={p} />)}</div>
+        <div className="space-y-3">{providers.map((p) => <ProviderCard key={p.id} p={p} chatSet={!!chatP} />)}</div>
         {list.data && !vaultReady && <p className="text-xs text-slate-500">{az ? "WEARDEN_VAULT_KEY təyin edilməyib: açar yaza bilməzsiniz, amma açarsız yerli provayderlər işləyir." : "WEARDEN_VAULT_KEY is not set: keys cannot be stored, but local providers without a key still work."}</p>}
       </Card>
       <Card title={az ? "Məxfilik" : "Privacy"}>
