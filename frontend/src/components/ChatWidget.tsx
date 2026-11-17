@@ -32,15 +32,15 @@ function Rich({ text }: { text: string }) {
 }
 
 /** Wardy's face: a small shield with eyes and a smile, in the app's cyan. */
-function WardyAvatar({ size = 36, online = false }: { size?: number; online?: boolean }) {
+function WardyAvatar({ size = 36, online = false, blink = false }: { size?: number; online?: boolean; blink?: boolean }) {
   return (
     <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>
       <svg viewBox="0 0 48 48" width={size} height={size} role="img" aria-label="Wardy">
         <circle cx="24" cy="24" r="24" fill="#0a0a0a" />
         <circle cx="24" cy="24" r="22.5" fill="none" stroke="#fafafa" strokeWidth="1.5" />
         <path d="M24 9.5l10.5 3.8v8.6c0 6.8-4.4 11.3-10.5 13.6-6.1-2.3-10.5-6.8-10.5-13.6v-8.6z" fill="#fafafa" />
-        <circle cx="19.8" cy="21.5" r="2" fill="#0a0a0a" />
-        <circle cx="28.2" cy="21.5" r="2" fill="#0a0a0a" />
+        <circle cx="19.8" cy="21.5" r="2" fill="#0a0a0a" className={blink ? "wd-blink" : undefined} />
+        <circle cx="28.2" cy="21.5" r="2" fill="#0a0a0a" className={blink ? "wd-blink" : undefined} />
         <path d="M19.3 27.2c1.3 1.8 2.8 2.6 4.7 2.6s3.4-.8 4.7-2.6" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" />
       </svg>
       {online && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />}
@@ -72,6 +72,16 @@ const SCROLL_CSS = `.wd-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255
 .wd-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:9999px}
 .wd-scroll::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.32)}`;
 
+// Launcher motion: a pulsing ring, a gentle float, blinking eyes and a pop-in greeting. All of it stops for reduced-motion users.
+const FX_CSS = `@keyframes wd-ring{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
+@keyframes wd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes wd-blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
+@keyframes wd-pop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes wd-spin-in{from{transform:rotate(-90deg) scale(.5);opacity:0}to{transform:none;opacity:1}}
+.wd-ring{animation:wd-ring 2.8s ease-out infinite}.wd-float{animation:wd-float 4s ease-in-out infinite}.wd-float:hover{animation-play-state:paused}
+.wd-blink{transform-box:fill-box;transform-origin:center;animation:wd-blink 5s infinite}.wd-pop{animation:wd-pop .35s ease-out}.wd-spin-in{animation:wd-spin-in .25s ease-out}
+@media (prefers-reduced-motion:reduce){.wd-ring,.wd-float,.wd-blink,.wd-pop,.wd-spin-in{animation:none}}`;
+
 /** Messenger-style support window: Home, Messages (chat with Wardy) and Help. Needs an AI provider; hidden otherwise. History lives in memory only. */
 export default function ChatWidget() {
   const { lang } = useI18n();
@@ -91,7 +101,20 @@ export default function ChatWidget() {
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
 
+  const [hint, setHint] = useState(false);
+
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, busy, open, tab]);
+  // One short greeting per browser session.
+  useEffect(() => {
+    if (status.data?.chat_enabled !== true) return;
+    try {
+      if (sessionStorage.getItem("wardy-hint") === "1") return;
+      sessionStorage.setItem("wardy-hint", "1");
+    } catch { /* storage may be blocked; show the greeting anyway */ }
+    const on = window.setTimeout(() => setHint(true), 2500);
+    const off = window.setTimeout(() => setHint(false), 11000);
+    return () => { window.clearTimeout(on); window.clearTimeout(off); };
+  }, [status.data?.chat_enabled]);
 
   if (!status.data?.chat_enabled) return null;
 
@@ -222,6 +245,7 @@ export default function ChatWidget() {
   const tabs: [Tab, string][] = [["home", L("Home", "Əsas")], ["chat", L("Messages", "Mesajlar")], ["help", L("Help", "Kömək")]];
   return (
     <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3">
+      <style>{FX_CSS}</style>
       {open && (
         <div role="dialog" aria-label={L("Support", "Dəstək")} className="relative flex h-[36rem] max-h-[80vh] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
           <style>{SCROLL_CSS}</style>
@@ -239,9 +263,23 @@ export default function ChatWidget() {
           </nav>
         </div>
       )}
-      <button onClick={() => setOpen(!open)} aria-label={L("Support", "Dəstək")} aria-expanded={open} className="rounded-full shadow-lg ring-2 ring-cyan-500/40 transition hover:scale-105 hover:ring-cyan-400">
-        <WardyAvatar size={56} online />
-      </button>
+      {hint && !open && (
+        <button onClick={() => { setHint(false); setOpen(true); }} className="wd-pop max-w-[15rem] rounded-2xl rounded-br-sm border border-white/10 bg-black px-4 py-2.5 text-left shadow-xl">
+          <span className="block text-sm font-semibold text-white">{L("Need a hand?", "Köməyə ehtiyac var?")} <span aria-hidden="true">👋</span></span>
+          <span className="block text-xs text-slate-400">{L("Ask Wardy anything about Wearden.", "Wearden barədə Wardy-dən soruş.")}</span>
+        </button>
+      )}
+      {open ? (
+        <button onClick={() => setOpen(false)} aria-label={L("Close support", "Dəstəyi bağla")} aria-expanded="true" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-black text-white shadow-xl transition hover:border-white/40">
+          <svg viewBox="0 0 24 24" className="wd-spin-in h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      ) : (
+        <button onClick={() => { setHint(false); setOpen(true); }} aria-label={L("Support", "Dəstək")} aria-expanded="false" className="wd-float group relative flex items-center rounded-full border border-white/15 bg-black p-1.5 shadow-xl transition-colors hover:border-white/40 focus-visible:border-white/60">
+          <span aria-hidden="true" className="wd-ring pointer-events-none absolute inset-0 rounded-full border border-white/40" />
+          <WardyAvatar size={46} online blink />
+          <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium text-white opacity-0 transition-all duration-300 group-hover:max-w-[10rem] group-hover:pl-3 group-hover:pr-3 group-hover:opacity-100 group-focus-visible:max-w-[10rem] group-focus-visible:pl-3 group-focus-visible:pr-3 group-focus-visible:opacity-100">{L("Ask Wardy", "Wardy-dən soruş")}</span>
+        </button>
+      )}
     </div>
   );
 }
