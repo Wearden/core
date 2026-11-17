@@ -109,7 +109,7 @@ export default function PamAssets() {
   const btn = "inline-flex h-8 items-center rounded border border-slate-700 px-2 text-xs hover:bg-slate-800 disabled:opacity-40";
   const columns: Column<Asset>[] = [
     { id: "status", header: t("col.status"), sort: (x, y) => x.status.localeCompare(y.status), csv: (a) => a.status, cell: (a) => <StatusDot status={a.status} /> },
-    { id: "name", header: t("col.name"), locked: true, sort: (x, y) => x.name.localeCompare(y.name), csv: (a) => a.name, cell: (a) => (
+    { id: "name", wide: true, header: t("col.name"), locked: true, sort: (x, y) => x.name.localeCompare(y.name), csv: (a) => a.name, cell: (a) => (
       <div className="flex items-center gap-3">
         <HostIcon os={a.os_type} size={28} />
         <div>

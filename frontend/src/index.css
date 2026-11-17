@@ -193,3 +193,6 @@ select, input:not([type]), input:is([type="text"], [type="search"], [type="email
 @supports not selector(::-webkit-scrollbar) {
   * { scrollbar-width: thin; scrollbar-color: rgb(var(--slate-500) / 0.5) transparent; }
 }
+
+/* Table cells with nothing to show (marked by DataTable) display a quiet dash instead of a gap. */
+td[data-empty]::after { content: "-"; color: rgb(var(--slate-500)); }

@@ -169,7 +169,7 @@ export default function Assets() {
     { id: "status", header: t("col.status"), sort: (x, y) => x.status.localeCompare(y.status), csv: (a) => a.status, cell: (a) => (
       <div><StatusDot status={a.status} /><div className="mt-1 text-xs text-slate-500">{secondsAgo(a.last_checked, now, t("assets.ago"), t("assets.never"))}</div></div>
     ) },
-    { id: "name", header: t("col.name"), locked: true, sort: (x, y) => x.name.localeCompare(y.name), csv: (a) => a.name, cell: (a) => (
+    { id: "name", wide: true, header: t("col.name"), locked: true, sort: (x, y) => x.name.localeCompare(y.name), csv: (a) => a.name, cell: (a) => (
       <div className="flex items-center gap-3">
         <HostIcon os={a.os_type} size={28} />
         <div>

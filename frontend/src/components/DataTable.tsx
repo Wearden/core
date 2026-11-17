@@ -1,6 +1,10 @@
-import { Fragment, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, tableWrap, theadCls } from "./ui";
 import { SkeletonRows } from "./feedback";
+import { useI18n } from "../i18n";
+
+// Empty cells show a quiet dash instead of a gap.
+const blank = (v: ReactNode) => v === null || v === undefined || v === "" || v === false;
 
 export interface Column<T> {
   id: string;
@@ -14,6 +18,10 @@ export interface Column<T> {
   defaultHidden?: boolean;
   /** Always shown (cannot be hidden), for example the primary name column. */
   locked?: boolean;
+  /** Takes the spare width and wraps. Without one, the first visible column does; every other column hugs its content. */
+  wide?: boolean;
+  /** Long values that may wrap, kept to a readable width (evidence, details). */
+  wrap?: boolean;
   className?: string;
 }
 
@@ -101,6 +109,8 @@ export default function DataTable<T>({
   filterState?: { value: unknown; onChange: (v: unknown) => void };
   selection?: { selected: Set<string | number>; onChange: (next: Set<string | number>) => void };
 }) {
+  const { lang } = useI18n();
+  const L = (en: string, az: string) => (lang === "az" ? az : en);
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs(storageKey, columns as Column<never>[], pageSizes[1] ?? pageSizes[0]));
   const [sort, setSort] = useState(initialSort ?? null);
   const [page, setPage] = useState(0);
@@ -153,6 +163,8 @@ export default function DataTable<T>({
   }, [menu]);
 
   const visible = columns.filter((c) => c.locked || !prefs.hidden.includes(c.id));
+  const wideId = (visible.find((c) => c.wide) ?? visible.find((c) => c.header) ?? visible[0])?.id;
+  const layout = (c: Column<T>) => (c.id === wideId ? "w-full min-w-[14rem]" : c.wrap ? "min-w-[10rem] max-w-[26rem] break-words" : "whitespace-nowrap");
   const sorted = useMemo(() => {
     const col = sort && columns.find((c) => c.id === sort.id);
     if (!col?.sort) return rows;
@@ -197,6 +209,13 @@ export default function DataTable<T>({
     selection.onChange(next);
   };
   const colSpan = visible.length + (selection ? 1 : 0);
+  const body = useRef<HTMLTableSectionElement>(null);
+  // Cells that render to nothing visible (an empty span, say) get a quiet dash through CSS.
+  useLayoutEffect(() => {
+    body.current?.querySelectorAll<HTMLTableCellElement>(":scope > tr > td").forEach((td) => {
+      td.toggleAttribute("data-empty", !td.textContent?.trim() && !td.querySelector("img,svg,input,button,select,a,canvas,[role]"));
+    });
+  });
 
   const from = sorted.length === 0 ? 0 : current * prefs.pageSize + 1;
   const to = Math.min(sorted.length, (current + 1) * prefs.pageSize);
@@ -208,10 +227,10 @@ export default function DataTable<T>({
         <div className="ml-auto flex items-center gap-2 text-xs">
           {storageKey && (
             <div className="relative" ref={viewRef}>
-              <button onClick={() => setViewMenu(!viewMenu)} aria-expanded={viewMenu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Views{views.length ? ` (${views.length})` : ""}</button>
+              <button onClick={() => setViewMenu(!viewMenu)} aria-expanded={viewMenu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">{L("Views", "Görünüşlər")}{views.length ? ` (${views.length})` : ""}</button>
               {viewMenu && (
                 <div className="absolute right-0 z-20 mt-1 w-60 rounded-lg border border-slate-700 bg-slate-900 p-2 shadow-xl">
-                  {views.length === 0 && <p className="px-2 py-1.5 text-xs text-slate-500">No saved views yet. Arrange sort, columns and page size, then save them under a name.</p>}
+                  {views.length === 0 && <p className="px-2 py-1.5 text-xs text-slate-500">{L("No saved views yet. Arrange sort, columns and page size, then save them under a name.", "Hələ saxlanmış görünüş yoxdur. Sıralama, sütunlar və sətir sayını qurub bir adla saxlayın.")}</p>}
                   {views.map((v) => (
                     <div key={v.name} className="flex items-center justify-between gap-1 rounded px-2 py-1 hover:bg-slate-800">
                       <button onClick={() => applyView(v)} className="flex-1 truncate text-left text-sm text-slate-200" title={v.name}>{v.name}</button>
@@ -219,15 +238,15 @@ export default function DataTable<T>({
                     </div>
                   ))}
                   <div className="mt-1 flex gap-1 border-t border-slate-800 pt-2">
-                    <input value={viewName} onChange={(e) => setViewName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveView()} placeholder="View name" aria-label="View name" className="h-8 min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-2 text-sm" />
-                    <button onClick={saveView} disabled={!viewName.trim()} className="inline-flex h-8 items-center rounded-md border border-slate-700 px-2 text-slate-200 hover:bg-slate-800 disabled:opacity-40">Save</button>
+                    <input value={viewName} onChange={(e) => setViewName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveView()} placeholder={L("View name", "Görünüş adı")} aria-label={L("View name", "Görünüş adı")} className="h-8 min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-2 text-sm" />
+                    <button onClick={saveView} disabled={!viewName.trim()} className="inline-flex h-8 items-center rounded-md border border-slate-700 px-2 text-slate-200 hover:bg-slate-800 disabled:opacity-40">{L("Save", "Saxla")}</button>
                   </div>
                 </div>
               )}
             </div>
           )}
           <div className="relative" ref={menuRef}>
-            <button onClick={() => setMenu(!menu)} aria-expanded={menu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Columns</button>
+            <button onClick={() => setMenu(!menu)} aria-expanded={menu} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">{L("Columns", "Sütunlar")}</button>
             {menu && (
               <div className="absolute right-0 z-20 mt-1 w-52 rounded-lg border border-slate-700 bg-slate-900 p-2 shadow-xl">
                 {columns.filter((c) => !c.locked).map((c) => (
@@ -239,8 +258,8 @@ export default function DataTable<T>({
               </div>
             )}
           </div>
-          {exportName && selection && selection.selected.size > 0 && <button onClick={() => exportCsv(true)} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">Export selected ({selection.selected.size})</button>}
-          {exportName && <button onClick={() => exportCsv()} disabled={sorted.length === 0} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900 disabled:opacity-40">Export CSV</button>}
+          {exportName && selection && selection.selected.size > 0 && <button onClick={() => exportCsv(true)} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900">{L("Export selected", "Seçilənləri ixrac et")} ({selection.selected.size})</button>}
+          {exportName && <button onClick={() => exportCsv()} disabled={sorted.length === 0} className="inline-flex h-8 items-center rounded-md border border-slate-800 px-3 text-slate-300 hover:bg-slate-900 disabled:opacity-40">{L("Export CSV", "CSV ixrac")}</button>}
         </div>
       </div>
 
@@ -259,7 +278,7 @@ export default function DataTable<T>({
                   {visible.map((c) => {
                     const active = sort?.id === c.id;
                     return (
-                      <th key={c.id} scope="col" aria-sort={active ? (sort!.dir === "asc" ? "ascending" : "descending") : undefined} className={`px-4 py-2.5 font-medium ${c.className ?? ""}`}>
+                      <th key={c.id} scope="col" aria-sort={active ? (sort!.dir === "asc" ? "ascending" : "descending") : undefined} className={`px-4 py-3 font-semibold ${layout(c)} ${c.className ?? ""}`}>
                         {c.sort ? (
                           <button onClick={() => toggleSort(c)} className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-200">
                             {c.header}
@@ -271,7 +290,7 @@ export default function DataTable<T>({
                   })}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/70">
+              <tbody ref={body} className="divide-y divide-slate-800/60 tabular-nums">
                 {slice.map((r) => {
                   const key = rowKey(r);
                   const click = onRowClick ? () => onRowClick(r) : expanded ? () => toggle(key) : undefined;
@@ -283,10 +302,13 @@ export default function DataTable<T>({
                         onKeyDown={click ? (e) => e.key === "Enter" && !(e.target as HTMLElement).closest("button, a, input, select, summary") && click() : undefined}
                         tabIndex={click ? 0 : undefined}
                         aria-expanded={expanded ? isOpen : undefined}
-                        className={`hover:bg-slate-900/60 ${click ? "cursor-pointer" : ""} ${rowClassName?.(r) ?? ""}`}
+                        className={`transition-colors even:bg-slate-900/30 hover:bg-slate-800/50 ${click ? "cursor-pointer" : ""} ${isOpen ? "bg-slate-800/40" : ""} ${rowClassName?.(r) ?? ""}`}
                       >
-                        {selection && <td className="w-10 px-4 py-2.5 align-top"><input type="checkbox" aria-label="Select row" checked={selection.selected.has(key)} onChange={() => toggleOne(key)} /></td>}
-                        {visible.map((c) => <td key={c.id} className={`px-4 py-2.5 align-top ${c.className ?? ""}`}>{c.cell(r)}</td>)}
+                        {selection && <td className="w-10 px-4 py-2.5 align-middle"><input type="checkbox" aria-label="Select row" checked={selection.selected.has(key)} onChange={() => toggleOne(key)} /></td>}
+                        {visible.map((c) => {
+                          const v = c.cell(r);
+                          return <td key={c.id} className={`px-4 py-2.5 align-middle text-slate-200 ${layout(c)} ${c.className ?? ""}`}>{blank(v) ? <span className="text-slate-500">-</span> : v}</td>;
+                        })}
                       </tr>
                       {expanded && isOpen && (
                         <tr className="bg-slate-900/40">
@@ -301,15 +323,15 @@ export default function DataTable<T>({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
             <span>
-              {from}-{to} / {sorted.length}
-              {selection && selection.selected.size > 0 && <span className="ml-2 text-slate-300">{selection.selected.size} selected</span>}
+              {L(`Showing ${from}-${to} of ${sorted.length}`, `${sorted.length} nəticədən ${from}-${to}`)}
+              {selection && selection.selected.size > 0 && <span className="ml-2 text-slate-300">{selection.selected.size} {L("selected", "seçilib")}</span>}
               {selection && sorted.length > pageKeys.length && (
-                <button onClick={() => selection.onChange(new Set(sorted.map(rowKey)))} className="ml-2 underline hover:text-slate-200">Select all {sorted.length}</button>
+                <button onClick={() => selection.onChange(new Set(sorted.map(rowKey)))} className="ml-2 underline hover:text-slate-200">{L(`Select all ${sorted.length}`, `Hamısını seç (${sorted.length})`)}</button>
               )}
             </span>
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5">
-                Rows
+                {L("Rows", "Sətir")}
                 <select value={prefs.pageSize} onChange={(e) => { setPrefs((p) => ({ ...p, pageSize: Number(e.target.value) })); setPage(0); }} className="h-8 rounded-md border border-slate-800 bg-slate-950 px-1.5 text-slate-300">
                   {pageSizes.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
