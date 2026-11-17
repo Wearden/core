@@ -9,8 +9,10 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -297,6 +299,14 @@ func (s *Server) featureRecording(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
+	if r.URL.Query().Get("format") == "mp4" {
+		if doc["ended_at"] == nil {
+			problem(w, 409, "Session is still open; the MP4 can be downloaded after it ends")
+			return
+		}
+		s.featureRecordingMP4(w, r, id, file)
+		return
+	}
 	info, err := file.Stat()
 	if err != nil {
 		problem(w, 500, "Cannot read session recording")
@@ -306,6 +316,60 @@ func (s *Server) featureRecording(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", `attachment; filename="session.guac"`)
 	http.ServeContent(w, r, "session.guac", info.ModTime(), file)
+}
+
+// featureRecordingMP4 renders the recording to an H.264 MP4 in a private temp folder that is removed afterwards.
+// shortcut: converts on every download (about 15 s per minute of recording), cache the MP4 if downloads get frequent.
+func (s *Server) featureRecordingMP4(w http.ResponseWriter, r *http.Request, id string, src *os.File) {
+	fail := func(step string, err error, out []byte) {
+		slog.Error("recording conversion failed", "session", id, "step", step, "error", err, "output", strings.TrimSpace(string(out)))
+		problem(w, 500, "Cannot convert session recording to MP4")
+	}
+	dir, err := os.MkdirTemp("", "wearden-mp4-")
+	if err != nil {
+		fail("tempdir", err, nil)
+		return
+	}
+	defer os.RemoveAll(dir)
+	in := filepath.Join(dir, "session.guac")
+	dst, err := os.Create(in)
+	if err == nil {
+		_, err = io.Copy(dst, src)
+		if closeErr := dst.Close(); err == nil {
+			err = closeErr
+		}
+	}
+	if err != nil {
+		fail("copy", err, nil)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Minute)
+	defer cancel()
+	// guacenc writes <input>.m4v as MPEG-4 Part 2, which browsers and many players refuse, so ffmpeg re-encodes it to H.264.
+	if out, err := exec.CommandContext(ctx, "guacenc", "-s", "1920x1080", in).CombinedOutput(); err != nil {
+		fail("guacenc", err, out)
+		return
+	}
+	mp4 := filepath.Join(dir, "session.mp4")
+	if out, err := exec.CommandContext(ctx, "ffmpeg", "-v", "error", "-y", "-i", in+".m4v", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4).CombinedOutput(); err != nil {
+		fail("ffmpeg", err, out)
+		return
+	}
+	video, err := os.Open(mp4)
+	if err != nil {
+		fail("open", err, nil)
+		return
+	}
+	defer video.Close()
+	info, err := video.Stat()
+	if err != nil {
+		fail("stat", err, nil)
+		return
+	}
+	s.audit(r, "session.recording", id, true, "mp4")
+	w.Header().Set("Content-Type", "video/mp4")
+	w.Header().Set("Content-Disposition", `attachment; filename="session.mp4"`)
+	http.ServeContent(w, r, "session.mp4", info.ModTime(), video)
 }
 
 // sessionControlRoutes is intentionally outside /api: only the bridge calls it with a shared key.

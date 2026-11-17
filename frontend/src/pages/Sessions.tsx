@@ -20,9 +20,14 @@ export default function Sessions() {
   });
   const [playing, setPlaying] = useState<RemoteSessionRow | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  // The server converts to MP4 on request, which takes a few seconds per minute of recording.
+  const [preparing, setPreparing] = useState<string | null>(null);
   const save = (s: RemoteSessionRow) => {
     setDownloadError(null);
-    download(`/sessions/${s.id}/recording`, `${recordingName(s)}.guac`).catch((err) => setDownloadError(err instanceof Error ? err.message : String(err)));
+    setPreparing(s.id);
+    download(`/sessions/${s.id}/recording?format=mp4`, `${recordingName(s)}.mp4`)
+      .catch((err) => setDownloadError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setPreparing(null));
   };
 
   return (
@@ -71,9 +76,10 @@ export default function Sessions() {
                         </button>
                         <button
                           onClick={() => save(s)}
-                          className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+                          disabled={preparing === s.id}
+                          className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800 disabled:opacity-50"
                         >
-                          {t("ses.download")}
+                          {preparing === s.id ? t("ses.preparing") : t("ses.download")}
                         </button>
                       </>
                     ) : (
