@@ -22,7 +22,7 @@ const GUAC_ERRORS: Record<number, string> = {
   521: "the session is already in use elsewhere",
   522: "the session timed out",
   523: "the session was closed",
-  769: "the host rejected the username or password/key. Check the stored credential (Test it on the Password vault or PAM assets page).",
+  769: "the host rejected the username or password/key. Check the stored credential (test it on the PAM assets page).",
   771: "access to this session was refused",
   776: "the session ended because it was idle",
 };
