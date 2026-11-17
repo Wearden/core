@@ -7,6 +7,42 @@ import (
 	"time"
 )
 
+const aiChatMeta = "chat"
+
+// chatResolve uses the provider chosen for chat; with none chosen it follows the default. A chosen but unusable provider is an error, so chat never silently switches vendor.
+func (s *Server) chatResolve(ctx context.Context) (aiProvider, error) {
+	if doc, err := s.Store.Get(ctx, aiMetaCollection, aiChatMeta); err == nil && text(doc["provider_id"]) != "" {
+		return s.aiResolve(ctx, text(doc["provider_id"]))
+	}
+	return s.aiResolve(ctx, "")
+}
+
+func (s *Server) aiChatRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/ai/chat", s.require("viewer", s.aiChat))
+	manage := func(h http.HandlerFunc) http.HandlerFunc { return s.requirePerm("ai.manage", h) }
+	mux.HandleFunc("POST /api/ai/providers/{id}/chat", manage(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if p, err := s.aiResolve(r.Context(), id); err != nil || p.ID != id {
+			problem(w, 409, "Only an enabled provider with a model can be used for chat")
+			return
+		}
+		if err := s.Store.Put(r.Context(), aiMetaCollection, aiChatMeta, map[string]any{"provider_id": id, "updated_by": current(r).Username, "updated_at": now()}); err != nil {
+			s.databaseError(w, err)
+			return
+		}
+		s.audit(r, "ai.chat_provider_changed", id, true, "")
+		w.WriteHeader(204)
+	}))
+	mux.HandleFunc("DELETE /api/ai/chat-provider", manage(func(w http.ResponseWriter, r *http.Request) {
+		if err := s.Store.Put(r.Context(), aiMetaCollection, aiChatMeta, map[string]any{"provider_id": "", "updated_by": current(r).Username, "updated_at": now()}); err != nil {
+			s.databaseError(w, err)
+			return
+		}
+		s.audit(r, "ai.chat_provider_changed", "", true, "")
+		w.WriteHeader(204)
+	}))
+}
+
 const (
 	chatMaxMessages = 10
 	chatMaxChars    = 2000
@@ -33,9 +69,9 @@ func (s *Server) aiChat(w http.ResponseWriter, r *http.Request) {
 	if len(in.Messages) > chatMaxMessages {
 		in.Messages = in.Messages[len(in.Messages)-chatMaxMessages:]
 	}
-	prov, err := s.aiResolve(r.Context(), "")
+	prov, err := s.chatResolve(r.Context())
 	if err != nil {
-		problem(w, 503, "No AI provider is configured; an administrator can add one under Settings")
+		problem(w, 503, "No AI provider is available for chat; an administrator can set one under Settings")
 		return
 	}
 	var convo strings.Builder
