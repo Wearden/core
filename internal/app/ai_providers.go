@@ -155,7 +155,9 @@ func aiPost(ctx context.Context, p aiProvider, path string, body any, out any) e
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return errors.New("provider status " + resp.Status)
+		// The provider's own reason (bad model name, unsupported parameter) is what an administrator needs; only the connection check shows it.
+		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 400))
+		return errors.New("provider status " + resp.Status + ": " + strings.TrimSpace(string(detail)))
 	}
 	return json.NewDecoder(io.LimitReader(resp.Body, 4*1024*1024)).Decode(out)
 }
@@ -394,7 +396,9 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 		defer cancel()
 		started := time.Now()
 		if err := s.aiPing(ctx, p); err != nil {
-			writeJSON(w, 200, map[string]any{"ok": false, "message": "Connection failed: " + err.Error()})
+			// Still offer the model list: a wrong model name is the most common failure.
+			failed, _ := s.aiModelList(ctx, p)
+			writeJSON(w, 200, map[string]any{"ok": false, "message": "Connection failed: " + err.Error(), "models": failed})
 			return
 		}
 		latency := time.Since(started).Milliseconds()
