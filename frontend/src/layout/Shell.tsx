@@ -11,6 +11,7 @@ import { applyAppearance, getMotion, getThemePref, Motion, setMotion, setThemePr
 import Logo from "../components/Logo";
 import CommandPalette, { PaletteItem } from "../components/CommandPalette";
 import ChatWidget from "../components/ChatWidget";
+import { dateTime } from "../time";
 
 // Two-key "go to" shortcuts, in the style of common admin tools: press g, then the letter.
 const GO_KEYS: Record<string, string> = { d: "/", a: "/assets", s: "/scans", h: "/hardening", r: "/reports", u: "/audit", b: "/benchmarks", t: "/settings" };
@@ -322,7 +323,7 @@ export default function Shell() {
                       {alerts.slice(0, 8).map((a) => (
                         <li key={a.id} className="px-4 py-2.5 text-sm">
                           <div className="text-slate-200">{a.message}</div>
-                          <div className="text-xs text-slate-500">{new Date(a.detected_at).toLocaleString()} · {a.severity}</div>
+                          <div className="text-xs text-slate-500">{dateTime(a.detected_at)} · {a.severity}</div>
                         </li>
                       ))}
                     </ul>

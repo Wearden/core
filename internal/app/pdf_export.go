@@ -169,7 +169,7 @@ func reportPDF(title string, doc map[string]any, headerKeys []string, groups []p
 		if _, ok := doc[key]; !ok {
 			continue
 		}
-		if err := line(key+": ", doc[key]); err != nil {
+		if err := line(key+": ", localTime(key, doc[key])); err != nil {
 			return nil, err
 		}
 	}
@@ -184,7 +184,7 @@ func reportPDF(title string, doc map[string]any, headerKeys []string, groups []p
 				return nil, err
 			}
 			for _, key := range group.keys {
-				if err := line(key+": ", row[key]); err != nil {
+				if err := line(key+": ", localTime(key, row[key])); err != nil {
 					return nil, err
 				}
 			}

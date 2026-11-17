@@ -162,7 +162,7 @@ func (s *Server) featureCSV(w http.ResponseWriter, filename string, columns []st
 	for _, row := range rows {
 		record := make([]string, len(columns))
 		for i, column := range columns {
-			value := row[column]
+			value := localTime(column, row[column])
 			cell := ""
 			if value != nil {
 				if str, ok := value.(string); ok {

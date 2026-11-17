@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { agentsApi } from "../agentsApi";
 import { useI18n } from "../i18n";
+import { dateTime } from "../time";
 
 const LEVEL_STYLE: Record<string, string> = {
   info: "text-slate-300",
@@ -35,7 +36,7 @@ export default function AgentLogs({ agentId, tall = false }: { agentId: string; 
       <ul className={`${tall ? "max-h-[60vh]" : "max-h-72"} space-y-1 overflow-y-auto font-mono text-xs`}>
         {logs.data?.map((l) => (
           <li key={l.id} className={LEVEL_STYLE[l.level]}>
-            <span className="text-slate-500">{new Date(l.logged_at).toLocaleString()}</span> [{l.level}] {l.message}
+            <span className="text-slate-500">{dateTime(l.logged_at)}</span> [{l.level}] {l.message}
           </li>
         ))}
       </ul>

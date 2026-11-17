@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	_ "time/tzdata" // Asia/Baku must resolve even in images without a zoneinfo database.
 )
 
 type Config struct{ VaultKey, GuacKey, SessionControlKey, RecordingsDir, AnthropicKey, AnthropicModel, AllowedOrigin, DownloadsDir string }
@@ -130,6 +131,28 @@ func integer(v any) int64 {
 }
 func text(v any) string { s, _ := v.(string); return s }
 func now() string       { return time.Now().UTC().Format(time.RFC3339Nano) }
+
+// Stored values and the JSON API stay UTC; people-facing PDF and CSV exports show Baku time.
+var bakuTime = func() *time.Location {
+	loc, err := time.LoadLocation("Asia/Baku")
+	if err != nil {
+		panic(err)
+	}
+	return loc
+}()
+
+// localTime renders a timestamp field (key ending in _at) as Baku time, e.g. 2026-11-17T11:56:59+04:00. Anything else is returned unchanged.
+func localTime(key string, v any) any {
+	s, ok := v.(string)
+	if !ok || !strings.HasSuffix(key, "_at") {
+		return v
+	}
+	t, err := time.Parse(time.RFC3339Nano, s)
+	if err != nil {
+		return v
+	}
+	return t.In(bakuTime).Format(time.RFC3339)
+}
 func limit(r *http.Request, max int) int {
 	v, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil || v < 1 {
