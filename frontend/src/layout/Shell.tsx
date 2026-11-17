@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Segment } from "../components/ui";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, request } from "../api";
@@ -355,25 +356,11 @@ export default function Shell() {
                   </div>
                   <div className="border-t border-slate-800 px-4 py-3">
                     <div className="mb-1.5 text-[11px] uppercase tracking-wide text-slate-500">{az ? "Tema" : "Theme"}</div>
-                    <div className="flex overflow-hidden rounded-md border border-slate-700" role="group" aria-label="theme">
-                      {(["dark", "light", "system"] as const).map((v) => (
-                        <button key={v} onClick={() => chooseTheme(v)} aria-pressed={theme === v} className={`flex-1 px-2 py-1 text-xs ${theme === v ? "bg-slate-100 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>
-                          {v === "dark" ? (az ? "Qara" : "Black") : v === "light" ? (az ? "Ağ" : "White") : az ? "Sistem" : "System"}
-                        </button>
-                      ))}
-                    </div>
+                    <Segment label="theme" equal value={theme} onChange={chooseTheme} options={[{ id: "dark", label: az ? "Qara" : "Black" }, { id: "light", label: az ? "Ağ" : "White" }, { id: "system", label: az ? "Sistem" : "System" }]} />
                     <div className="mb-1.5 mt-3 text-[11px] uppercase tracking-wide text-slate-500">{az ? "Animasiyalar" : "Animations"}</div>
-                    <div className="flex overflow-hidden rounded-md border border-slate-700" role="group" aria-label="animations">
-                      {(["on", "system", "off"] as const).map((v) => (
-                        <button key={v} onClick={() => { setMotionPref(v); setMotion(v); }} aria-pressed={motion === v} className={`flex-1 px-2 py-1 text-xs ${motion === v ? "bg-slate-100 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>{v === "on" ? (az ? "Açıq" : "On") : v === "system" ? (az ? "Sistem" : "System") : az ? "Bağlı" : "Off"}</button>
-                      ))}
-                    </div>
+                    <Segment label="animations" equal value={motion} onChange={(v) => { setMotionPref(v); setMotion(v); }} options={[{ id: "on", label: az ? "Açıq" : "On" }, { id: "system", label: az ? "Sistem" : "System" }, { id: "off", label: az ? "Bağlı" : "Off" }]} />
                     <div className="mb-1.5 mt-3 text-[11px] uppercase tracking-wide text-slate-500">{az ? "Dil" : "Language"}</div>
-                    <div className="flex overflow-hidden rounded-md border border-slate-700" role="group" aria-label="language">
-                      {(["en", "az"] as const).map((l) => (
-                        <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l} className={`flex-1 px-2 py-1 text-xs ${lang === l ? "bg-slate-100 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>{l === "en" ? "English" : "Azərbaycanca"}</button>
-                      ))}
-                    </div>
+                    <Segment label="language" equal value={lang} onChange={setLang} options={[{ id: "en", label: "English" }, { id: "az", label: "Azərbaycanca" }]} />
                   </div>
                   <button onClick={logout} className="w-full border-t border-slate-800 px-4 py-2.5 text-left text-sm text-red-300 hover:bg-slate-800">{t("common.logout")}</button>
                 </div>
