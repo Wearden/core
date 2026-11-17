@@ -117,7 +117,16 @@ export async function request<T>(path: string, init: RequestInit = {}, auth = tr
 /** Fetches a protected binary (e.g. a session recording) and returns a blob: URL for the browser to play. */
 export async function fetchBlobUrl(path: string): Promise<string> {
   const res = await fetchResponse(path);
-  if (!res.ok) throw new ApiError(res.status, res.status === 404 ? "No recording for this session" : `HTTP ${res.status}`);
+  if (!res.ok) {
+    let message = res.status === 404 ? "No recording for this session" : `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      if (typeof body.detail === "string") message = body.detail;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new ApiError(res.status, message);
+  }
   return URL.createObjectURL(await res.blob());
 }
 
