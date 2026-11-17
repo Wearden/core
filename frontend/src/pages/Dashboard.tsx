@@ -48,9 +48,22 @@ export default function Dashboard() {
   const db = useQuery({ queryKey: ["ready"], queryFn: api.ready, refetchInterval: 10_000 });
   const dash = useQuery({ queryKey: ["dashboard"], queryFn: analyticsApi.dashboard, refetchInterval: 10_000 });
   const drift = useQuery({ queryKey: ["drift"], queryFn: () => request<DriftRow[]>("/drift?active_only=true"), refetchInterval: 30_000 });
+  const [driftNote, setDriftNote] = useState<string | null>(null);
   const runDrift = useMutation({
-    mutationFn: () => request<{ queued: boolean }>("/drift/run", { method: "POST" }),
-    onSuccess: () => window.setTimeout(() => drift.refetch(), 5000),
+    mutationFn: () => request<{ queued: boolean; hosts: number; hardened_hosts: number; skipped: string[] }>("/drift/run", { method: "POST" }),
+    onSuccess: (res) => {
+      const skipped = res.skipped.length ? ` ${L("Skipped (no stored credential or connection)", "Ötürüldü (etimad məlumatı və ya bağlantı yoxdur)")}: ${res.skipped.join(", ")}.` : "";
+      setDriftNote(
+        res.queued
+          ? `${L(`Rechecking ${res.hosts} hardened host(s). Alerts appear here when the scan finishes.`, `${res.hosts} möhkəmləndirilmiş host yenidən yoxlanılır. Skan bitəndə xəbərdarlıqlar burada görünəcək.`)}${skipped}`
+          : res.hardened_hosts === 0
+            ? L("Nothing to recheck: no host has hardening changes in place.", "Yoxlanacaq heç nə yoxdur: heç bir hostda tətbiq olunmuş möhkəmləndirmə yoxdur.")
+            : `${L("No hardened host could be rechecked.", "Heç bir möhkəmləndirilmiş host yoxlana bilmədi.")}${skipped}`,
+      );
+      window.setTimeout(() => drift.refetch(), 5000);
+      window.setTimeout(() => drift.refetch(), 30000);
+    },
+    onError: (err) => setDriftNote((err as Error).message),
   });
 
   // Newest completed scans drive every trend; the newest one drives the per-control charts.
@@ -278,6 +291,7 @@ export default function Dashboard() {
                   </button>
                 )}
               </div>
+              {driftNote && <p role="status" className="mb-3 rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-300">{driftNote}</p>}
               {(drift.data ?? []).length === 0 && <p className="text-sm text-slate-500">{t("dash.noDrift")}</p>}
               <ul className="space-y-2 text-sm">
                 {(drift.data ?? []).map((ev) => (

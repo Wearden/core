@@ -220,7 +220,7 @@ func (s *Server) ingestReport(w http.ResponseWriter, r *http.Request) {
 		_, err = tx.ExecContext(r.Context(), `UPDATE assets SET data=data||jsonb_build_object('status','online','last_seen',now(),'last_checked',now()) WHERE id=$1`, a.AssetID)
 	}
 	if err == nil {
-		err = s.reconcileDrift(r.Context(), tx, a, in)
+		err = s.reconcileDrift(r.Context(), tx, a.AssetID, a.Hostname, a.ID, in.FinishedAt, in.Findings)
 	}
 	if err == nil {
 		err = tx.Commit()
