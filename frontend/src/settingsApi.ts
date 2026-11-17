@@ -76,6 +76,7 @@ export interface AiProvider {
   enabled: boolean;
   default: boolean;
   chat?: boolean;
+  headers?: string;
   /** Provided by the older key and model settings; edit it under Agents and logs. */
   readonly: boolean;
 }
@@ -87,6 +88,7 @@ export interface AiProviderInput {
   model: string;
   api_key?: string;
   clear_key?: boolean;
+  headers?: string;
   enabled?: boolean;
 }
 

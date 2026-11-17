@@ -30,7 +30,47 @@ const (
 
 type aiProvider struct {
 	ID, Name, Kind, BaseURL, Model, Key string
+	Headers                             string // extra request headers, one "Name: value" per line
 	Enabled                             bool
+}
+
+// Headers the provider settings may not override: credentials and framing stay under the platform's control.
+var blockedHeaders = map[string]bool{"authorization": true, "x-api-key": true, "host": true, "content-type": true, "content-length": true, "cookie": true, "transfer-encoding": true}
+
+// parseHeaders validates the "Name: value" lines of the extra-headers setting.
+func parseHeaders(raw string) (map[string]string, error) {
+	out := map[string]string{}
+	for _, line := range strings.Split(strings.ReplaceAll(raw, "\r", ""), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		name, value, ok := strings.Cut(line, ":")
+		name, value = strings.TrimSpace(name), strings.TrimSpace(value)
+		if !ok || name == "" || value == "" || len(name) > 64 || len(value) > 256 {
+			return nil, errors.New("each header must look like Name: value")
+		}
+		if strings.ContainsFunc(name, func(r rune) bool { return !(r == '-' || r == '_' || r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z') }) {
+			return nil, errors.New("header names may only use letters, digits, - and _")
+		}
+		if blockedHeaders[strings.ToLower(name)] {
+			return nil, errors.New("the " + name + " header is set by Wearden and cannot be overridden")
+		}
+		out[name] = value
+		if len(out) > 10 {
+			return nil, errors.New("at most 10 extra headers")
+		}
+	}
+	return out, nil
+}
+
+// setHeaders applies the identifying User-Agent and the provider's extra headers.
+func (p aiProvider) setHeaders(req *http.Request) {
+	req.Header.Set("User-Agent", "Wearden-core")
+	extra, _ := parseHeaders(p.Headers)
+	for k, v := range extra {
+		req.Header.Set(k, v)
+	}
 }
 
 func defaultBaseURL(kind string) string {
@@ -71,7 +111,7 @@ func (s *Server) openKey(doc map[string]any) string {
 
 func (s *Server) providerFromDoc(id string, doc map[string]any) aiProvider {
 	enabled, ok := doc["enabled"].(bool)
-	return aiProvider{ID: id, Name: text(doc["name"]), Kind: text(doc["kind"]), BaseURL: text(doc["base_url"]), Model: text(doc["model"]), Key: s.openKey(doc), Enabled: !ok || enabled}
+	return aiProvider{ID: id, Name: text(doc["name"]), Kind: text(doc["kind"]), BaseURL: text(doc["base_url"]), Model: text(doc["model"]), Key: s.openKey(doc), Headers: text(doc["headers"]), Enabled: !ok || enabled}
 }
 
 // legacyProvider exposes the older Anthropic key and model settings (UI or environment) as a provider.
@@ -143,6 +183,7 @@ func aiPost(ctx context.Context, p aiProvider, path string, body any, out any) e
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	p.setHeaders(req)
 	if p.Kind == "anthropic" {
 		req.Header.Set("x-api-key", p.Key)
 		req.Header.Set("anthropic-version", "2023-06-01")
@@ -256,6 +297,7 @@ func (s *Server) aiModelList(ctx context.Context, p aiProvider) ([]map[string]st
 	if err != nil {
 		return nil, err
 	}
+	p.setHeaders(req)
 	if p.Kind == "anthropic" {
 		req.Header.Set("x-api-key", p.Key)
 		req.Header.Set("anthropic-version", "2023-06-01")
@@ -289,7 +331,7 @@ func (s *Server) aiModelList(ctx context.Context, p aiProvider) ([]map[string]st
 }
 
 func (s *Server) providerView(p aiProvider, def string, builtin bool) map[string]any {
-	return map[string]any{"id": p.ID, "name": p.Name, "kind": p.Kind, "base_url": p.BaseURL, "model": p.Model, "has_key": p.Key != "", "enabled": p.Enabled, "default": p.ID == def, "readonly": builtin}
+	return map[string]any{"id": p.ID, "name": p.Name, "kind": p.Kind, "base_url": p.BaseURL, "model": p.Model, "has_key": p.Key != "", "headers": p.Headers, "enabled": p.Enabled, "default": p.ID == def, "readonly": builtin}
 }
 
 func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
@@ -334,6 +376,7 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 		BaseURL  string `json:"base_url"`
 		Model    string `json:"model"`
 		APIKey   string `json:"api_key"`
+		Headers  string `json:"headers"`
 		ClearKey bool   `json:"clear_key"`
 		Enabled  *bool  `json:"enabled"`
 	}
@@ -361,6 +404,10 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 			return false
 		}
 		in.BaseURL = clean
+		if _, err := parseHeaders(in.Headers); err != nil {
+			problem(w, 400, err.Error())
+			return false
+		}
 		if in.APIKey != "" && (len(in.APIKey) > 512 || strings.ContainsAny(in.APIKey, " \r\n\t")) {
 			problem(w, 400, "API key has an invalid format")
 			return false
@@ -384,7 +431,7 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 		if !decode(w, r, &in) || !validate(w, &in.input) {
 			return
 		}
-		p := aiProvider{Name: in.Name, Kind: in.Kind, BaseURL: in.BaseURL, Model: in.Model, Key: in.APIKey, Enabled: true}
+		p := aiProvider{Name: in.Name, Kind: in.Kind, BaseURL: in.BaseURL, Model: in.Model, Key: in.APIKey, Headers: in.Headers, Enabled: true}
 		if p.Key == "" && in.ID != "" {
 			if doc, err := s.Store.Get(r.Context(), aiProvidersCollection, in.ID); err == nil {
 				p.Key = s.openKey(doc)
@@ -417,7 +464,7 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 		}
 		id = id[:12]
 		enabled := in.Enabled == nil || *in.Enabled
-		doc := map[string]any{"id": id, "name": in.Name, "kind": in.Kind, "base_url": in.BaseURL, "model": in.Model, "enabled": enabled, "created_by": current(r).Username, "created_at": now()}
+		doc := map[string]any{"id": id, "name": in.Name, "kind": in.Kind, "base_url": in.BaseURL, "model": in.Model, "headers": in.Headers, "enabled": enabled, "created_by": current(r).Username, "created_at": now()}
 		if in.APIKey != "" {
 			sealed, err := seal(in.APIKey)
 			if err != nil {
@@ -444,7 +491,7 @@ func (s *Server) aiProviderRoutes(mux *http.ServeMux) {
 		if !decode(w, r, &in) || !validate(w, &in) {
 			return
 		}
-		doc["name"], doc["kind"], doc["base_url"], doc["model"] = in.Name, in.Kind, in.BaseURL, in.Model
+		doc["name"], doc["kind"], doc["base_url"], doc["model"], doc["headers"] = in.Name, in.Kind, in.BaseURL, in.Model, in.Headers
 		if in.Enabled != nil {
 			doc["enabled"] = *in.Enabled
 		}
