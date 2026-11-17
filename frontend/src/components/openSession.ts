@@ -7,10 +7,9 @@ type Confirm = ReturnType<typeof useFeedback>["confirm"];
 
 /**
  * Opens a recorded SSH or RDP session to an asset. Windows hosts first need their RDP certificate confirmed.
- * With vaultId the secret of that vault entry is injected instead of the asset's own stored credential.
  * Returns null when the operator declines the certificate.
  */
-export async function openSession(asset: Asset, confirm: Confirm, az: boolean, cancelLabel: string, vaultId = ""): Promise<SessionOpenResult | null> {
+export async function openSession(asset: Asset, confirm: Confirm, az: boolean, cancelLabel: string): Promise<SessionOpenResult | null> {
   const L = (en: string, a: string) => (az ? a : en);
   let fingerprint = "";
   if (asset.os_type === "windows") {
@@ -27,5 +26,5 @@ export async function openSession(asset: Asset, confirm: Confirm, az: boolean, c
       fingerprint = cert.fingerprint;
     }
   }
-  return sessionsApi.open(asset.id, Math.max(640, window.innerWidth - 340), Math.max(480, window.innerHeight - 60), fingerprint, vaultId);
+  return sessionsApi.open(asset.id, Math.max(640, window.innerWidth - 340), Math.max(480, window.innerHeight - 60), fingerprint);
 }
