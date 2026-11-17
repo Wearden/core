@@ -18,6 +18,14 @@ export interface User {
   permissions: string[];
 }
 
+/** The signed-in user's own profile. `avatar` is an image data URL or empty. */
+export interface Profile {
+  display_name: string;
+  email: string;
+  job_title: string;
+  avatar: string;
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -137,6 +145,8 @@ export const api = {
   register: (username: string, password: string) =>
     request<{ status: "admin" | "pending" }>("/auth/register", { method: "POST", body: JSON.stringify({ username, password }) }, false),
   me: () => request<User>("/auth/me"),
+  profile: () => request<Profile>("/profile"),
+  updateProfile: (body: Profile) => request<Profile>("/profile", { method: "PUT", body: JSON.stringify(body) }),
   changePassword: (current_password: string, new_password: string) =>
     request<void>("/auth/change-password", {
       method: "POST",
