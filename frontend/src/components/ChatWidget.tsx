@@ -6,6 +6,8 @@ import { aiApi } from "../settingsApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import Logo from "./Logo";
+import { useProfile } from "./UserAvatar";
+import { usePrefs } from "../prefs";
 
 interface Msg { role: "user" | "assistant"; content: string }
 type Tab = "home" | "chat" | "help";
@@ -88,6 +90,8 @@ export default function ChatWidget() {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const status = useQuery({ queryKey: ["ai-status"], queryFn: aiApi.status, staleTime: 60_000 });
+  const prefs = usePrefs();
+  const profile = useProfile();
   const ready = useQuery({ queryKey: ["chat-ready"], queryFn: api.ready, refetchInterval: 30_000, enabled: status.data?.chat_enabled === true });
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
@@ -114,7 +118,7 @@ export default function ChatWidget() {
     return () => { window.clearTimeout(on); window.clearTimeout(off); };
   }, [status.data?.chat_enabled]);
 
-  if (!status.data?.chat_enabled) return null;
+  if (!status.data?.chat_enabled || !prefs.assistant) return null;
 
   const ask = async (content: string) => {
     content = content.trim();
@@ -150,7 +154,7 @@ export default function ChatWidget() {
           <WardyAvatar size={36} online animated />
         </div>
         <div className="mt-10">
-          <p className="text-2xl font-bold text-slate-400">{L("Hi", "Salam")} {user?.username} <span aria-hidden="true">👋</span></p>
+          <p className="text-2xl font-bold text-slate-400">{L("Hi", "Salam")} {profile.data?.display_name || user?.username} <span aria-hidden="true">👋</span></p>
           <p className="text-2xl font-bold text-slate-50">{L("How can we help?", "Sizə necə kömək edək?")}</p>
         </div>
       </div>

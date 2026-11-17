@@ -1,11 +1,19 @@
+import { getPrefs } from "./prefs";
+
 /** Every time the app shows is Baku time, whatever the viewer's own computer is set to. The API stays in UTC. */
 export const TIME_ZONE = "Asia/Baku";
 
+// 12 or 24 hour clock from the preferences; undefined lets the browser locale decide.
+const hour12 = () => {
+  const h = getPrefs().hour12;
+  return h === "auto" ? undefined : h === "12";
+};
+
 type When = string | number | Date;
 
-export const dateTime = (v: When, opts?: Intl.DateTimeFormatOptions) => new Date(v).toLocaleString(undefined, { timeZone: TIME_ZONE, ...opts });
+export const dateTime = (v: When, opts?: Intl.DateTimeFormatOptions) => new Date(v).toLocaleString(undefined, { timeZone: TIME_ZONE, hour12: hour12(), ...opts });
 export const dateOnly = (v: When) => new Date(v).toLocaleDateString(undefined, { timeZone: TIME_ZONE });
-export const timeOnly = (v: When = Date.now()) => new Date(v).toLocaleTimeString(undefined, { timeZone: TIME_ZONE });
+export const timeOnly = (v: When = Date.now()) => new Date(v).toLocaleTimeString(undefined, { timeZone: TIME_ZONE, hour12: hour12() });
 
 const parts = (v: When) =>
   Object.fromEntries(

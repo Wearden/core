@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { getPrefs } from "./prefs";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth";
 import Shell from "./layout/Shell";
@@ -50,7 +51,7 @@ function LoginRoute() {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
   if (user && user.must_change_password) return <Navigate to="/change-password" replace />;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={getPrefs().startPage} replace />;
   return <Login />;
 }
 
