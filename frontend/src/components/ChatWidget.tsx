@@ -6,6 +6,27 @@ import { useI18n } from "../i18n";
 
 interface Msg { role: "user" | "assistant"; content: string }
 
+const COLOR: Record<string, string> = { red: "text-red-300", green: "text-emerald-300", yellow: "text-amber-300", cyan: "text-cyan-300", violet: "text-violet-300" };
+const TOKEN = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|\[\[(?:red|green|yellow|cyan|violet):[^\]\n]+\]\])/g;
+
+/** Renders **bold**, *italic*, `code` and [[colour:text]] as React elements. Nothing is injected as HTML. */
+function Rich({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(TOKEN).map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**") && part.length > 4) return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
+        if (part.startsWith("[[") && part.endsWith("]]")) {
+          const [name, ...rest] = part.slice(2, -2).split(":");
+          return <span key={i} className={`font-medium ${COLOR[name] ?? ""}`}>{rest.join(":")}</span>;
+        }
+        if (part.startsWith("`") && part.endsWith("`") && part.length > 2) return <code key={i} className="rounded bg-slate-950 px-1 py-0.5 font-mono text-[12px] text-cyan-200">{part.slice(1, -1)}</code>;
+        if (part.startsWith("*") && part.endsWith("*") && part.length > 2) return <em key={i}>{part.slice(1, -1)}</em>;
+        return part;
+      })}
+    </>
+  );
+}
+
 /** Wardy's face: a small shield with eyes and a smile, in the app's cyan. */
 function WardyAvatar({ size = 36, online = false }: { size?: number; online?: boolean }) {
   return (
@@ -96,7 +117,7 @@ export default function ChatWidget() {
               ) : (
                 <div key={i} className="flex items-end gap-2">
                   <WardyAvatar size={28} />
-                  <p className="max-w-[80%] whitespace-pre-line rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-2 text-slate-200">{m.content}</p>
+                  <p className="max-w-[80%] whitespace-pre-line rounded-2xl rounded-bl-sm bg-slate-800 px-3 py-2 text-slate-200"><Rich text={m.content} /></p>
                 </div>
               ),
             )}
