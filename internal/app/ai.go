@@ -33,6 +33,7 @@ func (s *Server) aiRoutes(mux *http.ServeMux) {
 		writeJSON(w, 200, map[string]any{"enabled": true, "provider": p.Name, "model": p.Model})
 	}))
 	mux.HandleFunc("POST /api/ai/analyze", s.require("operator", s.aiAnalyze))
+	mux.HandleFunc("POST /api/ai/chat", s.require("viewer", s.aiChat))
 	mux.HandleFunc("GET /api/ai/analyses/{scan_id}", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
 		doc, err := s.Store.Get(r.Context(), "ai_analyses", r.PathValue("scan_id"))
 		if errors.Is(err, sql.ErrNoRows) {
