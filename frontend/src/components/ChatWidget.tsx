@@ -31,19 +31,17 @@ function Rich({ text }: { text: string }) {
   );
 }
 
-/** Wardy's face: a small shield with eyes and a smile, in the app's cyan. */
-function WardyAvatar({ size = 36, online = false, blink = false }: { size?: number; online?: boolean; blink?: boolean }) {
+/** Wardy: a small black and white orb with two soft blobs that drift and change shape. Static unless `animated`. */
+function WardyAvatar({ size = 36, online = false, animated = false }: { size?: number; online?: boolean; animated?: boolean }) {
+  const blob = animated ? "wd-orb-anim" : "";
   return (
-    <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 48 48" width={size} height={size} role="img" aria-label="Wardy">
-        <circle cx="24" cy="24" r="24" fill="#0a0a0a" />
-        <circle cx="24" cy="24" r="22.5" fill="none" stroke="#fafafa" strokeWidth="1.5" />
-        <path d="M24 9.5l10.5 3.8v8.6c0 6.8-4.4 11.3-10.5 13.6-6.1-2.3-10.5-6.8-10.5-13.6v-8.6z" fill="#fafafa" />
-        <circle cx="19.8" cy="21.5" r="2" fill="#0a0a0a" className={blink ? "wd-blink" : undefined} />
-        <circle cx="28.2" cy="21.5" r="2" fill="#0a0a0a" className={blink ? "wd-blink" : undefined} />
-        <path d="M19.3 27.2c1.3 1.8 2.8 2.6 4.7 2.6s3.4-.8 4.7-2.6" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-      {online && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />}
+    <span className="relative inline-flex shrink-0" style={{ width: size, height: size }} role="img" aria-label="Wardy">
+      <span className="wd-orb" style={{ ["--s" as string]: size }}>
+        <span className={`wd-blob wd-blob-a ${blob}`} />
+        <span className={`wd-blob wd-blob-b ${blob}`} />
+        <span className="wd-gloss" />
+      </span>
+      {online && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-black bg-emerald-400" />}
     </span>
   );
 }
@@ -72,15 +70,22 @@ const SCROLL_CSS = `.wd-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255
 .wd-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:9999px}
 .wd-scroll::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.32)}`;
 
-// Launcher motion: a pulsing ring, a gentle float, blinking eyes and a pop-in greeting. All of it stops for reduced-motion users.
+// Launcher motion: a pulsing ring, a gentle float, a drifting orb and a pop-in greeting. All of it stops for reduced-motion users.
 const FX_CSS = `@keyframes wd-ring{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
 @keyframes wd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-@keyframes wd-blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
+@keyframes wd-morph-a{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%;transform:translate(-10%,-8%) rotate(0deg)}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%;transform:translate(10%,8%) rotate(200deg)}}
+@keyframes wd-morph-b{0%,100%{border-radius:40% 60% 60% 40%/70% 30% 70% 30%;transform:translate(12%,10%) rotate(40deg)}50%{border-radius:70% 30% 40% 60%/40% 70% 30% 60%;transform:translate(-12%,-10%) rotate(-160deg)}}
+.wd-orb{position:relative;display:block;width:calc(var(--s) * 1px);height:calc(var(--s) * 1px);overflow:hidden;border-radius:9999px;background:radial-gradient(circle at 50% 55%,#27272a 0%,#0a0a0a 75%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.wd-blob{position:absolute;left:12%;top:12%;width:76%;height:76%;filter:blur(calc(var(--s) * .07px))}
+.wd-blob-a{background:radial-gradient(circle at 30% 30%,#fff 0%,#d4d4d8 45%,#71717a 100%);border-radius:60% 40% 30% 70%/60% 30% 70% 40%;opacity:.95}
+.wd-blob-b{background:radial-gradient(circle at 70% 70%,#e4e4e7 0%,#52525b 70%,transparent 100%);border-radius:40% 60% 60% 40%/70% 30% 70% 30%;opacity:.7;mix-blend-mode:screen}
+.wd-gloss{position:absolute;left:20%;top:12%;width:34%;height:20%;border-radius:9999px;background:rgba(255,255,255,.55);filter:blur(calc(var(--s) * .05px));transform:rotate(-30deg)}
+.wd-orb-anim.wd-blob-a{animation:wd-morph-a 7s ease-in-out infinite}.wd-orb-anim.wd-blob-b{animation:wd-morph-b 9s ease-in-out infinite}
 @keyframes wd-pop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes wd-spin-in{from{transform:rotate(-90deg) scale(.5);opacity:0}to{transform:none;opacity:1}}
 .wd-ring{animation:wd-ring 2.8s ease-out infinite}.wd-float{animation:wd-float 4s ease-in-out infinite}.wd-float:hover{animation-play-state:paused}
-.wd-blink{transform-box:fill-box;transform-origin:center;animation:wd-blink 5s infinite}.wd-pop{animation:wd-pop .35s ease-out}.wd-spin-in{animation:wd-spin-in .25s ease-out}
-@media (prefers-reduced-motion:reduce){.wd-ring,.wd-float,.wd-blink,.wd-pop,.wd-spin-in{animation:none}}`;
+.wd-pop{animation:wd-pop .35s ease-out}.wd-spin-in{animation:wd-spin-in .25s ease-out}
+@media (prefers-reduced-motion:reduce){.wd-ring,.wd-float,.wd-orb-anim,.wd-pop,.wd-spin-in{animation:none}}`;
 
 /** Messenger-style support window: Home, Messages (chat with Wardy) and Help. Needs an AI provider; hidden otherwise. History lives in memory only. */
 export default function ChatWidget() {
@@ -149,7 +154,7 @@ export default function ChatWidget() {
       <div className="bg-gradient-to-b from-cyan-950/70 via-slate-900 to-slate-900 px-5 pb-6 pt-5">
         <div className="flex items-center justify-between pr-11">
           <span className="flex items-center gap-2 text-cyan-300"><Logo className="h-6 w-auto" /><span className="text-lg font-bold tracking-wide text-slate-50">WEARDEN</span></span>
-          <WardyAvatar size={36} online />
+          <WardyAvatar size={36} online animated />
         </div>
         <div className="mt-10">
           <p className="text-2xl font-bold text-slate-400">{L("Hi", "Salam")} {user?.username} <span aria-hidden="true">👋</span></p>
@@ -200,7 +205,7 @@ export default function ChatWidget() {
   const chat: ReactNode = (
     <>
       <div className="flex items-center gap-3 border-b border-slate-800 bg-gradient-to-r from-cyan-950/70 to-slate-900 px-4 py-3 pr-12">
-        <WardyAvatar size={36} online />
+        <WardyAvatar size={36} online animated />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-slate-50">Wardy</div>
           <div className="truncate text-xs text-cyan-200/70">{L("Wearden support · AI assistant", "Wearden dəstək · AI köməkçi")}</div>
@@ -276,7 +281,7 @@ export default function ChatWidget() {
       ) : (
         <button onClick={() => { setHint(false); setOpen(true); }} aria-label={L("Support", "Dəstək")} aria-expanded="false" className="wd-float group relative flex items-center rounded-full border border-white/15 bg-black p-1.5 shadow-xl transition-colors hover:border-white/40 focus-visible:border-white/60">
           <span aria-hidden="true" className="wd-ring pointer-events-none absolute inset-0 rounded-full border border-white/40" />
-          <WardyAvatar size={46} online blink />
+          <WardyAvatar size={46} online animated />
           <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium text-white opacity-0 transition-all duration-300 group-hover:max-w-[10rem] group-hover:pl-3 group-hover:pr-3 group-hover:opacity-100 group-focus-visible:max-w-[10rem] group-focus-visible:pl-3 group-focus-visible:pr-3 group-focus-visible:opacity-100">{L("Ask Wardy", "Wardy-dən soruş")}</span>
         </button>
       )}
