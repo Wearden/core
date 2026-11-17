@@ -28,7 +28,7 @@ const PRESETS: Preset[] = [
   { id: "custom", label: "Custom OpenAI compatible", kind: "openai", base_url: "", name: "", local: false, hint: "vLLM, llama.cpp, OpenRouter, a company gateway or any server that speaks the OpenAI chat API." },
 ];
 
-const emptyForm = { name: "", kind: "openai" as ProviderKind, base_url: "", model: "", api_key: "", clear_key: false, enabled: true };
+const emptyForm = { name: "", kind: "openai" as ProviderKind, base_url: "", model: "", api_key: "", headers: "", clear_key: false, enabled: true };
 
 function hostOf(url: string): string {
   try {
@@ -45,13 +45,13 @@ function ProviderDialog({ initial, onClose, vaultReady }: { initial: AiProvider 
   const { toast } = useFeedback();
   const [preset, setPreset] = useState<string>(initial ? "" : "ollama");
   const [form, setForm] = useState(() => {
-    if (initial) return { name: initial.name, kind: initial.kind, base_url: initial.base_url, model: initial.model, api_key: "", clear_key: false, enabled: initial.enabled };
+    if (initial) return { name: initial.name, kind: initial.kind, base_url: initial.base_url, model: initial.model, api_key: "", headers: initial.headers ?? "", clear_key: false, enabled: initial.enabled };
     const p = PRESETS.find((x) => x.id === "ollama")!;
     return { ...emptyForm, name: p.name, kind: p.kind, base_url: p.base_url };
   });
   const models = useMutation({ mutationFn: () => aiAdminApi.models(initial!.id) });
   const body = (): AiProviderInput => {
-    const b: AiProviderInput = { name: form.name, kind: form.kind, base_url: form.base_url, model: form.model, enabled: form.enabled };
+    const b: AiProviderInput = { name: form.name, kind: form.kind, base_url: form.base_url, model: form.model, headers: form.headers, enabled: form.enabled };
     if (form.api_key) b.api_key = form.api_key;
     return b;
   };
@@ -123,6 +123,9 @@ function ProviderDialog({ initial, onClose, vaultReady }: { initial: AiProvider 
         {initial?.has_key && (
           <label className="flex items-center gap-2 text-xs text-slate-300"><input type="checkbox" checked={form.clear_key} onChange={(e) => setForm({ ...form, clear_key: e.target.checked })} />{az ? "Saxlanılmış açarı sil" : "Remove the stored key"}</label>
         )}
+        <Labeled label={az ? "Əlavə başlıqlar (istəyə görə)" : "Extra headers (optional)"} hint={az ? "Hər sətirdə bir başlıq: Ad: dəyər. Bəzi provayderlər xüsusi başlıq tələb edir. Gizli açarları bura yazmayın, onlar üçün API açarı sahəsi var." : "One header per line as Name: value. Some providers require a special header. Do not put secrets here, use the API key field for those."}>
+          <textarea className={`${field} font-mono`} rows={2} value={form.headers} onChange={(e) => setForm({ ...form, headers: e.target.value })} placeholder="x-opencode-session: wearden" spellCheck={false} />
+        </Labeled>
         <label className="flex items-center gap-2 text-sm text-slate-200"><input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />{az ? "Aktivdir" : "Enabled"}</label>
         {check.error && <p className="text-xs text-red-300">{errText(check.error)}</p>}
         {check.data && (
