@@ -34,6 +34,7 @@ func (s *Server) featureRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/assets/{id}/rdp-certificate", s.require("operator", s.rdpCertificateInfo))
 	mux.HandleFunc("POST /api/sessions/{id}/end", s.require("operator", s.featureEndSession))
 	mux.HandleFunc("GET /api/sessions/{id}/recording", s.require("operator", s.featureRecording))
+	mux.HandleFunc("DELETE /api/sessions/{id}", s.requirePerm("recordings.delete", s.featureDeleteSession))
 }
 
 func (s *Server) featureAudit(w http.ResponseWriter, r *http.Request) {

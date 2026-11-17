@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { sessionsApi } from "../sessionsApi";
+import { useAuth } from "../auth";
+import { useFeedback } from "../components/feedback";
 import RecordingPlayer from "../components/RecordingPlayer";
 import type { RemoteSessionRow } from "../sessionTypes";
 import { useI18n } from "../i18n";
@@ -29,6 +31,31 @@ export default function Sessions() {
     download(`/sessions/${s.id}/recording?format=mp4`, `${recordingName(s)}.mp4`)
       .catch((err) => setDownloadError(err instanceof Error ? err.message : String(err)))
       .finally(() => setPreparing(null));
+  };
+  const { can } = useAuth();
+  const { confirm, toast } = useFeedback();
+  const queryClient = useQueryClient();
+  const az = lang === "az";
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const remove = async (s: RemoteSessionRow) => {
+    const ok = await confirm({
+      title: az ? "Qeydi sil" : "Delete recording",
+      message: `${recordingName(s)}: ${az ? "video və sessiya qeydi birdəfəlik silinir, geri qaytarmaq olmur." : "the video and the session entry are deleted permanently and cannot be recovered."}`,
+      confirmLabel: az ? "Sil" : "Delete",
+      cancelLabel: t("common.cancel"),
+      danger: true,
+    });
+    if (!ok) return;
+    setDeleting(s.id);
+    try {
+      await sessionsApi.remove(s.id);
+      toast(az ? "Qeyd silindi" : "Recording deleted", "success");
+      await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    } catch (err) {
+      toast((err as Error).message, "error");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -85,6 +112,15 @@ export default function Sessions() {
                       </>
                     ) : (
                       <span className="text-xs text-slate-500">{t("ses.noneYet")}</span>
+                    )}
+                    {can("recordings.delete") && s.ended_at && (
+                      <button
+                        onClick={() => remove(s)}
+                        disabled={deleting === s.id}
+                        className="ml-2 rounded border border-red-900/70 px-2 py-1 text-xs text-red-300 hover:bg-red-950/60 disabled:opacity-50"
+                      >
+                        {az ? "Sil" : "Delete"}
+                      </button>
                     )}
                   </td>
                 </tr>
