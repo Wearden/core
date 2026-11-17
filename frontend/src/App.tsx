@@ -19,8 +19,6 @@ import Rollback from "./pages/Rollback";
 import PamAssets from "./pages/PamAssets";
 import PamScans from "./pages/PamScans";
 import PamHardening from "./pages/PamHardening";
-import PamVault from "./pages/PamVault";
-import PamAccess from "./pages/PamAccess";
 import Reports from "./pages/Reports";
 import AttackMatrix from "./pages/AttackMatrix";
 import { useI18n } from "./i18n";
@@ -80,8 +78,6 @@ export default function App() {
             <Route path="/assets" element={<Assets />} />
             <Route path="/audit" element={<Audit />} />
             <Route path="/pam/sessions" element={<Sessions />} />
-            <Route path="/pam/vault" element={<PamVault />} />
-            <Route path="/pam/access" element={<PamAccess />} />
             <Route path="/sessions" element={<Navigate to="/pam/sessions" replace />} />
             <Route path="/benchmarks" element={<Benchmarks />} />
             <Route path="/scans" element={<Scans />} />

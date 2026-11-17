@@ -28,8 +28,6 @@ var permissionCatalog = []permissionDef{
 	{"agents.enroll", "Fleet", "Create enrollment tokens and revoke agents"},
 	{"assets.delete", "Fleet", "Delete assets"},
 	{"credentials.manage", "Fleet", "Set or remove stored host credentials"},
-	{"vault.manage", "PAM", "Add, edit and delete password vault entries"},
-	{"jit.approve", "PAM", "Approve, deny and revoke just-in-time access and set the zero standing privileges policy"},
 }
 
 var roleNameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{1,31}$`)

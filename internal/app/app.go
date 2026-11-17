@@ -189,7 +189,6 @@ func (s *Server) Handler() http.Handler {
 	s.installRoutes(m)
 	s.remoteInstallRoutes(m)
 	s.pamRoutes(m)
-	s.pamVaultRoutes(m)
 	s.aiRoutes(m)
 	s.profileRoutes(m)
 	s.userRoutes(m)
