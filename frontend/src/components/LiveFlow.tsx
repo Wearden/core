@@ -50,17 +50,28 @@ function Arrow({ flowing, color }: { flowing: boolean; color: string }) {
   );
 }
 
-function DetailPanel({ detail, hint }: { detail: Detail | null; hint: string }) {
-  if (!detail) return <p className="p-5 text-sm text-slate-500">{hint}</p>;
+// Colour a value by what it says: good green, bad red, in progress yellow, numbers white, the rest grey.
+const toneOf = (v: string) =>
+  /^(pass|passed|done|ok|completed|applied|connected|yes|bəli)\b/i.test(v) ? "text-emerald-300"
+  : /^(fail|failed|error|errored|cancelled|no|xeyr)\b/i.test(v) ? "text-red-300"
+  : /^(running|queued|pending|idle|cancel_requested)\b/i.test(v) ? "text-amber-300"
+  : /^[\d\s/%.()-]+$/.test(v) ? "font-semibold text-white" : "text-slate-300";
+
+/** Small window under a pipeline box with that stage's details, coloured by meaning. */
+function StepPopover({ detail, alignRight }: { detail: Detail; alignRight: boolean }) {
   return (
-    <div className="space-y-3 p-5">
-      <h3 className="text-sm font-semibold text-slate-50">{detail.title}</h3>
-      <dl className="space-y-2 text-xs">
+    <div role="dialog" aria-label={detail.title} className={`absolute top-full z-20 mt-2 w-72 rounded-lg border border-slate-700 bg-black p-3 text-xs shadow-2xl ${alignRight ? "right-0" : "left-0"}`}>
+      <span aria-hidden className={`absolute -top-1.5 h-3 w-3 rotate-45 border-l border-t border-slate-700 bg-black ${alignRight ? "right-6" : "left-6"}`} />
+      <div className="mb-2 text-sm font-semibold text-white">{detail.title}</div>
+      <dl className="space-y-1">
         {detail.rows.map(([k, v]) => (
-          <div key={k}><dt className="text-slate-500">{k}</dt><dd className="mt-0.5 break-words font-mono text-slate-200">{v || "-"}</dd></div>
+          <div key={k} className="flex justify-between gap-3">
+            <dt className="shrink-0 text-slate-500">{k}</dt>
+            <dd className={`min-w-0 break-words text-right font-mono ${toneOf(v)}`}>{v || "-"}</dd>
+          </div>
         ))}
       </dl>
-      {detail.note && <p className="text-xs text-slate-400">{detail.note}</p>}
+      {detail.note && <p className="mt-2 border-t border-slate-800 pt-2 text-slate-400">{detail.note}</p>}
     </div>
   );
 }
@@ -97,20 +108,23 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
             </div>
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
               <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
-                <div className="flex flex-wrap items-center gap-y-4">
+                <div className="flex items-center">
                   {steps.map((s, i) => {
                     const st = stateOf(i, current, end);
                     const id = `step-${i}`;
                     return (
-                      <div key={s.label} className="flex items-center">
+                      <div key={s.label} className="flex min-w-0 flex-1 items-center">
                         {i > 0 && <Arrow flowing={st === "active" && end === null} color={ARROW[st]} />}
-                        <button onClick={() => setSel({ id, detail: s.info })} aria-pressed={sel?.id === id} className={`min-w-[9.5rem] rounded-xl border-2 px-4 py-3 text-left text-sm transition-colors duration-500 hover:brightness-125 ${NODE[st]} ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
+                        <div className="relative min-w-0 flex-1">
+                        <button onClick={() => setSel(sel?.id === id ? null : { id, detail: s.info })} aria-pressed={sel?.id === id} className={`w-full rounded-xl border-2 px-4 py-3 text-left text-sm transition-colors duration-500 hover:brightness-125 ${NODE[st]} ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
                           <span className="flex items-center gap-2 font-medium">
                             {st === "active" ? <span className="wf-anim h-3.5 w-3.5 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" /> : <span>{st === "done" ? "✓" : st === "fail" ? "✕" : st === "stop" ? "■" : "○"}</span>}
                             {s.label}
                           </span>
                           {s.detail && <span className="mt-1 block text-xs opacity-80">{s.detail}</span>}
                         </button>
+                        {sel?.id === id && <StepPopover detail={s.info} alignRight={i >= steps.length - 2} />}
+                        </div>
                       </div>
                     );
                   })}
@@ -122,9 +136,9 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
                       {calls.map((c) => {
                         const id = `call-${c.key}`;
                         return (
-                          <button key={c.key} onClick={() => setSel({ id, detail: c.info })} aria-pressed={sel?.id === id} className={`rounded-lg ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
+                          <span key={c.key} className="relative block"><button onClick={() => setSel(sel?.id === id ? null : { id, detail: c.info })} aria-pressed={sel?.id === id} className={`rounded-lg ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
                             <CallChip {...CHIP} size={30} icon={headline?.name === "harden" ? "edit" : "search"} showTimer={false} expectedMs={1} name={c.name} argument={c.arg} status={c.status} />
-                          </button>
+                          </button>{sel?.id === id && <StepPopover detail={c.info} alignRight={false} />}</span>
                         );
                       })}
                     </div>
@@ -138,29 +152,26 @@ function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle,
                         const total = Math.max(c.ok + c.bad + c.warn, 1);
                         const id = `chip-${c.key}`;
                         return (
-                          <button key={c.key} onClick={() => setSel({ id, detail: c.info })} aria-pressed={sel?.id === id} className={`rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-left text-sm text-slate-300 hover:border-slate-600 ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
+                          <span key={c.key} className="relative block"><button onClick={() => setSel(sel?.id === id ? null : { id, detail: c.info })} aria-pressed={sel?.id === id} className={`rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-left text-sm text-slate-300 hover:border-slate-600 ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
                             <span className="mb-2 flex justify-between"><span className="truncate">{c.label}</span><span className="text-xs text-slate-500">{c.ok}/{c.bad}/{c.warn}</span></span>
                             <span className="flex h-2 overflow-hidden rounded bg-slate-800">
                               <span className="bg-emerald-500 transition-all duration-500" style={{ width: `${(c.ok / total) * 100}%` }} />
                               <span className="bg-red-500 transition-all duration-500" style={{ width: `${(c.bad / total) * 100}%` }} />
                               <span className="bg-amber-500 transition-all duration-500" style={{ width: `${(c.warn / total) * 100}%` }} />
                             </span>
-                          </button>
+                          </button>{sel?.id === id && <StepPopover detail={c.info} alignRight={false} />}</span>
                         );
                       })}
                     </div>
                   </div>
                 )}
               </div>
-              <aside className="max-h-60 shrink-0 overflow-y-auto border-t border-slate-800 bg-slate-900/60 md:max-h-none md:w-80 md:border-l md:border-t-0">
-                <DetailPanel detail={sel?.detail ?? null} hint={az ? "Qutuya, hosta və ya hadisə sətrinə basın, ətraflı məlumat burada açılacaq." : "Click a box, a host or an event line to see its details here."} />
-              </aside>
             </div>
             <ul className="max-h-44 shrink-0 space-y-0.5 overflow-y-auto border-t border-slate-800 bg-black/40 px-5 py-3 font-mono text-xs" aria-live="off">
               {lines.length === 0 && <li className="text-slate-600">{az ? "Hadisə gözlənilir…" : "Waiting for events…"}</li>}
               {lines.map((l) => (
                 <li key={l.key} className="wf-line">
-                  <button disabled={!l.info} onClick={() => l.info && setSel({ id: `line-${l.key}`, detail: l.info })} className={`w-full truncate text-left ${l.tone ? TONE[l.tone] : "text-slate-400"} ${l.info ? "hover:underline" : ""}`}>{l.text}</button>
+                  <span className={`block w-full truncate text-left ${l.tone ? TONE[l.tone] : "text-slate-400"} `}>{l.text}</span>
                 </li>
               ))}
             </ul>
