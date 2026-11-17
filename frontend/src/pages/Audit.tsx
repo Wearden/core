@@ -39,14 +39,14 @@ export default function Audit() {
     { id: "time", header: t("audit.time"), sort: (x, y) => Date.parse(x.created_at) - Date.parse(y.created_at), csv: (r) => isoTime(r.created_at), locked: true, cell: (r) => <span className="whitespace-nowrap text-xs text-slate-500" title={dateTime(r.created_at)}>{relativeTime(r.created_at)}</span> },
     { id: "user", header: t("audit.user"), sort: (x, y) => (x.username ?? "").localeCompare(y.username ?? ""), csv: (r) => r.username, cell: (r) => <span className="text-slate-300">{r.username ?? "-"}</span> },
     { id: "action", header: t("audit.action"), sort: (x, y) => x.action.localeCompare(y.action), csv: (r) => r.action, cell: (r) => <span className="font-mono text-xs text-slate-200">{r.action}</span> },
-    { id: "target", header: t("audit.target"), csv: (r) => r.target, cell: (r) => <ShortId value={r.target} /> },
+    { id: "target", wrap: true, header: t("audit.target"), csv: (r) => r.target, cell: (r) => <ShortId value={r.target} /> },
     { id: "result", header: t("audit.result"), sort: (x, y) => Number(x.success) - Number(y.success), csv: (r) => (r.success ? "ok" : "failed"), cell: (r) => (
       <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
         <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${r.success ? "bg-emerald-400" : "bg-red-400"}`} />
         {r.success ? t("audit.ok") : t("dash.failed")}
       </span>
     ) },
-    { id: "detail", header: t("audit.detail"), csv: (r) => r.detail, cell: (r) => <span className="block max-w-xs truncate text-xs text-slate-500" title={r.detail ?? ""}>{r.detail ?? ""}</span> },
+    { id: "detail", wide: true, header: t("audit.detail"), csv: (r) => r.detail, cell: (r) => <span className="block max-w-xs truncate text-xs text-slate-500" title={r.detail ?? ""}>{r.detail ?? ""}</span> },
   ];
 
   const count = (g: Group) => data.filter((r) => (g === "all" ? true : g === "people" ? groupOf(r.action) !== "agents" && !r.action.startsWith("hardening.task_result") && !r.action.startsWith("scan.queued") : groupOf(r.action) === g)).length;

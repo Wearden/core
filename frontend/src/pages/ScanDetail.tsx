@@ -90,13 +90,13 @@ export default function ScanDetail() {
 
   const columns: Column<ControlResultRow>[] = [
     { id: "host", header: t("col.host"), sort: (a, b) => a.asset_name.localeCompare(b.asset_name), csv: (r) => r.asset_name, cell: (r) => <span className="text-xs text-slate-300">{r.asset_name}</span>, defaultHidden: s.hosts.length < 2 },
-    { id: "control", header: t("col.control"), locked: true, sort: (a, b) => a.title.localeCompare(b.title), csv: (r) => `${r.control_id} ${r.title}`,
+    { id: "control", wide: true, header: t("col.control"), locked: true, sort: (a, b) => a.title.localeCompare(b.title), csv: (r) => `${r.control_id} ${r.title}`,
       cell: (r) => (<><div className="text-slate-100">{r.title}</div><div className="text-xs text-slate-500"><span className="font-mono">{r.control_id}</span>{r.category && <span> · {r.category}</span>}</div></>) },
     { id: "severity", header: t("col.severity"), sort: (a, b) => (SEVERITY_ORDER[a.severity] ?? 0) - (SEVERITY_ORDER[b.severity] ?? 0), csv: (r) => r.severity,
       cell: (r) => <span className="inline-flex items-center gap-1.5 text-xs text-slate-200"><span aria-hidden className={`h-1.5 w-1.5 rounded-full ${SEVERITY_DOT[r.severity] ?? "bg-slate-500"}`} />{r.severity}</span> },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (r) => r.status, cell: (r) => <StatusPill status={r.status} /> },
-    { id: "found", header: t("scan.found"), csv: (r) => r.actual ?? "", cell: (r) => <span className="block max-w-[14rem] truncate font-mono text-xs text-slate-400" title={r.actual ?? ""}>{r.actual ?? "-"}</span> },
-    { id: "expected", header: t("scan.expected"), defaultHidden: true, csv: (r) => r.expected, cell: (r) => <span className="block max-w-[14rem] truncate font-mono text-xs text-slate-400" title={r.expected}>{r.expected}</span> },
+    { id: "found", wrap: true, header: t("scan.found"), csv: (r) => r.actual ?? "", cell: (r) => <span className="block max-w-[14rem] truncate font-mono text-xs text-slate-400" title={r.actual ?? ""}>{r.actual ?? "-"}</span> },
+    { id: "expected", wrap: true, header: t("scan.expected"), defaultHidden: true, csv: (r) => r.expected, cell: (r) => <span className="block max-w-[14rem] truncate font-mono text-xs text-slate-400" title={r.expected}>{r.expected}</span> },
     { id: "duration", header: "ms", defaultHidden: true, sort: (a, b) => a.duration_ms - b.duration_ms, csv: (r) => r.duration_ms, cell: (r) => <span className="text-xs text-slate-500">{r.duration_ms}</span> },
   ];
 

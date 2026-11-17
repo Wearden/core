@@ -107,7 +107,7 @@ export default function Benchmarks() {
   const applyProfile = (p: Profile) => setSelected(new Set<string | number>(p.control_ids));
   const columns: Column<ControlSummary>[] = [
     { id: "cis", header: t("bm.cis"), sort: (x, y) => x.cis_ref.localeCompare(y.cis_ref, undefined, { numeric: true }), csv: (c) => c.cis_ref, cell: (c) => <span className="font-mono text-xs text-slate-400">{c.cis_ref}</span> },
-    { id: "control", header: t("col.control"), locked: true, sort: (x, y) => x.title.localeCompare(y.title), csv: (c) => c.title, cell: (c) => (
+    { id: "control", wide: true, header: t("col.control"), locked: true, sort: (x, y) => x.title.localeCompare(y.title), csv: (c) => c.title, cell: (c) => (
       <div><div className="font-medium">{c.title}</div><div className="font-mono text-xs text-slate-500">{c.id}</div></div>
     ) },
     { id: "category", header: t("bm.category"), sort: (x, y) => x.category.localeCompare(y.category), csv: (c) => c.category, cell: (c) => <span className="text-xs text-slate-400">{c.category}</span> },
