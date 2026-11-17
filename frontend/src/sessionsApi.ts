@@ -11,4 +11,5 @@ export const sessionsApi = {
     request<{ fingerprint: string; subject: string; not_after: string; trusted: boolean; changed: boolean }>(`/assets/${assetId}/rdp-certificate`),
   list: () => request<RemoteSessionRow[]>("/sessions"),
   end: (id: string) => request<RemoteSessionRow>(`/sessions/${id}/end`, { method: "POST" }),
+  remove: (id: string) => request<void>(`/sessions/${id}`, { method: "DELETE" }),
 };
