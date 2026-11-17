@@ -27,13 +27,14 @@ func (s *Server) aiRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/ai/status", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
 		p, err := s.aiResolve(r.Context(), "")
 		if err != nil {
-			writeJSON(w, 200, map[string]any{"enabled": false})
+			writeJSON(w, 200, map[string]any{"enabled": false, "chat_enabled": false})
 			return
 		}
-		writeJSON(w, 200, map[string]any{"enabled": true, "provider": p.Name, "model": p.Model})
+		_, chatErr := s.chatResolve(r.Context())
+		writeJSON(w, 200, map[string]any{"enabled": true, "provider": p.Name, "model": p.Model, "chat_enabled": chatErr == nil})
 	}))
 	mux.HandleFunc("POST /api/ai/analyze", s.require("operator", s.aiAnalyze))
-	mux.HandleFunc("POST /api/ai/chat", s.require("viewer", s.aiChat))
+	s.aiChatRoutes(mux)
 	mux.HandleFunc("GET /api/ai/analyses/{scan_id}", s.require("viewer", func(w http.ResponseWriter, r *http.Request) {
 		doc, err := s.Store.Get(r.Context(), "ai_analyses", r.PathValue("scan_id"))
 		if errors.Is(err, sql.ErrNoRows) {
