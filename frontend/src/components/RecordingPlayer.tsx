@@ -26,7 +26,8 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
       try {
         blobUrl = await fetchBlobUrl(`/sessions/${sessionId}/recording`);
         if (cancelled || !screenRef.current) return;
-        const recording = new Guacamole.SessionRecording(blobUrl);
+        // SessionRecording takes a Blob or a tunnel, not a URL; its Blob path is broken in 1.5.0, so stream the file through a tunnel.
+        const recording = new Guacamole.SessionRecording(new Guacamole.StaticHTTPTunnel(blobUrl));
         recordingRef.current = recording;
         screenRef.current.appendChild(recording.getDisplay().getElement());
         recording.onprogress = (at: number, total: number) => setProgress({ at, total });
