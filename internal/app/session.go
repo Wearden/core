@@ -35,6 +35,8 @@ func (s *Server) featureOpenSession(w http.ResponseWriter, r *http.Request) {
 		Height  int   `json:"height"`
 		// Fingerprint the operator confirmed for a Windows host's RDP certificate.
 		Certificate string `json:"certificate_fingerprint"`
+		// Optional password vault entry whose secret is injected instead of the asset's stored credential.
+		VaultID string `json:"vault_id"`
 	}
 	if !decode(w, r, &in) {
 		return
@@ -43,9 +45,24 @@ func (s *Server) featureOpenSession(w http.ResponseWriter, r *http.Request) {
 		problem(w, 400, "Invalid asset or screen dimensions")
 		return
 	}
+	grant, allowed := s.jitAllowed(r.Context(), current(r), in.AssetID, in.VaultID)
+	if !allowed {
+		problem(w, 403, "Just-in-time access is required: request access to this asset first")
+		return
+	}
 	var raw, encrypted []byte
 	var username, authType string
-	err := s.DB.QueryRowContext(r.Context(), "SELECT a.data,c.username,c.auth_type,c.encrypted FROM assets a JOIN credentials c ON c.asset_id=a.id WHERE a.id=$1", in.AssetID).Scan(&raw, &username, &authType, &encrypted)
+	var err error
+	if in.VaultID != "" {
+		username, authType, encrypted, err = s.vaultCredential(r.Context(), in.VaultID, in.AssetID)
+		if err != nil {
+			problem(w, 400, err.Error())
+			return
+		}
+		err = s.DB.QueryRowContext(r.Context(), "SELECT data FROM assets WHERE id=$1", in.AssetID).Scan(&raw)
+	} else {
+		err = s.DB.QueryRowContext(r.Context(), "SELECT a.data,c.username,c.auth_type,c.encrypted FROM assets a JOIN credentials c ON c.asset_id=a.id WHERE a.id=$1", in.AssetID).Scan(&raw, &username, &authType, &encrypted)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		problem(w, 404, "Asset or stored credential not found")
 		return
@@ -132,8 +149,14 @@ func (s *Server) featureOpenSession(w http.ResponseWriter, r *http.Request) {
 		problem(w, 503, "Cannot issue remote session token")
 		return
 	}
-	expires := time.Now().UTC().Add(time.Hour).Format(time.RFC3339Nano)
-	doc := map[string]any{"id": id, "asset_id": in.AssetID, "asset_name": asset["name"], "protocol": protocol, "operator": current(r).Username, "operator_id": current(r).ID, "started_at": now(), "ended_at": nil, "token_hash": security.Digest(token), "token_expires_at": time.Now().UTC().Add(time.Minute).Format(time.RFC3339Nano), "expires_at": expires, "connection_status": "issued", "revoked": false}
+	// A session never outlives the just-in-time grant that allowed it.
+	end := time.Now().UTC().Add(time.Hour)
+	var grantID any
+	if grant != nil {
+		end, grantID = earlier(end, grant["expires_at"]), grant["id"]
+	}
+	expires := end.Format(time.RFC3339Nano)
+	doc := map[string]any{"id": id, "asset_id": in.AssetID, "asset_name": asset["name"], "protocol": protocol, "operator": current(r).Username, "operator_id": current(r).ID, "started_at": now(), "ended_at": nil, "token_hash": security.Digest(token), "token_expires_at": time.Now().UTC().Add(time.Minute).Format(time.RFC3339Nano), "expires_at": expires, "connection_status": "issued", "revoked": false, "grant_id": grantID, "vault_id": in.VaultID}
 	if err := s.Store.Put(r.Context(), "sessions", id, doc); err != nil {
 		s.databaseError(w, err)
 		return
@@ -462,7 +485,8 @@ func (s *Server) featureSessionStatus(w http.ResponseWriter, r *http.Request) {
 		problem(w, 403, "Session unavailable")
 		return
 	}
-	if !featureSessionLive(doc) || doc["consumed_at"] == nil || !s.featureSessionUserActive(r.Context(), doc) {
+	// The bridge asks every 15 seconds; a revoked or ended grant disconnects the session here.
+	if !featureSessionLive(doc) || doc["consumed_at"] == nil || !s.featureSessionUserActive(r.Context(), doc) || (text(doc["grant_id"]) != "" && !s.jitGrantActive(r.Context(), text(doc["grant_id"]))) {
 		problem(w, 403, "Session revoked or expired")
 		return
 	}
