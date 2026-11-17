@@ -7,6 +7,7 @@ import { useFeedback } from "../../components/feedback";
 import DataTable, { Column } from "../../components/DataTable";
 import { Chips, searchCls } from "../../components/ui";
 import { btn, btnDanger, btnPrimary, btnSmall, Card, Dialog, errText, field, Labeled } from "../../components/settingsUi";
+import { dateOnly, isoTime } from "../../time";
 
 const LEVEL_RANK = { viewer: 1, operator: 2, admin: 3 } as const;
 
@@ -176,7 +177,7 @@ export function Users() {
     { id: "state", header: az ? "Vəziyyət" : "State", sort: (a, b) => Number(a.active) - Number(b.active), csv: (u) => (u.active ? "active" : "disabled"), cell: (u) => (
       <span className="inline-flex items-center gap-1.5 text-xs text-slate-300"><span aria-hidden className={`h-1.5 w-1.5 rounded-full ${u.pending ? "bg-amber-400" : u.active ? "bg-emerald-400" : "bg-slate-500"}`} />{u.pending ? (az ? "təsdiq gözləyir" : "awaiting approval") : u.active ? (az ? "aktiv" : "active") : az ? "bağlı" : "disabled"}{u.must_change_password && <span className="ml-2 text-slate-500">{az ? "parol dəyişməli" : "must change password"}</span>}</span>
     ) },
-    { id: "created", header: az ? "Yaradılıb" : "Created", defaultHidden: true, sort: (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at), csv: (u) => u.created_at, cell: (u) => <span className="text-xs text-slate-500">{new Date(u.created_at).toLocaleDateString()}</span> },
+    { id: "created", header: az ? "Yaradılıb" : "Created", defaultHidden: true, sort: (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at), csv: (u) => isoTime(u.created_at), cell: (u) => <span className="text-xs text-slate-500">{dateOnly(u.created_at)}</span> },
     { id: "actions", header: "", locked: true, className: "text-right", cell: (u) => (
       <div className="flex justify-end gap-2">
         <button className={btnSmall} disabled={!manageable(u) && u.id !== user?.id} onClick={() => setReset({ id: u.id, name: u.username, password: generatePassword() })}>{az ? "Parolu sıfırla" : "Reset password"}</button>

@@ -15,6 +15,7 @@ import HostIcon, { osLabel } from "./HostIcon";
 import StatusPill from "./StatusPill";
 import { Bars, Ring, TrendArea, useChartColors } from "./charts";
 import { Chips, EmptyState, ShortId, searchCls, tableWrap, theadCls } from "./ui";
+import { dateTime } from "../time";
 
 export type DrawerTab = "overview" | "findings" | "hardening" | "logs";
 
@@ -168,7 +169,7 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
                     <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
                       <div className="mb-2 text-sm font-medium text-slate-100">{L("Compliance trend", "Uyğunluq trendi")}</div>
                       {(host.data?.trend.length ?? 0) < 2 ? <p className="py-12 text-center text-sm text-slate-500">{L("A trend appears after two scans.", "Trend iki yoxlamadan sonra görünür.")}</p> : (
-                        <TrendArea height={180} domain={[0, 100]} xKey="when" data={(host.data?.trend ?? []).map((p) => ({ when: new Date(p.at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }), score: p.score ?? 0 }))} series={[{ key: "score", name: L("Compliance %", "Uyğunluq %"), color: c.line }]} />
+                        <TrendArea height={180} domain={[0, 100]} xKey="when" data={(host.data?.trend ?? []).map((p) => ({ when: dateTime(p.at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }), score: p.score ?? 0 }))} series={[{ key: "score", name: L("Compliance %", "Uyğunluq %"), color: c.line }]} />
                       )}
                     </div>
                   </div>
@@ -183,7 +184,7 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
                 <Fact k={L("Operating system", "Əməliyyat sistemi")}>{asset?.os_detected ?? osLabel(asset?.os_type ?? "")}</Fact>
                 <Fact k="Agent">{agent ? <>v{agent.version ?? "1"} <span className="text-slate-500">·</span> <ShortId value={agent.id} /></> : L("No agent", "Agent yoxdur")}</Fact>
                 <Fact k="Benchmark">{agent?.benchmark_id ?? "-"}</Fact>
-                <Fact k={L("Last seen", "Son əlaqə")}>{agent?.last_seen ? new Date(agent.last_seen).toLocaleString() : "-"}</Fact>
+                <Fact k={L("Last seen", "Son əlaqə")}>{agent?.last_seen ? dateTime(agent.last_seen) : "-"}</Fact>
                 {asset && asset.tags.length > 0 && <Fact k={L("Tags", "Etiketlər")}>{asset.tags.join(", ")}</Fact>}
               </dl>
               <Link to={`/hosts/${assetId}`} className="inline-block text-sm text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">{L("Open full analytics page", "Tam analitika səhifəsini aç")}</Link>
@@ -233,7 +234,7 @@ export default function AssetDrawer({ assetId, tab, onTab, onClose }: { assetId:
                       <div className="font-medium text-slate-100">{run.name}</div>
                       <StatusPill status={run.status} />
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">{new Date(run.created_at).toLocaleString()} · {mine.length} {L("changes on this host", "dəyişiklik bu hostda")}</div>
+                    <div className="mt-1 text-xs text-slate-500">{dateTime(run.created_at)} · {mine.length} {L("changes on this host", "dəyişiklik bu hostda")}</div>
                     <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-300">
                       <span><span className="text-emerald-300">{n("applied")}</span> {L("applied", "tətbiq")}</span>
                       <span><span className="text-slate-200">{n("skipped")}</span> {L("skipped", "keçildi")}</span>

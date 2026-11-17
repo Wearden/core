@@ -13,6 +13,7 @@ import DataTable, { Column } from "../components/DataTable";
 import { PageHeader, searchCls } from "../components/ui";
 import { isPam } from "../types";
 import ScanResultPicker from "../components/ScanResultPicker";
+import { dateTime, isoTime } from "../time";
 
 const field = "mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
@@ -94,7 +95,7 @@ function NewPamHardening({ onClose }: { onClose: () => void }) {
           <label className="text-sm"><span className="text-slate-300">{L("Start from a PAM scan (optional)", "PAM skanından başla (istəyə bağlı)")}</span>
             <select className={field} value={scanId} onChange={(e) => fromScan(e.target.value)}>
               <option value="">{L("No scan", "Skan yoxdur")}</option>
-              {pamScans.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.status} · {new Date(s.created_at).toLocaleString()}</option>)}
+              {pamScans.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.status} · {dateTime(s.created_at)}</option>)}
             </select>
           </label>
         </div>
@@ -172,7 +173,7 @@ export default function PamHardening() {
     { id: "hosts", header: t("col.hosts"), sort: (a, b) => a.host_count - b.host_count, csv: (r) => r.host_count, cell: (r) => r.host_count },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (r) => r.status, cell: (r) => <StatusPill status={r.status} /> },
     { id: "progress", header: t("col.progress"), csv: (r) => `${r.done_changes}/${r.total_changes}`, cell: (r) => <span className="text-xs text-slate-400">{Math.min(r.done_changes, r.total_changes)} / {r.total_changes} · {r.applied_count} {L("applied", "tətbiq olunub")}</span> },
-    { id: "created", header: t("col.started"), sort: (a, b) => a.created_at.localeCompare(b.created_at), csv: (r) => r.created_at, cell: (r) => <span className="whitespace-nowrap text-xs text-slate-400">{new Date(r.created_at).toLocaleString()}</span> },
+    { id: "created", header: t("col.started"), sort: (a, b) => a.created_at.localeCompare(b.created_at), csv: (r) => isoTime(r.created_at), cell: (r) => <span className="whitespace-nowrap text-xs text-slate-400">{dateTime(r.created_at)}</span> },
   ];
   return (
     <div className="space-y-5">

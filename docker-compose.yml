@@ -3,6 +3,7 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
+      TZ: ${TZ:-Asia/Baku}
       POSTGRES_USER: ${POSTGRES_USER:-wearden}
       POSTGRES_DB: ${POSTGRES_DB:-wearden}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
@@ -19,6 +20,7 @@ services:
       context: ..
       dockerfile: core/Dockerfile
     environment:
+      TZ: ${TZ:-Asia/Baku}
       DATABASE_HOST: postgres
       DATABASE_PORT: "5432"
       DATABASE_NAME: ${POSTGRES_DB:-wearden}
@@ -45,9 +47,13 @@ services:
     restart: unless-stopped
   frontend:
     build: ./frontend
+    environment:
+      TZ: ${TZ:-Asia/Baku}
     restart: unless-stopped
   nginx:
     image: nginx:1.27-alpine
+    environment:
+      TZ: ${TZ:-Asia/Baku}
     ports:
       - "${WEARDEN_BIND:-127.0.0.1}:${WEARDEN_PORT:-8080}:80"
     volumes:
@@ -60,6 +66,7 @@ services:
     profiles: [tls]
     image: caddy:2-alpine
     environment:
+      TZ: ${TZ:-Asia/Baku}
       WEARDEN_DOMAIN: ${WEARDEN_DOMAIN:-localhost}
     ports:
       - "80:80"
@@ -92,6 +99,7 @@ services:
     profiles: [sessions]
     build: ./guac-tunnel
     environment:
+      TZ: ${TZ:-Asia/Baku}
       GUACD_HOST: guacd
       GUACD_PORT: "4822"
       TUNNEL_PORT: "8080"

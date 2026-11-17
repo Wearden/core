@@ -4,6 +4,7 @@ import { assetsApi } from "../assetsApi";
 import { useI18n } from "../i18n";
 import { Chips, PageHeader, ShortId, relativeTime, searchCls } from "../components/ui";
 import DataTable, { Column } from "../components/DataTable";
+import { dateTime, isoTime } from "../time";
 
 type Row = Awaited<ReturnType<typeof assetsApi.audit>>[number];
 
@@ -35,7 +36,7 @@ export default function Audit() {
   }, [data, group, q]);
 
   const columns: Column<Row>[] = [
-    { id: "time", header: t("audit.time"), sort: (x, y) => Date.parse(x.created_at) - Date.parse(y.created_at), csv: (r) => r.created_at, locked: true, cell: (r) => <span className="whitespace-nowrap text-xs text-slate-500" title={new Date(r.created_at).toLocaleString()}>{relativeTime(r.created_at)}</span> },
+    { id: "time", header: t("audit.time"), sort: (x, y) => Date.parse(x.created_at) - Date.parse(y.created_at), csv: (r) => isoTime(r.created_at), locked: true, cell: (r) => <span className="whitespace-nowrap text-xs text-slate-500" title={dateTime(r.created_at)}>{relativeTime(r.created_at)}</span> },
     { id: "user", header: t("audit.user"), sort: (x, y) => (x.username ?? "").localeCompare(y.username ?? ""), csv: (r) => r.username, cell: (r) => <span className="text-slate-300">{r.username ?? "-"}</span> },
     { id: "action", header: t("audit.action"), sort: (x, y) => x.action.localeCompare(y.action), csv: (r) => r.action, cell: (r) => <span className="font-mono text-xs text-slate-200">{r.action}</span> },
     { id: "target", header: t("audit.target"), csv: (r) => r.target, cell: (r) => <ShortId value={r.target} /> },

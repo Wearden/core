@@ -11,6 +11,7 @@ import StatusPill from "../components/StatusPill";
 import DataTable, { Column } from "../components/DataTable";
 import { PageHeader, searchCls } from "../components/ui";
 import { isPam } from "../types";
+import { dateTime, isoTime } from "../time";
 
 const field = "mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
@@ -112,7 +113,7 @@ export default function PamScans() {
     { id: "hosts", header: t("col.hosts"), sort: (a, b) => a.host_count - b.host_count, csv: (s) => s.host_count, cell: (s) => s.host_count },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (s) => s.status, cell: (s) => <StatusPill status={s.status} /> },
     { id: "progress", header: t("col.progress"), csv: (s) => `${s.done_checks}/${s.total_checks}`, cell: (s) => <span className="text-xs text-slate-400">{s.done_checks} / {s.total_checks}</span> },
-    { id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? "").localeCompare(b.started_at ?? ""), csv: (s) => s.started_at ?? "", cell: (s) => <span className="whitespace-nowrap text-xs text-slate-400">{s.started_at ? new Date(s.started_at).toLocaleString() : "-"}</span> },
+    { id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? "").localeCompare(b.started_at ?? ""), csv: (s) => isoTime(s.started_at), cell: (s) => <span className="whitespace-nowrap text-xs text-slate-400">{s.started_at ? dateTime(s.started_at) : "-"}</span> },
   ];
   return (
     <div className="space-y-5">
