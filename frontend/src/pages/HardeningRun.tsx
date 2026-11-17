@@ -5,6 +5,7 @@ import { hardeningApi, shortId } from "../hardeningApi";
 import { benchmarksApi } from "../benchmarksApi";
 import ControlInfo from "../components/ControlInfo";
 import { useHardeningSocket } from "../hooks/useHardeningSocket";
+import { HardeningFlow } from "../components/LiveFlow";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { useFeedback } from "../components/feedback";
@@ -97,6 +98,7 @@ export default function HardeningRun() {
 
   return (
     <div className="space-y-6">
+      <HardeningFlow run={r} log={log} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           {r.mode === "pam" ? (
