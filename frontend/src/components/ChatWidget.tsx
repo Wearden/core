@@ -279,7 +279,7 @@ export default function ChatWidget() {
         </button>
       ) : (
         <button onClick={() => { setHint(false); setOpen(true); }} aria-label={L("Support", "Dəstək")} aria-expanded="false" className="wd-float group relative flex items-center rounded-full border border-white/15 bg-black p-1.5 shadow-xl transition-colors hover:border-white/40 focus-visible:border-white/60">
-          <span aria-hidden="true" className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-white/40 transition-colors group-hover:border-white/70" />
+          <span aria-hidden="true" className="pointer-events-none absolute -inset-1 rounded-full border border-dashed border-white/40 transition-colors group-hover:border-white/70" />
           <WardyAvatar size={46} online animated />
           <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium text-white opacity-0 transition-all duration-300 group-hover:max-w-[10rem] group-hover:pl-3 group-hover:pr-3 group-hover:opacity-100 group-focus-visible:max-w-[10rem] group-focus-visible:pl-3 group-focus-visible:pr-3 group-focus-visible:opacity-100">{L("Ask Wardy", "Wardy-dən soruş")}</span>
         </button>
