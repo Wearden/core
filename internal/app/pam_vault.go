@@ -45,6 +45,7 @@ func (s *Server) pamVaultRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/pam/vault/{id}/checkout", s.require("operator", s.vaultCheckout))
 	mux.HandleFunc("POST /api/pam/vault/{id}/checkin", s.require("operator", s.vaultCheckin))
 	mux.HandleFunc("GET /api/pam/vault/{id}/secret", s.require("operator", s.vaultSecret))
+	mux.HandleFunc("POST /api/pam/vault/{id}/test", s.require("operator", s.vaultTest))
 	mux.HandleFunc("GET /api/pam/jit", s.require("operator", s.jitList))
 	mux.HandleFunc("POST /api/pam/jit", s.require("operator", s.jitRequest))
 	mux.HandleFunc("POST /api/pam/jit/{id}/approve", s.requirePerm("jit.approve", s.jitDecide("approved")))
@@ -361,6 +362,56 @@ func (s *Server) vaultCredential(ctx context.Context, vaultID string, assetID in
 		return "", "", nil, errors.New("Stored vault secret is damaged")
 	}
 	return text(doc["username"]), text(doc["type"]), sealed, nil
+}
+
+// vaultTest logs in to the linked asset with the entry's secret (SSH or WinRM, as the asset is
+// managed) and reports whether the host accepts it. The secret is never returned.
+func (s *Server) vaultTest(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	doc, err := s.Store.Get(r.Context(), vaultCollection, id)
+	if err != nil {
+		problem(w, 404, "Vault entry not found")
+		return
+	}
+	assetID := integer(doc["asset_id"])
+	username, authType, sealed, err := s.vaultCredential(r.Context(), id, assetID)
+	if err != nil || assetID == 0 {
+		problem(w, 400, "Only password and SSH key entries linked to an asset can be tested")
+		return
+	}
+	var raw []byte
+	if err := s.DB.QueryRowContext(r.Context(), "SELECT data FROM assets WHERE id=$1", assetID).Scan(&raw); err != nil {
+		problem(w, 404, "Linked asset not found")
+		return
+	}
+	var asset map[string]any
+	if json.Unmarshal(raw, &asset) != nil {
+		problem(w, 500, "Invalid stored asset")
+		return
+	}
+	secret, err := security.Open(s.Config.VaultKey, sealed)
+	if err != nil {
+		problem(w, 503, "Cannot decrypt the secret")
+		return
+	}
+	target, err := s.pamTargetWith(r.Context(), assetID, asset, username, authType, secret)
+	if err != nil {
+		clear(secret)
+		writeJSON(w, 200, map[string]any{"status": "failed", "detail": pamMessage(err)})
+		return
+	}
+	defer target.wipe()
+	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+	defer cancel()
+	conn, err := target.open(ctx)
+	if err != nil {
+		s.audit(r, "vault.test", id, false, pamMessage(err))
+		writeJSON(w, 200, map[string]any{"status": "failed", "detail": pamMessage(err)})
+		return
+	}
+	conn.Close()
+	s.audit(r, "vault.test", id, true, text(doc["asset_name"]))
+	writeJSON(w, 200, map[string]any{"status": "ok", "detail": "The host accepted " + username + " with this secret"})
 }
 
 // ---------- just-in-time access ----------
