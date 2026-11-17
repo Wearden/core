@@ -125,6 +125,16 @@ export default function ChatWidget() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  // Clicking anywhere outside the window or pressing Escape closes it.
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: PointerEvent) => { if (root.current && !root.current.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", down);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", down); document.removeEventListener("keydown", key); };
+  }, [open]);
 
   const [hint, setHint] = useState(false);
 
@@ -333,7 +343,7 @@ export default function ChatWidget() {
 
   const tabs: [Tab, string][] = [["home", L("Home", "Əsas")], ["chat", L("Messages", "Mesajlar")], ["help", L("Help", "Kömək")]];
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3">
+    <div ref={root} className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3">
       <style>{FX_CSS}</style>
       {open && (
         <div role="dialog" aria-label={L("Support", "Dəstək")} className="relative flex h-[36rem] max-h-[80vh] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
