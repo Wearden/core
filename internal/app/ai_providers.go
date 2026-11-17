@@ -31,7 +31,15 @@ const (
 type aiProvider struct {
 	ID, Name, Kind, BaseURL, Model, Key string
 	Headers                             string // extra request headers, one "Name: value" per line
+	MaxTokens                           int    // reply limit for one call; 0 means the default
 	Enabled                             bool
+}
+
+func (p aiProvider) tokens() int {
+	if p.MaxTokens > 0 {
+		return p.MaxTokens
+	}
+	return 2000
 }
 
 // Headers the provider settings may not override: credentials and framing stay under the platform's control.
@@ -50,7 +58,9 @@ func parseHeaders(raw string) (map[string]string, error) {
 		if !ok || name == "" || value == "" || len(name) > 64 || len(value) > 256 {
 			return nil, errors.New("each header must look like Name: value")
 		}
-		if strings.ContainsFunc(name, func(r rune) bool { return !(r == '-' || r == '_' || r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z') }) {
+		if strings.ContainsFunc(name, func(r rune) bool {
+			return !(r == '-' || r == '_' || r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z')
+		}) {
 			return nil, errors.New("header names may only use letters, digits, - and _")
 		}
 		if blockedHeaders[strings.ToLower(name)] {
@@ -228,7 +238,7 @@ func (s *Server) aiLoop(ctx context.Context, p aiProvider, system, user string, 
 		messages := []map[string]any{{"role": "user", "content": user}}
 		for turn := 0; turn < aiMaxTurns; turn++ {
 			var resp anthropicResp
-			if err := aiPost(ctx, p, "/v1/messages", map[string]any{"model": p.Model, "max_tokens": 2000, "system": system, "tools": aiTools, "messages": messages}, &resp); err != nil {
+			if err := aiPost(ctx, p, "/v1/messages", map[string]any{"model": p.Model, "max_tokens": p.tokens(), "system": system, "tools": aiTools, "messages": messages}, &resp); err != nil {
 				return "", err
 			}
 			messages = append(messages, map[string]any{"role": "assistant", "content": resp.Content})
@@ -257,7 +267,7 @@ func (s *Server) aiLoop(ctx context.Context, p aiProvider, system, user string, 
 	messages := []map[string]any{{"role": "system", "content": system}, {"role": "user", "content": user}}
 	for turn := 0; turn < aiMaxTurns; turn++ {
 		var resp openaiResp
-		if err := aiPost(ctx, p, "/chat/completions", map[string]any{"model": p.Model, "max_tokens": 2000, "tools": tools, "messages": messages}, &resp); err != nil {
+		if err := aiPost(ctx, p, "/chat/completions", map[string]any{"model": p.Model, "max_tokens": p.tokens(), "tools": tools, "messages": messages}, &resp); err != nil {
 			return "", err
 		}
 		if len(resp.Choices) == 0 {
