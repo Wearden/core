@@ -101,8 +101,6 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
   const { t, lang } = useI18n();
   const az = lang === "az";
   const rail = collapsed && !mobile;
-  const health = useQuery({ queryKey: ["health"], queryFn: api.health, refetchInterval: 10_000 });
-  const ready = useQuery({ queryKey: ["ready"], queryFn: api.ready, refetchInterval: 10_000 });
   const scans = useQuery({ queryKey: ["scans"], queryFn: scansApi.list, refetchInterval: 30_000 });
   const assets = useQuery({ queryKey: ["assets"], queryFn: assetsApi.list, refetchInterval: 30_000 });
   // Agent and PAM work are counted on their own menu items.
@@ -117,7 +115,6 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
     "/pam/scans": { n: activePamScans, tone: "bg-slate-100 text-slate-950", title: az ? "aktiv PAM skanı" : "active PAM scans" },
     "/pam/assets": { n: offlinePam, tone: "bg-red-400 text-slate-950", title: az ? "oflayn PAM hostu" : "offline PAM hosts" },
   };
-  const apiOk = health.data?.status === "ok" && ready.data?.database === "ok";
   const profile = useProfile();
   const { pathname } = useLocation();
   const [closed, setClosed] = useState<number[]>(() => {
@@ -134,7 +131,6 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
       return next;
     });
   const shut = (gi: number, group: (typeof GROUPS)[number]) => closed.includes(gi) && !group.items.some((i) => (i.to === "/" ? pathname === "/" : pathname.startsWith(i.to)));
-  const statusText = health.isLoading ? "..." : apiOk ? (az ? "Sistem işləyir" : "All systems normal") : az ? "Problem var" : "Service issue";
 
   return (
     <>
@@ -197,10 +193,6 @@ function Sidebar({ collapsed, onToggle, mobile }: { collapsed: boolean; onToggle
       </nav>
 
       <div className="border-t border-slate-800 p-3">
-        <div className={`mb-3 flex items-center gap-2 text-xs text-slate-400 ${rail ? "justify-center" : "rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2"}`} title={statusText}>
-          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${health.isLoading ? "bg-slate-500" : apiOk ? "bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.15)]" : "bg-red-400 shadow-[0_0_0_3px_rgba(248,113,113,0.15)]"}`} />
-          {!rail && <span className="truncate">{statusText}</span>}
-        </div>
         <div className={`flex items-center ${rail ? "flex-col gap-2" : "gap-2.5"}`}>
           <Link to="/settings?section=profile" title={rail ? `${user?.username} (${user?.role})` : undefined} className={`flex min-w-0 items-center gap-2.5 rounded-lg ${rail ? "" : "flex-1 border border-transparent p-1.5 transition-colors hover:border-slate-800 hover:bg-slate-900"}`}>
             <UserAvatar size={32} />
