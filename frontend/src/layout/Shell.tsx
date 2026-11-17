@@ -10,6 +10,7 @@ import { useI18n } from "../i18n";
 import { applyAppearance, getMotion, getThemePref, Motion, setMotion, setThemePref, ThemePref } from "../theme";
 import Logo from "../components/Logo";
 import CommandPalette, { PaletteItem } from "../components/CommandPalette";
+import ChatWidget from "../components/ChatWidget";
 
 // Two-key "go to" shortcuts, in the style of common admin tools: press g, then the letter.
 const GO_KEYS: Record<string, string> = { d: "/", a: "/assets", s: "/scans", h: "/hardening", r: "/reports", u: "/audit", b: "/benchmarks", t: "/settings" };
@@ -380,6 +381,7 @@ export default function Shell() {
         </main>
       </div>
       <CommandPalette open={palette} onClose={() => setPalette(false)} pages={pages} />
+      <ChatWidget />
       {help && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onMouseDown={(e) => e.target === e.currentTarget && setHelp(false)}>
           <div className="w-full max-w-md space-y-3 rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
