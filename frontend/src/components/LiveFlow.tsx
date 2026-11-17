@@ -3,13 +3,18 @@ import { useI18n } from "../i18n";
 import type { ScanDetail } from "../scansApi";
 import type { LiveCheck } from "../hooks/useScanSocket";
 import type { LogLine } from "../hooks/useHardeningSocket";
-import type { RunSummary } from "../hardeningApi";
+import type { Change, RunSummary } from "../hardeningApi";
+import CallChip, { CallChipStatus } from "./CallChip";
 
 type StepState = "idle" | "active" | "done" | "fail" | "stop";
 /** What the side panel shows when a box, host or log line is clicked. */
 interface Detail { title: string; rows: [string, string][]; note?: string }
 interface Step { label: string; detail?: string; info: Detail }
 interface Line { key: string; text: string; tone?: "ok" | "bad" | "warn"; info?: Detail }
+/** One unit of work shown as a CallChip: a check on a host, or a hardening change. */
+interface Call { key: string; name: string; arg: string; status: CallChipStatus; info: Detail }
+// CallChip colours matched to the app's dark palette.
+const CHIP = { surfaceColor: "#0f172a", color: "#e2e8f0", progressColor: "#22d3ee", doneColor: "#10b981", errorColor: "#ef4444" } as const;
 interface Chip { key: string; label: string; ok: number; bad: number; warn: number; info: Detail }
 
 const NODE: Record<StepState, string> = {
@@ -60,7 +65,7 @@ function DetailPanel({ detail, hint }: { detail: Detail | null; hint: string }) 
 }
 
 /** Large window: coloured boxes joined by arrows (the active one pulses, the arrow into it flows). Click anything for details. */
-function LiveFlow({ title, steps, current, end, lines, chips, live, summary }: { title: string; steps: Step[]; current: number; end: "ok" | "fail" | "stop" | null; lines: Line[]; chips?: Chip[]; live: boolean; summary: string }) {
+function LiveFlow({ title, steps, current, end, lines, chips, calls, callsTitle, headline, live, summary }: { title: string; steps: Step[]; current: number; end: "ok" | "fail" | "stop" | null; lines: Line[]; chips?: Chip[]; calls?: Call[]; callsTitle?: string; headline?: Call; live: boolean; summary: string }) {
   const { lang } = useI18n();
   const az = lang === "az";
   const [open, setOpen] = useState(live);
@@ -86,6 +91,7 @@ function LiveFlow({ title, steps, current, end, lines, chips, live, summary }: {
           <div className="flex h-[min(92vh,54rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
               <div className="flex items-center gap-3 text-sm font-semibold text-slate-50"><span className={`h-3 w-3 rounded-full ${dot}`} />{title}<span className="text-xs font-normal text-slate-500">{summary}</span></div>
+              {headline && <CallChip {...CHIP} size={28} icon={headline.name === "harden" ? "edit" : "search"} name={headline.name} argument={headline.arg} status={headline.status} expectedMs={90000} />}
               <button onClick={() => setOpen(false)} aria-label={az ? "Bağla" : "Close"} className="rounded border border-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-800">Esc</button>
             </div>
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -108,6 +114,21 @@ function LiveFlow({ title, steps, current, end, lines, chips, live, summary }: {
                     );
                   })}
                 </div>
+                {calls && calls.length > 0 && (
+                  <div>
+                    <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">{callsTitle}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {calls.map((c) => {
+                        const id = `call-${c.key}`;
+                        return (
+                          <button key={c.key} onClick={() => setSel({ id, detail: c.info })} aria-pressed={sel?.id === id} className={`rounded-lg ${sel?.id === id ? "ring-2 ring-white/40" : ""}`}>
+                            <CallChip {...CHIP} size={30} icon={headline?.name === "harden" ? "edit" : "search"} showTimer={false} expectedMs={1} name={c.name} argument={c.arg} status={c.status} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {chips && chips.length > 0 && (
                   <div>
                     <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">{az ? "Hostlar" : "Hosts"} <span className="normal-case">({az ? "keçdi / uğursuz / xəta" : "pass / fail / error"})</span></div>
@@ -172,19 +193,24 @@ export function ScanFlow({ scan, feed }: { scan: ScanDetail; feed: LiveCheck[] }
   ];
   // Report and Score only light up once the scan is complete.
   const cur = end === "ok" ? steps.length : Math.min(current, 2);
+  const checkInfo = (c: LiveCheck): Detail => ({ title: `${c.controlId}`, rows: [[L("Title", "Başlıq"), c.title], [L("Host", "Host"), c.hostName], [L("Status", "Status"), c.status], [L("Expected", "Gözlənilən"), c.expected], [L("Actual", "Faktiki"), fmt(c.actual)], [L("Duration", "Müddət"), `${c.durationMs} ms`]] });
   const lines: Line[] = feed.slice(-40).reverse().map((c) => ({
     key: c.key, text: `${c.hostName} · ${c.controlId} · ${c.status}`, tone: c.status === "pass" ? "ok" : c.status === "fail" ? "bad" : c.status === "error" ? "warn" : undefined,
-    info: { title: `${c.controlId}`, rows: [[L("Title", "Başlıq"), c.title], [L("Host", "Host"), c.hostName], [L("Status", "Status"), c.status], [L("Expected", "Gözlənilən"), c.expected], [L("Actual", "Faktiki"), fmt(c.actual)], [L("Duration", "Müddət"), `${c.durationMs} ms`]] },
+    info: checkInfo(c),
   }));
+  const calls: Call[] = feed.slice(-12).reverse().map((c) => ({ key: c.key, name: c.controlId, arg: c.hostName, status: c.status === "pass" ? "done" : c.status === "fail" || c.status === "error" ? "error" : "idle", info: checkInfo(c) }));
+  const headline: Call = { key: "scan", name: "scan", arg: scan.profile_name, status: scan.status === "queued" ? "idle" : running ? "running" : end === "ok" ? "done" : "error", info: steps[0].info };
   const chips: Chip[] = scan.hosts.map((h) => ({
     key: String(h.id), label: h.asset_name || h.host, ok: h.passed, bad: h.failed, warn: h.errored,
     info: { title: h.asset_name || h.host, rows: [["Host", h.host], ["OS", fmt(h.os_detected)], [L("Status", "Status"), h.status], [L("Passed", "Keçdi"), String(h.passed)], [L("Failed", "Uğursuz"), String(h.failed)], [L("Errors", "Xəta"), String(h.errored)], [L("Not applicable", "Aid deyil"), String(h.not_applicable)], [L("Score", "Skor"), h.score == null ? "-" : `${h.score}%`], [L("Recent checks", "Son yoxlamalar"), feed.filter((c) => c.hostName === (h.asset_name || h.host) || c.hostId === h.id).slice(-5).map((c) => `${c.controlId} ${c.status}`).join(", ")]] },
   }));
-  return <LiveFlow title={L("Live scan", "Canlı skan")} summary={`${scan.done_checks}/${scan.total_checks} · ${scan.status}`} steps={steps} current={cur} end={end} lines={lines} chips={chips} live={scan.status === "queued" || running} />;
+  return <LiveFlow title={L("Live scan", "Canlı skan")} summary={`${scan.done_checks}/${scan.total_checks} · ${scan.status}`} steps={steps} current={cur} end={end} lines={lines} chips={chips} calls={calls} callsTitle={L("Live checks", "Canlı yoxlamalar")} headline={headline} live={scan.status === "queued" || running} />;
 }
 
 /** Hardening run: plan, queued, applying changes, finished (or rolled back). */
-export function HardeningFlow({ run, log }: { run: RunSummary; log: LogLine[] }) {
+const changeStatus = (s: string): CallChipStatus => (s === "applied" || s === "completed" || s === "rolled_back" ? "done" : s === "failed" || s === "error" ? "error" : s === "running" || s === "applying" ? "running" : "idle");
+
+export function HardeningFlow({ run, log }: { run: RunSummary & { changes?: Change[] }; log: LogLine[] }) {
   const { lang } = useI18n();
   const L = (en: string, az: string) => (lang === "az" ? az : en);
   const active = run.status === "queued" || run.status === "running";
@@ -203,5 +229,10 @@ export function HardeningFlow({ run, log }: { run: RunSummary; log: LogLine[] })
     key: l.key, text: l.text, tone: /fail|error/i.test(l.text) ? "bad" : /rollback/i.test(l.text) ? "warn" : undefined,
     info: { title: L("Event", "Hadisə"), rows: [[L("Log line", "Log sətri"), l.text]] },
   }));
-  return <LiveFlow title={L("Live hardening", "Canlı sərtləşdirmə")} summary={`${done}/${run.total_changes} · ${run.status}`} steps={steps} current={cur} end={end} lines={lines} live={active} />;
+  const calls: Call[] = (run.changes ?? []).slice(0, 30).map((c) => ({
+    key: String(c.id), name: c.control_id, arg: c.asset_name, status: changeStatus(c.status),
+    info: { title: c.control_id, rows: [[L("Host", "Host"), c.host], [L("Severity", "Ciddilik"), c.severity], [L("Status", "Status"), c.status], [L("Before", "Əvvəl"), `${fmt(c.before_status)} ${fmt(c.before_value)}`], [L("After", "Sonra"), `${fmt(c.after_status)} ${fmt(c.after_value)}`], [L("Risky", "Riskli"), c.risky ? L("yes", "bəli") : L("no", "xeyr")], [L("Message", "Mesaj"), fmt(c.message)], [L("Output", "Çıxış"), fmt(c.remediation_output).slice(0, 300)]] },
+  }));
+  const headline: Call = { key: "harden", name: "harden", arg: run.name, status: run.status === "queued" ? "idle" : run.status === "running" ? "running" : end === "ok" ? "done" : "error", info: steps[0].info };
+  return <LiveFlow title={L("Live hardening", "Canlı sərtləşdirmə")} calls={calls} callsTitle={L("Changes", "Dəyişikliklər")} headline={headline} summary={`${done}/${run.total_changes} · ${run.status}`} steps={steps} current={cur} end={end} lines={lines} live={active} />;
 }
