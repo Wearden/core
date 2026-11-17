@@ -135,10 +135,29 @@ export default function ScanDetail() {
       />
 
       <div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <div className="h-full rounded-full bg-cyan-500 transition-all duration-300" style={{ width: `${pct}%` }} />
-        </div>
-        <div className="mt-1 text-xs text-slate-500">{s.done_checks} {t("scan.of")} {s.total_checks} {t("scan.checks")} · {pct}%</div>
+        {(() => {
+          // Segmented by outcome: the filled part splits into pass, fail and error in proportion.
+          const n = (k: "passed" | "failed" | "errored") => s.hosts.reduce((acc, h) => acc + h[k], 0);
+          const parts: [string, number, string][] = [["bg-emerald-500", n("passed"), "pass"], ["bg-red-500", n("failed"), "fail"], ["bg-amber-500", n("errored"), "error"]];
+          const any = parts.some(([, v]) => v > 0);
+          return (
+            <>
+              <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-800/80 ring-1 ring-inset ring-white/5" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                <div className="flex h-full gap-px overflow-hidden rounded-full transition-all duration-500" style={{ width: `${pct}%` }}>
+                  {any ? parts.map(([c, v]) => v > 0 && <div key={c} className={`h-full ${c}`} style={{ flexGrow: v }} />) : <div className="h-full flex-1 bg-emerald-500" />}
+                </div>
+                {s.status === "running" && <div aria-hidden className="wd-shine absolute inset-0" />}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                <span className="flex flex-wrap items-center gap-3">
+                  <span>{s.done_checks} {t("scan.of")} {s.total_checks} {t("scan.checks")}</span>
+                  {parts.map(([c, v, label]) => <span key={label} className="inline-flex items-center gap-1.5"><span className={`h-2 w-2 rounded-full ${c}`} />{label} <span className="tabular-nums text-slate-200">{v}</span></span>)}
+                </span>
+                <span className="text-sm font-semibold tabular-nums text-slate-100">{pct}%</span>
+              </div>
+            </>
+          );
+        })()}
         {s.message && <p className="mt-2 text-sm text-red-300">{s.message}</p>}
       </div>
 
