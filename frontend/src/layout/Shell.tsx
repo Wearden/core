@@ -23,7 +23,7 @@ const ICONS: Record<string, string> = {
   "/attack": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 1v3M12 20v3M1 12h3M20 12h3",
   "/benchmarks": "M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2",
   "/reports": "M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h8",
-  "/sessions": "M4 17l6-6-6-6M12 19h8",
+  "/pam/sessions": "M4 17l6-6-6-6M12 19h8",
   "/audit": "M12 8v4l3 2M3 12a9 9 0 1 0 3-6.7M3 4v5h5",
   "/settings": "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
   "/pam/assets": "M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5zM12 15v2",
@@ -52,13 +52,13 @@ const GROUPS = [
       { to: "/pam/scans", key: "nav.pamScans", hint: "" },
       { to: "/pam/hardening", key: "nav.pamHardening", hint: "" },
       { to: "/pam/rollback", key: "nav.pamRollback", hint: "" },
+      { to: "/pam/sessions", key: "nav.sessions", hint: "" },
     ],
   },
   {
     label: "Operations",
     items: [
       { to: "/reports", key: "nav.reports", hint: "g r" },
-      { to: "/sessions", key: "nav.sessions", hint: "" },
       { to: "/audit", key: "nav.audit", hint: "g u" },
       { to: "/settings", key: "nav.settings", hint: "g t" },
     ],

@@ -5,6 +5,11 @@ import RecordingPlayer from "../components/RecordingPlayer";
 import type { RemoteSessionRow } from "../sessionTypes";
 import { useI18n } from "../i18n";
 import { EmptyState, PageHeader } from "../components/ui";
+import { download } from "../analyticsApi";
+
+/** Asset, protocol and UTC start time, e.g. web01-ssh-2026-11-17_06-10-15. Also the download file name, so no characters a file system rejects. */
+const recordingName = (s: RemoteSessionRow) =>
+  `${s.asset_name}-${s.protocol}-${s.started_at.slice(0, 19).replace("T", "_")}`.replace(/[\\/:*?"<>|\s]+/g, "-");
 
 export default function Sessions() {
   const { t, lang } = useI18n();
@@ -14,11 +19,17 @@ export default function Sessions() {
     refetchInterval: 10_000,
   });
   const [playing, setPlaying] = useState<RemoteSessionRow | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const save = (s: RemoteSessionRow) => {
+    setDownloadError(null);
+    download(`/sessions/${s.id}/recording`, `${recordingName(s)}.guac`).catch((err) => setDownloadError(err instanceof Error ? err.message : String(err)));
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader title={t("ses.title")} subtitle={t("ses.subtitle")} />
       {error && <p className="text-red-400">{t("ses.loadError")}: {(error as Error).message}</p>}
+      {downloadError && <p role="alert" className="text-red-400">{t("ses.downloadFail")}: {downloadError}</p>}
       {isLoading && <p className="text-slate-400">{t("common.loading")}</p>}
       {!isLoading && data.length === 0 && (
         <EmptyState
@@ -36,6 +47,7 @@ export default function Sessions() {
                 <th className="px-4 py-3">Protocol</th>
                 <th className="px-4 py-3">{t("ses.operator")}</th>
                 <th className="px-4 py-3">{t("ses.state")}</th>
+                <th className="px-4 py-3">{t("ses.name")}</th>
                 <th className="px-4 py-3 text-right">{t("ses.recording")}</th>
               </tr>
             </thead>
@@ -47,14 +59,23 @@ export default function Sessions() {
                   <td className="px-4 py-2 uppercase">{s.protocol}</td>
                   <td className="px-4 py-2">{s.operator}</td>
                   <td className="px-4 py-2">{s.ended_at ? t("ses.ended") : t("ses.open")}</td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-2 font-mono text-xs text-slate-300">{s.has_recording ? recordingName(s) : ""}</td>
+                  <td className="whitespace-nowrap px-4 py-2 text-right">
                     {s.has_recording ? (
-                      <button
-                        onClick={() => setPlaying(s)}
-                        className="rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
-                      >
-                        {t("ses.play")}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => setPlaying(s)}
+                          className="rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+                        >
+                          {t("ses.play")}
+                        </button>
+                        <button
+                          onClick={() => save(s)}
+                          className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+                        >
+                          {t("ses.download")}
+                        </button>
+                      </>
                     ) : (
                       <span className="text-xs text-slate-500">{t("ses.noneYet")}</span>
                     )}
@@ -68,7 +89,7 @@ export default function Sessions() {
       {playing && (
         <RecordingPlayer
           sessionId={playing.id}
-          title={`${playing.asset_name} (${playing.protocol.toUpperCase()}, ${new Date(playing.started_at).toLocaleString()})`}
+          title={recordingName(playing)}
           onClose={() => setPlaying(null)}
         />
       )}
