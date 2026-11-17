@@ -14,6 +14,7 @@ import DataTable, { Column } from "../components/DataTable";
 import { Chips, PageHeader, searchCls } from "../components/ui";
 import SearchBox, { matchesSearch } from "../components/SearchBox";
 import ScanResultPicker from "../components/ScanResultPicker";
+import { dateTime, isoTime } from "../time";
 
 const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
@@ -198,7 +199,7 @@ export function NewHardening({
               }}
             >
               <option value="">{t("hard.noScan")}</option>
-              {agentScans.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.status} · {new Date(s.created_at).toLocaleString()}</option>)}
+              {agentScans.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.status} · {dateTime(s.created_at)}</option>)}
             </select>
           </label>
         </div>
@@ -359,8 +360,8 @@ export default function Hardening() {
     { id: "hosts", header: t("col.hosts"), defaultHidden: true, sort: (a, b) => a.host_count - b.host_count, csv: (r) => r.host_count, cell: (r) => r.host_count },
     { id: "by", header: t("rb.startedBy"), defaultHidden: true, csv: (r) => r.created_by, cell: (r) => <span className="text-xs text-slate-300">{r.created_by}</span> },
     {
-      id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? a.created_at).localeCompare(b.started_at ?? b.created_at), csv: (r) => r.started_at ?? r.created_at,
-      cell: (r) => <span className="whitespace-nowrap text-xs text-slate-400">{r.started_at ? new Date(r.started_at).toLocaleString() : "-"}</span>,
+      id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? a.created_at).localeCompare(b.started_at ?? b.created_at), csv: (r) => isoTime(r.started_at ?? r.created_at),
+      cell: (r) => <span className="whitespace-nowrap text-xs text-slate-400">{r.started_at ? dateTime(r.started_at) : "-"}</span>,
     },
   ];
 

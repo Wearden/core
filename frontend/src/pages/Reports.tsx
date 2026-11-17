@@ -8,6 +8,7 @@ import { hardeningApi } from "../hardeningApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { Chips, EmptyState, PageHeader } from "../components/ui";
+import { dateTime } from "../time";
 
 const field = "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-500";
 
@@ -186,7 +187,7 @@ export default function Reports() {
         <div className="flex flex-wrap items-center gap-3">
           <select className={field} value={activeRun} onChange={(e) => setReportRun(e.target.value)} aria-label="hardening run">
             {runList.length === 0 && <option value="">{lang === "az" ? "Möhkəmləndirmə işi yoxdur" : "No hardening runs"}</option>}
-            {runList.map((r) => <option key={r.id} value={r.id}>{tag(r.mode)}{r.name} · {r.status} · {new Date(r.created_at).toLocaleString()}</option>)}
+            {runList.map((r) => <option key={r.id} value={r.id}>{tag(r.mode)}{r.name} · {r.status} · {dateTime(r.created_at)}</option>)}
           </select>
           {(["pdf", "csv", "json"] as const).map((ext) => (
             <button key={ext} disabled={!activeRun} onClick={() => exportFile(`/reports/hardening/${activeRun}.${ext}`, `hardening-${activeRun}.${ext}`)} className={ext === "pdf" ? "rounded-md bg-cyan-600 px-3 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-40" : "rounded-md border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-40"}>{ext.toUpperCase()}</button>

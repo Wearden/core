@@ -6,10 +6,11 @@ import type { RemoteSessionRow } from "../sessionTypes";
 import { useI18n } from "../i18n";
 import { EmptyState, PageHeader } from "../components/ui";
 import { download } from "../analyticsApi";
+import { dateTime, fileStamp } from "../time";
 
-/** Asset, protocol and UTC start time, e.g. web01-ssh-2026-11-17_06-10-15. Also the download file name, so no characters a file system rejects. */
+/** Asset, protocol and Baku start time, e.g. web01-ssh-2026-11-17_10-10-15. Also the download file name, so no characters a file system rejects. */
 const recordingName = (s: RemoteSessionRow) =>
-  `${s.asset_name}-${s.protocol}-${s.started_at.slice(0, 19).replace("T", "_")}`.replace(/[\\/:*?"<>|\s]+/g, "-");
+  `${s.asset_name}-${s.protocol}-${fileStamp(s.started_at)}`.replace(/[\\/:*?"<>|\s]+/g, "-");
 
 export default function Sessions() {
   const { t, lang } = useI18n();
@@ -59,7 +60,7 @@ export default function Sessions() {
             <tbody className="divide-y divide-slate-800">
               {data.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-900/60">
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-slate-400">{new Date(s.started_at).toLocaleString()}</td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-slate-400">{dateTime(s.started_at)}</td>
                   <td className="px-4 py-2">{s.asset_name}</td>
                   <td className="px-4 py-2 uppercase">{s.protocol}</td>
                   <td className="px-4 py-2">{s.operator}</td>

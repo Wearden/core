@@ -8,6 +8,7 @@ import DataTable, { Column } from "../components/DataTable";
 import { Chips, PageHeader, searchCls } from "../components/ui";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { dateTime, isoTime } from "../time";
 
 type Filter = "all" | "active" | "completed" | "failed";
 const ACTIVE = ["queued", "running", "cancel_requested"];
@@ -60,7 +61,7 @@ export default function Scans() {
     { id: "hosts", header: t("col.hosts"), sort: (a, b) => a.host_count - b.host_count, csv: (s) => s.host_count, cell: (s) => s.host_count },
     { id: "status", header: t("col.status"), sort: (a, b) => a.status.localeCompare(b.status), csv: (s) => s.status, cell: (s) => <StatusPill status={s.status} /> },
     { id: "progress", header: t("col.progress"), sort: (a, b) => a.done_checks / Math.max(1, a.total_checks) - b.done_checks / Math.max(1, b.total_checks), csv: (s) => `${s.done_checks}/${s.total_checks}`, cell: (s) => <Progress s={s} /> },
-    { id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? "").localeCompare(b.started_at ?? ""), csv: (s) => s.started_at ?? "", cell: (s) => <span className="whitespace-nowrap text-xs text-slate-400">{s.started_at ? new Date(s.started_at).toLocaleString() : "-"}</span> },
+    { id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? "").localeCompare(b.started_at ?? ""), csv: (s) => isoTime(s.started_at), cell: (s) => <span className="whitespace-nowrap text-xs text-slate-400">{s.started_at ? dateTime(s.started_at) : "-"}</span> },
     { id: "duration", header: L("Duration", "Müddət"), defaultHidden: true, csv: (s) => (s.started_at && s.finished_at ? Math.round((new Date(s.finished_at).getTime() - new Date(s.started_at).getTime()) / 1000) : ""),
       cell: (s) => <span className="text-xs text-slate-400">{s.started_at && s.finished_at ? `${Math.round((new Date(s.finished_at).getTime() - new Date(s.started_at).getTime()) / 1000)}s` : "-"}</span> },
   ];

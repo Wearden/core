@@ -7,6 +7,7 @@ import DataTable, { Column } from "../components/DataTable";
 import { Chips, PageHeader, searchCls } from "../components/ui";
 import { useI18n } from "../i18n";
 import { download } from "../analyticsApi";
+import { dateTime, isoTime } from "../time";
 
 type Filter = "all" | "active" | "completed" | "failed";
 
@@ -86,8 +87,8 @@ export default function Rollback({ pam = false }: { pam?: boolean }) {
       ),
     },
     {
-      id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? a.created_at).localeCompare(b.started_at ?? b.created_at), csv: (r) => r.started_at ?? r.created_at,
-      cell: (r) => <span className="whitespace-nowrap text-xs text-slate-400">{new Date(r.started_at ?? r.created_at).toLocaleString()}</span>,
+      id: "started", header: t("col.started"), sort: (a, b) => (a.started_at ?? a.created_at).localeCompare(b.started_at ?? b.created_at), csv: (r) => isoTime(r.started_at ?? r.created_at),
+      cell: (r) => <span className="whitespace-nowrap text-xs text-slate-400">{dateTime(r.started_at ?? r.created_at)}</span>,
     },
   ];
 
