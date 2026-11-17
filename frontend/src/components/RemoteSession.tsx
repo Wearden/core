@@ -12,6 +12,21 @@ interface LogLine {
   text: string;
 }
 
+/** Guacamole status codes worth explaining; guacd itself only says "Aborted. See logs." */
+const GUAC_ERRORS: Record<number, string> = {
+  513: "the remote desktop gateway is busy",
+  514: "the host did not answer in time",
+  515: "the host closed the connection",
+  519: "the host cannot be reached",
+  520: "the host refused the connection",
+  521: "the session is already in use elsewhere",
+  522: "the session timed out",
+  523: "the session was closed",
+  769: "the host rejected the username or password/key. Check the stored credential (Test it on the Password vault or PAM assets page).",
+  771: "access to this session was refused",
+  776: "the session ended because it was idle",
+};
+
 interface Props {
   session: SessionOpenResult;
   onClose: () => void;
@@ -60,7 +75,7 @@ export default function RemoteSession({ session, onClose, sideContent }: Props) 
       addLog(`state: ${name}`);
     };
     client.onerror = (error: { code: number; message: string }) => {
-      addLog(`error ${error.code}: ${error.message}`);
+      addLog(`error ${error.code}: ${GUAC_ERRORS[error.code] ?? error.message}`);
     };
 
     const mouse = new Guacamole.Mouse(element);

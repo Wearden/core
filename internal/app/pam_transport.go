@@ -319,6 +319,11 @@ func (s *Server) pamTargetFor(ctx context.Context, assetID int64) (*pamTarget, e
 	if err != nil {
 		return nil, err
 	}
+	return s.pamTargetWith(ctx, assetID, asset, username, authType, secret)
+}
+
+// pamTargetWith builds a PAM target from an asset and an already decrypted credential.
+func (s *Server) pamTargetWith(ctx context.Context, assetID int64, asset map[string]any, username, authType string, secret []byte) (*pamTarget, error) {
 	t := &pamTarget{AssetID: assetID, Name: text(asset["name"]), Host: text(asset["host"]), OS: text(asset["os_type"]), Protocol: assetConnection(asset), username: username, authType: authType, secret: secret}
 	switch t.Protocol {
 	case "ssh":

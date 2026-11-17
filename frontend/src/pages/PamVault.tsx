@@ -72,6 +72,19 @@ export default function PamVault() {
 
   const reveal = (v: VaultEntry) => run(v.id, async () => setRevealed({ entry: v, ...(await vaultApi.secret(v.id)) }));
 
+  /** Logs in to the linked host with the entry's secret; the secret never leaves the server. */
+  const test = async (v: Pick<VaultEntry, "id" | "name">) => {
+    setBusy(v.id);
+    try {
+      const res = await vaultApi.test(v.id);
+      toast(`${v.name}: ${res.status === "ok" ? L("the host accepted this secret", "host bu sirri qəbul etdi") : `${L("the host refused it", "host qəbul etmədi")} (${res.detail})`}`, res.status === "ok" ? "success" : "error");
+    } catch (err) {
+      toast((err as Error).message, "error");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const remove = async (v: VaultEntry) => {
     const ok = await confirm({ title: L("Delete vault entry", "Seyf qeydini sil"), message: `${v.name}: ${L("the stored secret is deleted and cannot be recovered.", "saxlanılan sirr silinir və bərpa olunmur.")}`, confirmLabel: L("Delete", "Sil"), cancelLabel: L("Cancel", "Ləğv et"), danger: true });
     if (ok) await run(v.id, () => vaultApi.remove(v.id), L("Entry deleted", "Qeyd silindi"));
@@ -142,6 +155,11 @@ export default function PamVault() {
                             {L("Connect", "Qoşul")}
                           </button>
                         )}
+                        {injectable && (
+                          <button onClick={() => test(v)} disabled={busy === v.id} className={btn} title={L("Check that the host accepts this secret, without showing it", "Hostun bu sirri qəbul etdiyini göstərmədən yoxla")}>
+                            {busy === v.id ? "..." : L("Test", "Yoxla")}
+                          </button>
+                        )}
                         {v.mine ? (
                           <>
                             <button onClick={() => reveal(v)} disabled={busy === v.id} className={btn}>{L("Show secret", "Sirri göstər")}</button>
@@ -178,11 +196,12 @@ export default function PamVault() {
           az={az}
           onClose={() => setEditing(null)}
           onSave={async (body) => {
-            if (editing === "new") await vaultApi.create(body);
-            else await vaultApi.update(editing.id, body);
+            const saved = editing === "new" ? await vaultApi.create(body) : await vaultApi.update(editing.id, body);
             setEditing(null);
             toast(L("Saved", "Saxlanıldı"), "success");
             await refresh();
+            // A wrong secret otherwise only shows up as a failed session later.
+            if (saved.asset_id && (saved.type === "password" || saved.type === "ssh_key")) await test(saved);
           }}
         />
       )}
@@ -264,7 +283,7 @@ function VaultModal({ entry, assets, az, onSave, onClose }: { entry: VaultEntry 
           </select>
         </label>
         <label className="block text-sm"><span className="text-slate-300">{L("Account", "Hesab")}</span>
-          <input className={field} value={form.username} onChange={(e) => set({ username: e.target.value })} maxLength={255} placeholder="root" />
+          <input className={field} value={form.username} onChange={(e) => set({ username: e.target.value })} maxLength={255} placeholder="root" autoComplete="off" data-1p-ignore data-lpignore="true" />
         </label>
       </div>
       {linkable && (
@@ -279,8 +298,10 @@ function VaultModal({ entry, assets, az, onSave, onClose }: { entry: VaultEntry 
         {multiline ? (
           <textarea className={`${field} h-32 font-mono text-xs`} value={form.secret} onChange={(e) => set({ secret: e.target.value })} required={!entry} spellCheck={false} />
         ) : (
-          <input type="password" className={field} value={form.secret} onChange={(e) => set({ secret: e.target.value })} required={!entry} autoComplete="new-password" />
+          // Not type=password: browsers would offer to fill in the Wearden login password here.
+          <input type="text" className={field} style={{ WebkitTextSecurity: "disc" } as React.CSSProperties} value={form.secret} onChange={(e) => set({ secret: e.target.value })} required={!entry} autoComplete="off" spellCheck={false} data-1p-ignore data-lpignore="true" />
         )}
+        <span className="mt-1 block text-xs text-slate-500">{L("Type or paste the target account's own secret, not your Wearden password.", "Hədəf hesabın öz sirrini yazın və ya yapışdırın, Wearden parolunuzu yox.")}</span>
       </label>
       <label className="block text-sm"><span className="text-slate-300">{L("Notes", "Qeydlər")}</span>
         <textarea className={`${field} h-16`} value={form.notes} onChange={(e) => set({ notes: e.target.value })} maxLength={2000} />

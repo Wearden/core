@@ -66,6 +66,7 @@ export const vaultApi = {
     request<VaultEntry>(`/pam/vault/${id}/checkout`, { method: "POST", body: JSON.stringify({ minutes, reason }) }),
   checkin: (id: string) => request<VaultEntry>(`/pam/vault/${id}/checkin`, { method: "POST" }),
   secret: (id: string) => request<{ secret: string; expires_at: string }>(`/pam/vault/${id}/secret`),
+  test: (id: string) => request<{ status: "ok" | "failed"; detail: string }>(`/pam/vault/${id}/test`, { method: "POST" }),
 };
 
 export const jitApi = {
