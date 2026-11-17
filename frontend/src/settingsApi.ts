@@ -39,6 +39,7 @@ export const settingsApi = {
 export const aiApi = {
   status: () => request<{ enabled: boolean }>("/ai/status"),
   stored: (scanId: string) => request<AiAnalysis>(`/ai/analyses/${scanId}`),
+  chat: (messages: { role: string; content: string }[], language: string, page: string) => request<{ reply: string }>("/ai/chat", { method: "POST", body: JSON.stringify({ messages, language, page }) }),
   analyze: (scanId: string, language: string) => request<AiAnalysis>("/ai/analyze", { method: "POST", body: JSON.stringify({ scan_id: scanId, language }) }),
 };
 
