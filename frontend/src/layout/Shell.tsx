@@ -273,7 +273,20 @@ export default function Shell() {
 
   // Alerts: active drift events and failed hardening runs are the two things that need attention.
   const drift = useQuery({ queryKey: ["drift"], queryFn: () => request<{ id: number; message: string; severity: string; detected_at: string }[]>("/drift?active_only=true"), refetchInterval: 30_000 });
-  const alerts = drift.data ?? [];
+  // Read and cleared alerts are remembered in this browser, per user. The list itself comes from drift detection and cannot be deleted for everyone.
+  const alertKey = `wearden.alerts.${user?.id ?? 0}`;
+  const [alertState, setAlertState] = useState<{ read: number[]; cleared: number[] }>(() => {
+    try { return { read: [], cleared: [], ...JSON.parse(localStorage.getItem(alertKey) || "{}") }; } catch { return { read: [], cleared: [] }; }
+  });
+  const saveAlerts = (next: { read: number[]; cleared: number[] }) => {
+    setAlertState(next);
+    try { localStorage.setItem(alertKey, JSON.stringify({ read: next.read.slice(-200), cleared: next.cleared.slice(-200) })); } catch { /* convenience only */ }
+  };
+  const alerts = (drift.data ?? []).filter((a) => !alertState.cleared.includes(a.id));
+  const unread = alerts.filter((a) => !alertState.read.includes(a.id));
+  const markAllRead = () => saveAlerts({ ...alertState, read: [...new Set([...alertState.read, ...alerts.map((a) => a.id)])] });
+  const clearAll = () => saveAlerts({ read: alertState.read, cleared: [...new Set([...alertState.cleared, ...alerts.map((a) => a.id)])] });
+  const clearOne = (id: number) => saveAlerts({ ...alertState, cleared: [...new Set([...alertState.cleared, id])] });
 
   const pages = useMemo<PaletteItem[]>(() => GROUPS.flatMap((g) => g.items.map((i) => ({ id: i.to, label: t(i.key), hint: g.label, to: i.to }))), [t]);
 
@@ -329,17 +342,29 @@ export default function Shell() {
             <div className="relative" ref={bellRef}>
               <button onClick={() => setBell(!bell)} aria-label="Alerts" aria-expanded={bell} className="relative flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 text-slate-300 hover:bg-slate-900">
                 <Icon d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
-                {alerts.length > 0 && <span aria-hidden className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-400 px-1 text-[10px] font-semibold text-slate-950">{alerts.length}</span>}
+                {unread.length > 0 && <span aria-hidden className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-400 px-1 text-[10px] font-semibold text-slate-950">{unread.length}</span>}
               </button>
               {bell && (
                 <div className="absolute right-0 mt-2 w-[min(20rem,92vw)] overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-                  <div className="border-b border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-100">{az ? "Xəbərdarlıqlar" : "Alerts"}</div>
+                  <div className="flex items-center justify-between border-b border-slate-800 px-4 py-2.5">
+                    <span className="text-sm font-medium text-slate-100">{az ? "Xəbərdarlıqlar" : "Alerts"}{unread.length > 0 && <span className="ml-2 text-xs text-slate-500">{unread.length} {az ? "oxunmamış" : "unread"}</span>}</span>
+                    {alerts.length > 0 && (
+                      <span className="flex gap-3 text-xs">
+                        <button onClick={markAllRead} disabled={unread.length === 0} className="text-slate-400 hover:text-slate-100 disabled:opacity-40">{az ? "Hamısını oxu" : "Mark all read"}</button>
+                        <button onClick={clearAll} className="text-slate-400 hover:text-red-300">{az ? "Təmizlə" : "Clear all"}</button>
+                      </span>
+                    )}
+                  </div>
                   {alerts.length === 0 ? <p className="px-4 py-6 text-center text-sm text-slate-500">{az ? "Aktiv xəbərdarlıq yoxdur." : "No active alerts."}</p> : (
                     <ul className="max-h-72 divide-y divide-slate-800 overflow-y-auto">
                       {alerts.slice(0, 8).map((a) => (
-                        <li key={a.id} className="px-4 py-2.5 text-sm">
-                          <div className="text-slate-200">{a.message}</div>
-                          <div className="text-xs text-slate-500">{dateTime(a.detected_at)} · {a.severity}</div>
+                        <li key={a.id} className={`group flex items-start gap-3 px-4 py-2.5 text-sm ${alertState.read.includes(a.id) ? "opacity-60" : ""}`}>
+                          <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alertState.read.includes(a.id) ? "bg-transparent" : "bg-red-400"}`} />
+                          <button onClick={() => !alertState.read.includes(a.id) && saveAlerts({ ...alertState, read: [...alertState.read, a.id] })} className="min-w-0 flex-1 text-left" title={az ? "Oxundu kimi işarələ" : "Mark as read"}>
+                            <div className="text-slate-200">{a.message}</div>
+                            <div className="text-xs text-slate-500">{dateTime(a.detected_at)} · {a.severity}</div>
+                          </button>
+                          <button onClick={() => clearOne(a.id)} aria-label={az ? "Sil" : "Dismiss"} className="shrink-0 text-slate-600 hover:text-red-300">✕</button>
                         </li>
                       ))}
                     </ul>
