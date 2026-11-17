@@ -4,6 +4,8 @@ import { aiApi } from "../settingsApi";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { NewHardening } from "../pages/Hardening";
+import AiBadge from "./AiBadge";
+import { dateTime } from "../time";
 
 const ACTION_STYLE: Record<string, string> = {
   remediate: "bg-cyan-900/60 text-cyan-200",
@@ -29,7 +31,7 @@ export default function AiAnalysisPanel({ scanId, benchmarkId }: { scanId: strin
   return (
     <div className="space-y-3 rounded-xl border border-cyan-900 bg-cyan-950/20 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold text-cyan-200">{t("ai.title")}</h2>
+        <h2 className="flex items-center gap-2 font-semibold text-cyan-200"><AiBadge />{t("ai.title")}</h2>
         {canOperate && (
           <button onClick={() => analyze.mutate()} disabled={!status.data?.enabled || analyze.isPending} className="rounded-md bg-cyan-700 px-3 py-1.5 text-sm hover:bg-cyan-600 disabled:opacity-40">
             {analyze.isPending ? t("ai.running") : t("ai.analyze")}
@@ -63,7 +65,7 @@ export default function AiAnalysisPanel({ scanId, benchmarkId }: { scanId: strin
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-slate-500">{t("ai.advisory")} · {result.model}</p>
+          <p className="text-xs text-slate-500">{t("ai.advisory")} · {result.provider ? `${result.provider} · ` : ""}{result.model} · {dateTime(result.created_at)}</p>
           {canOperate && picked.length > 0 && (
             <button onClick={() => setPlanning(true)} className="rounded-md border border-cyan-700 px-3 py-1.5 text-sm text-cyan-200 hover:bg-cyan-900/40">
               {t("ai.planHardening")} ({picked.length})
