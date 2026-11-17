@@ -70,9 +70,8 @@ const SCROLL_CSS = `.wd-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255
 .wd-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:9999px}
 .wd-scroll::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.32)}`;
 
-// Launcher motion: a pulsing ring, a gentle float, a drifting orb and a pop-in greeting. All of it stops for reduced-motion users.
-const FX_CSS = `@keyframes wd-ring{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
-@keyframes wd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+// Launcher motion: a static dashed outline, a gentle float, a drifting orb and a pop-in greeting. All of it stops for reduced-motion users.
+const FX_CSS = `@keyframes wd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes wd-morph-a{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%;transform:translate(-10%,-8%) rotate(0deg)}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%;transform:translate(10%,8%) rotate(200deg)}}
 @keyframes wd-morph-b{0%,100%{border-radius:40% 60% 60% 40%/70% 30% 70% 30%;transform:translate(12%,10%) rotate(40deg)}50%{border-radius:70% 30% 40% 60%/40% 70% 30% 60%;transform:translate(-12%,-10%) rotate(-160deg)}}
 .wd-orb{position:relative;display:block;width:calc(var(--s) * 1px);height:calc(var(--s) * 1px);overflow:hidden;border-radius:9999px;background:radial-gradient(circle at 50% 55%,#27272a 0%,#0a0a0a 75%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
@@ -83,9 +82,9 @@ const FX_CSS = `@keyframes wd-ring{0%{transform:scale(1);opacity:.5}100%{transfo
 .wd-orb-anim.wd-blob-a{animation:wd-morph-a 7s ease-in-out infinite}.wd-orb-anim.wd-blob-b{animation:wd-morph-b 9s ease-in-out infinite}
 @keyframes wd-pop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes wd-spin-in{from{transform:rotate(-90deg) scale(.5);opacity:0}to{transform:none;opacity:1}}
-.wd-ring{animation:wd-ring 2.8s ease-out infinite}.wd-float{animation:wd-float 4s ease-in-out infinite}.wd-float:hover{animation-play-state:paused}
+.wd-float{animation:wd-float 4s ease-in-out infinite}.wd-float:hover{animation-play-state:paused}
 .wd-pop{animation:wd-pop .35s ease-out}.wd-spin-in{animation:wd-spin-in .25s ease-out}
-@media (prefers-reduced-motion:reduce){.wd-ring,.wd-float,.wd-orb-anim,.wd-pop,.wd-spin-in{animation:none}}`;
+@media (prefers-reduced-motion:reduce){.wd-float,.wd-orb-anim,.wd-pop,.wd-spin-in{animation:none}}`;
 
 /** Messenger-style support window: Home, Messages (chat with Wardy) and Help. Needs an AI provider; hidden otherwise. History lives in memory only. */
 export default function ChatWidget() {
@@ -280,7 +279,7 @@ export default function ChatWidget() {
         </button>
       ) : (
         <button onClick={() => { setHint(false); setOpen(true); }} aria-label={L("Support", "Dəstək")} aria-expanded="false" className="wd-float group relative flex items-center rounded-full border border-white/15 bg-black p-1.5 shadow-xl transition-colors hover:border-white/40 focus-visible:border-white/60">
-          <span aria-hidden="true" className="wd-ring pointer-events-none absolute inset-0 rounded-full border border-white/40" />
+          <span aria-hidden="true" className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-white/40 transition-colors group-hover:border-white/70" />
           <WardyAvatar size={46} online animated />
           <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium text-white opacity-0 transition-all duration-300 group-hover:max-w-[10rem] group-hover:pl-3 group-hover:pr-3 group-hover:opacity-100 group-focus-visible:max-w-[10rem] group-focus-visible:pl-3 group-focus-visible:pr-3 group-focus-visible:opacity-100">{L("Ask Wardy", "Wardy-dən soruş")}</span>
         </button>
