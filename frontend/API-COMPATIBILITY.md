@@ -95,7 +95,7 @@ Plan includes controls `{id,title,severity,risky,reboot_required,commands,backup
 | GET `/sessions` | | `RemoteSessionRow[]` in `src/sessionTypes.ts` |
 | POST `/sessions` | `{asset_id:number,width:number,height:number}` | `{id,asset_name,protocol:"ssh"|"rdp",token}` |
 | POST `/sessions/{id}/end` | | `RemoteSessionRow` |
-| GET `/sessions/{id}/recording` | Bearer | Guacamole recording binary |
+| GET `/sessions/{id}/recording` | Bearer | Guacamole recording binary; `?format=mp4` returns an H.264 MP4 (409 while the session is open) |
 
 Dashboard fields and analytics nested arrays are accessed directly and must be supplied even when empty. Scores are numeric or null. Guacamole session token must follow guacamole-lite AES-256-CBC encrypted connection-token format using the shared `GUAC_CRYPT_KEY`. The browser connects to `/guac/?token=...`; gateway strips `/guac/`. Session end authorization and recording access control belong in the core API.
 
