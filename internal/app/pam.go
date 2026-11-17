@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -482,42 +483,55 @@ func (s *Server) pamCreateScan(w http.ResponseWriter, r *http.Request) {
 		problem(w, 400, "Invalid profile or name")
 		return
 	}
-	assets, err := s.pamValidateAssets(r.Context(), in.AssetIDs, b.OS)
-	if err != nil {
-		problem(w, 409, err.Error())
-		return
-	}
-	scanID, err := security.ID()
-	if err != nil {
-		problem(w, 500, "Cannot create scan")
-		return
-	}
-	hosts := []any{}
-	for _, a := range assets {
-		hostID, err := s.nextHostID(r.Context())
-		if err != nil {
-			s.databaseError(w, err)
-			return
-		}
-		hosts = append(hosts, map[string]any{"id": hostID, "asset_id": a["id"], "asset_name": a["name"], "host": a["host"], "os_detected": a["os_detected"], "status": "pending", "passed": 0, "failed": 0, "errored": 0, "not_applicable": 0, "score": nil, "weighted_score": nil, "message": nil})
-	}
 	name := in.Name
 	if name == "" {
 		name = b.Name + " PAM scan"
 	}
-	doc := scanDocument(scanID, name, in.Benchmark, in.Profile, current(r).Username, ids, hosts)
-	doc["mode"] = "pam"
-	raw, err := json.Marshal(doc)
-	if err == nil {
-		_, err = s.DB.ExecContext(r.Context(), "INSERT INTO documents(collection,id,data) VALUES('scans',$1,$2)", scanID, raw)
+	doc, err := s.pamQueueScan(r.Context(), name, in.Benchmark, in.Profile, b, ids, in.AssetIDs, current(r).Username)
+	if errors.Is(err, errPAMAssets) {
+		problem(w, 409, strings.TrimPrefix(err.Error(), errPAMAssets.Error()+": "))
+		return
 	}
 	if err != nil {
 		s.databaseError(w, err)
 		return
 	}
-	s.audit(r, "pam.scan_queued", scanID, true, in.Benchmark)
-	go s.pamRunScan(scanID, doc, b, ids)
+	s.audit(r, "pam.scan_queued", text(doc["id"]), true, in.Benchmark)
 	writeJSON(w, 201, doc)
+}
+
+var errPAMAssets = errors.New("assets")
+
+// pamQueueScan stores a new agentless scan of the given controls on the given assets and starts it.
+// An error wrapping errPAMAssets means an asset cannot be scanned this way.
+func (s *Server) pamQueueScan(ctx context.Context, name, benchmarkID, profile string, b *benchmarks.Benchmark, ids []string, assetIDs []int64, username string) (map[string]any, error) {
+	assets, err := s.pamValidateAssets(ctx, assetIDs, b.OS)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", errPAMAssets, err.Error())
+	}
+	scanID, err := security.ID()
+	if err != nil {
+		return nil, err
+	}
+	hosts := []any{}
+	for _, a := range assets {
+		hostID, err := s.nextHostID(ctx)
+		if err != nil {
+			return nil, err
+		}
+		hosts = append(hosts, map[string]any{"id": hostID, "asset_id": a["id"], "asset_name": a["name"], "host": a["host"], "os_detected": a["os_detected"], "status": "pending", "passed": 0, "failed": 0, "errored": 0, "not_applicable": 0, "score": nil, "weighted_score": nil, "message": nil})
+	}
+	doc := scanDocument(scanID, name, benchmarkID, profile, username, ids, hosts)
+	doc["mode"] = "pam"
+	raw, err := json.Marshal(doc)
+	if err == nil {
+		_, err = s.DB.ExecContext(ctx, "INSERT INTO documents(collection,id,data) VALUES('scans',$1,$2)", scanID, raw)
+	}
+	if err != nil {
+		return nil, err
+	}
+	go s.pamRunScan(scanID, doc, b, ids)
+	return doc, nil
 }
 
 func (s *Server) nextHostID(ctx context.Context) (int64, error) {
@@ -585,6 +599,32 @@ func (s *Server) pamSummarise(d *pamDoc, host map[string]any) {
 	host["score"], host["weighted_score"] = scores.Compliance, scores.Weighted
 }
 
+// pamDrift checks one host's finished agentless scan for drift, as agent reports are checked.
+// An unreachable host's error results become "unable to recheck" alerts for its hardened controls.
+func (s *Server) pamDrift(ctx context.Context, d *pamDoc, host map[string]any) {
+	d.mu.Lock()
+	findings := []wire.Finding{}
+	for _, row := range featureMaps(d.doc["results"]) {
+		if integer(row["host_result_id"]) == integer(host["id"]) {
+			findings = append(findings, wire.Finding{RuleID: text(row["control_id"]), Status: text(row["status"]), Severity: text(row["severity"])})
+		}
+	}
+	assetID, name := integer(host["asset_id"]), text(host["asset_name"])
+	d.mu.Unlock()
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err == nil {
+		err = s.reconcileDrift(ctx, tx, assetID, name, "pam:"+strconv.FormatInt(assetID, 10), time.Now().UTC(), findings)
+		if err == nil {
+			err = tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}
+	if err != nil {
+		slog.Error("PAM drift check failed", "asset", assetID, "error", err)
+	}
+}
+
 func (s *Server) pamScanHost(ctx context.Context, d *pamDoc, host map[string]any, b *benchmarks.Benchmark, ids []string) {
 	finish := func(status string, message *string) {
 		d.mu.Lock()
@@ -593,6 +633,9 @@ func (s *Server) pamScanHost(ctx context.Context, d *pamDoc, host map[string]any
 		d.mu.Unlock()
 		s.pamSummarise(d, host)
 		s.pamFlush(ctx, d)
+		if status != "cancelled" {
+			s.pamDrift(ctx, d, host)
+		}
 	}
 	errorRest := func(from int, message string) {
 		for _, cid := range ids[from:] {
