@@ -20,13 +20,17 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [full, setFull] = useState(false);
   const fitRef = useRef<() => void>(() => undefined);
+  const [info, setInfo] = useState("");
   // True until the viewer pauses: the library ignores play() while no frames are loaded and pauses by itself when playback outruns loading.
   const wantPlay = useRef(true);
 
   // Real browser full screen. It is requested right after Play was clicked, which the browser still counts as the user's gesture.
   useEffect(() => {
-    rootRef.current?.requestFullscreen?.().catch(() => { /* refused: the overlay still fills the window */ });
-    const on = () => setFull(!!document.fullscreenElement);
+    try {
+      const p = rootRef.current?.requestFullscreen?.() as Promise<void> | undefined;
+      p?.catch?.(() => { /* refused: the overlay still fills the window */ });
+    } catch { /* not supported: the overlay still fills the window */ }
+    const on = () => { setFull(!!document.fullscreenElement); window.setTimeout(() => fitRef.current(), 150); };
     document.addEventListener("fullscreenchange", on);
     return () => {
       document.removeEventListener("fullscreenchange", on);
@@ -55,13 +59,20 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
         // Keep the picture fitted to the window, whatever the recorded screen size is.
         const fit = () => {
           const box = screenRef.current;
-          const w = recording.getDisplay().getWidth();
-          const h = recording.getDisplay().getHeight();
-          if (box && w && h) recording.getDisplay().scale(Math.min(box.clientWidth / w, box.clientHeight / h));
+          const d = recording.getDisplay();
+          const w = d.getWidth();
+          const h = d.getHeight();
+          if (!box || !w || !h) return;
+          const k = Math.min(box.clientWidth / w, box.clientHeight / h);
+          // A zero or broken box size (not laid out yet) must never shrink the picture to nothing.
+          const scale = Number.isFinite(k) && k > 0.05 ? k : 1;
+          d.scale(scale);
+          setInfo(`${w}x${h} · ${Math.round(scale * 100)}%`);
         };
         recording.getDisplay().onresize = fit;
         window.addEventListener("resize", fit);
         fitRef.current = fit;
+        requestAnimationFrame(fit);
         recording.connect();
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : t("rec.loadFail"));
@@ -93,7 +104,7 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
         <div className="text-sm">
           <span className="font-medium">{t("rec.recording")} {title}</span>
           <span className="ml-3 text-slate-400">
-            {seconds(progress.at)} / {seconds(progress.total)}
+            {seconds(progress.at)} / {seconds(progress.total)}{info && <span className="ml-3 text-slate-500">{info}</span>}
           </span>
         </div>
         <div className="flex gap-2">
