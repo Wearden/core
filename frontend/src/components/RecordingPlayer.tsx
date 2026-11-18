@@ -22,7 +22,9 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
   const fitRef = useRef<() => void>(() => undefined);
   const [info, setInfo] = useState("");
   // True until the viewer pauses: the library ignores play() while no frames are loaded and pauses by itself when playback outruns loading.
-  const wantPlay = useRef(true);
+  // Guacamole keeps the newest instructions in a buffer until loading ends, so a frame played during loading
+  // is read as empty and still counted as played. Playback therefore starts only once the recording has loaded.
+  const [loaded, setLoaded] = useState(false);
 
   // Real browser full screen. It is requested right after Play was clicked, which the browser still counts as the user's gesture.
   useEffect(() => {
@@ -51,9 +53,8 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
         const recording = new Guacamole.SessionRecording(new Guacamole.StaticHTTPTunnel(blobUrl));
         recordingRef.current = recording;
         screenRef.current.appendChild(recording.getDisplay().getElement());
-        const tryPlay = () => { if (wantPlay.current && !recording.isPlaying()) recording.play(); };
-        recording.onprogress = (at: number, total: number) => { setProgress({ at, total }); tryPlay(); };
-        recording.onload = tryPlay;
+        recording.onprogress = (at: number, total: number) => setProgress({ at, total });
+        recording.onload = () => { setLoaded(true); recording.play(); };
         recording.onplay = () => setPlaying(true);
         recording.onpause = () => setPlaying(false);
         // Keep the picture fitted to the window, whatever the recorded screen size is.
@@ -92,8 +93,9 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
   const toggle = () => {
     const rec = recordingRef.current;
     if (!rec) return;
-    if (playing) { wantPlay.current = false; rec.pause(); }
-    else { wantPlay.current = true; rec.play(); }
+    if (!loaded) return;
+    if (playing) rec.pause();
+    else rec.play();
   };
 
   const seconds = (ms: number) => `${Math.floor(ms / 1000)} s`;
@@ -108,7 +110,7 @@ export default function RecordingPlayer({ sessionId, title, onClose }: Props) {
           </span>
         </div>
         <div className="flex gap-2">
-          <button onClick={toggle} disabled={!!error} className="rounded border border-slate-700 px-3 py-1 text-sm hover:bg-slate-800 disabled:opacity-40">
+          <button onClick={toggle} disabled={!!error || !loaded} className="rounded border border-slate-700 px-3 py-1 text-sm hover:bg-slate-800 disabled:opacity-40">
             {playing ? t("rec.pause") : t("ses.play")}
           </button>
           <button onClick={toggleFull} className="rounded border border-slate-700 px-3 py-1 text-sm hover:bg-slate-800">{full ? (lang === "az" ? "Tam ekrandan çıx" : "Exit full screen") : lang === "az" ? "Tam ekran" : "Full screen"}</button>
